@@ -1,0 +1,1 @@
+"""AutomationPy-compatible operational fiber."""
