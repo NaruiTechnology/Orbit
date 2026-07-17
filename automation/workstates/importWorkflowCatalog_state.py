@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from workstates.orbitAutomation_state import OrbitAutomationState
+from automation.workstates.orbitAutomation_state import OrbitAutomationState
 
 
 class importWorkflowCatalog_state(OrbitAutomationState):

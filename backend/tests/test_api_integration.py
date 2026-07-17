@@ -5,7 +5,6 @@ from uuid import uuid4
 
 import psycopg
 import pytest
-
 from app.config import get_settings
 
 pytestmark = [
@@ -20,9 +19,8 @@ pytestmark = [
 
 
 def test_localized_read_edit_restore_and_runtime_transition() -> None:
-    from fastapi.testclient import TestClient
-
     from app.main import app
+    from fastapi.testclient import TestClient
 
     settings = get_settings()
     business_key = f"INTEGRATION-{uuid4()}"

@@ -5,17 +5,12 @@ from __future__ import annotations
 
 import argparse
 import json
-import sys
 from pathlib import Path
 
-PROJECT_ROOT = Path(__file__).resolve().parents[1]
-sys.path.insert(0, str(PROJECT_ROOT / "backend"))
-
-import psycopg  # noqa: E402
-from psycopg.rows import dict_row  # noqa: E402
-
-from app.config import get_settings  # noqa: E402
-from app.services.catalog_importer import import_catalog  # noqa: E402
+import psycopg
+from app.config import get_settings
+from app.services.catalog_importer import import_catalog
+from psycopg.rows import dict_row
 
 
 def parse_args() -> argparse.Namespace:

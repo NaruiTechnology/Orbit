@@ -24,7 +24,7 @@ For a fresh checkout:
 ```bash
 cd /home/vboxuser/Project/OrbitAutomation/Orbit
 python3 -m venv .venv
-.venv/bin/pip install -e './backend[dev]'
+.venv/bin/pip install -r requirements.txt
 cd frontend
 npm install
 cd ..
@@ -107,17 +107,26 @@ The workbook remains the catalog source of truth. A catalog import updates sourc
 
 ## AutomationPy Fiber
 
-`automation/orbitAutomationApp.py` uses the existing `AutomationPy` package from `/home/vboxuser/Project/IobeamTech/Development`; no licensed framework code is copied. Its UTF-8 JSON config is `automation/Json/OrbitAutomation.json`.
+The `AutomationPy` framework is vendored as a top-level package so imports work
+from Python, IDE language servers, tests, and installed console commands without
+external path injection. The snapshot provenance is recorded in
+`AutomationPy/VENDORED_FROM.md`; its UTF-8 fiber configuration is
+`automation/Json/OrbitAutomation.json`.
 
 ```bash
 # Validate config, verify DB encoding/timezone, and import the catalog.
-.venv/bin/python automation/orbitAutomationApp.py
+.venv/bin/orbit-fiber
 
 # Also run states marked skip=true, including bootstrap and detached API launch.
-.venv/bin/python automation/orbitAutomationApp.py --include-skipped
+.venv/bin/orbit-fiber --include-skipped
+
+# Equivalent module form.
+.venv/bin/python -m automation.orbitAutomationApp
 ```
 
-`AUTOMATION_PY_ROOT` or `--framework-root` can override the framework location.
+The root `pyproject.toml` is the canonical Python project definition.
+`requirements.txt` installs it with development tooling, while the requested
+`requirement.txt` filename delegates to that canonical manifest.
 
 ## API Surface
 
@@ -156,11 +165,15 @@ The integration test verifies server/client UTF-8, localized reads, mixed-langua
 
 ```text
 Orbit/
-├── automation/       AutomationPy fiber, states, thread, and JSON config
+├── AutomationPy/     Vendored automation framework package
+├── automation/       Orbit fiber, states, thread, and JSON config
 ├── backend/          FastAPI contracts, auth, repository, and tests
 ├── config/           JSON application and PostgreSQL configuration
 ├── data/             Generated workbook catalog
 ├── database/         Idempotent schema and identity seed SQL
 ├── frontend/         React/Redux/TypeScript/AG Grid application
-└── scripts/          Workbook, DB, local cluster, and API operations
+├── scripts/          Workbook, DB, local cluster, and API operations
+├── pyproject.toml    Canonical Python package and tool configuration
+├── requirement.txt   Requested compatibility dependency manifest
+└── requirements.txt  Canonical editable development installation
 ```

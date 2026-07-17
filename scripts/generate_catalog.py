@@ -4,14 +4,11 @@
 from __future__ import annotations
 
 import argparse
-import sys
 from pathlib import Path
 
-PROJECT_ROOT = Path(__file__).resolve().parents[1]
-BACKEND_ROOT = PROJECT_ROOT / "backend"
-sys.path.insert(0, str(BACKEND_ROOT))
+from app.services.workbook import build_catalog, workflow_counts, write_catalog
 
-from app.services.workbook import build_catalog, workflow_counts, write_catalog  # noqa: E402
+PROJECT_ROOT = Path(__file__).resolve().parents[1]
 
 
 def parse_args() -> argparse.Namespace:

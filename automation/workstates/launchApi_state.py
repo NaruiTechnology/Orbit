@@ -2,10 +2,9 @@
 
 from __future__ import annotations
 
-import os
 import subprocess
 
-from workstates.orbitAutomation_state import OrbitAutomationState
+from automation.workstates.orbitAutomation_state import OrbitAutomationState
 
 
 class launchApi_state(OrbitAutomationState):
@@ -25,13 +24,10 @@ class launchApi_state(OrbitAutomationState):
             command.append("--reload")
         log_path = self.project_path(runtime.get("ApiLog", "/tmp/orbit-api.log"))
         pid_path = self.project_path(runtime.get("ApiPid", "/tmp/orbit-api.pid"))
-        environment = os.environ.copy()
-        environment["PYTHONPATH"] = str(self.project_root / "backend")
         with log_path.open("a", encoding="utf-8") as output:
             process = subprocess.Popen(
                 command,
-                cwd=self.project_root / "backend",
-                env=environment,
+                cwd=self.project_root,
                 stdin=subprocess.DEVNULL,
                 stdout=output,
                 stderr=subprocess.STDOUT,

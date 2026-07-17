@@ -4,16 +4,12 @@
 from __future__ import annotations
 
 import argparse
-import sys
 from pathlib import Path
 
+import uvicorn
+from app.config import get_settings
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
-sys.path.insert(0, str(PROJECT_ROOT / "backend"))
-
-import uvicorn  # noqa: E402
-
-from app.config import get_settings  # noqa: E402
 
 
 def main() -> int:
@@ -23,10 +19,10 @@ def main() -> int:
     settings = get_settings()
     uvicorn.run(
         "app.main:app",
-        app_dir=str(PROJECT_ROOT / "backend"),
         host=settings.api_host,
         port=settings.api_port,
         reload=args.reload,
+        reload_dirs=[str(PROJECT_ROOT / "backend")] if args.reload else None,
     )
     return 0
 

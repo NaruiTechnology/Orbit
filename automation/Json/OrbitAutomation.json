@@ -6,7 +6,6 @@
   },
   "Runtime": {
     "ProjectRoot": "../..",
-    "AutomationPyRoot": "../../../../IobeamTech/Development",
     "ApplicationConfig": "config/application.json",
     "DatabaseConfig": "config/database.json",
     "WorkflowCatalog": "data/workflow_catalog.json",

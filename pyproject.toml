@@ -3,9 +3,10 @@ requires = ["hatchling>=1.27"]
 build-backend = "hatchling.build"
 
 [project]
-name = "orbit-automation-api"
+name = "orbit-automation"
 version = "0.1.0"
-description = "FastAPI backend for the Orbit workflow automation platform"
+description = "Full-stack workflow automation and management platform"
+readme = "README.md"
 requires-python = ">=3.13"
 dependencies = [
   "fastapi>=0.136,<1",
@@ -22,17 +23,28 @@ dev = [
   "ruff>=0.15,<1"
 ]
 
+[project.scripts]
+orbit-fiber = "automation.orbitAutomationApp:main"
+
 [tool.hatch.build.targets.wheel]
-packages = ["app"]
+packages = ["backend/app", "automation", "AutomationPy"]
 
 [tool.pytest.ini_options]
-pythonpath = ["."]
-testpaths = ["tests"]
+pythonpath = [".", "backend"]
+testpaths = ["backend/tests"]
 
 [tool.ruff]
 line-length = 100
 target-version = "py313"
+extend-exclude = ["AutomationPy"]
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "UP", "B", "SIM"]
 ignore = ["B008"]
+
+[tool.pyright]
+include = ["automation", "backend/app", "scripts"]
+extraPaths = [".", "backend"]
+venvPath = "."
+venv = ".venv"
+

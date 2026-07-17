@@ -5,13 +5,13 @@ from __future__ import annotations
 import queue
 from pathlib import Path
 
+from automation.workstates.bootstrapDatabase_state import bootstrapDatabase_state
+from automation.workstates.importWorkflowCatalog_state import importWorkflowCatalog_state
+from automation.workstates.launchApi_state import launchApi_state
+from automation.workstates.validateConfiguration_state import validateConfiguration_state
+from automation.workstates.verifyDatabase_state import verifyDatabase_state
 from AutomationPy.buildingblocks.decorators import overrides
 from AutomationPy.buildingblocks.workflow.work_thread import WorkThread
-from workstates.bootstrapDatabase_state import bootstrapDatabase_state
-from workstates.importWorkflowCatalog_state import importWorkflowCatalog_state
-from workstates.launchApi_state import launchApi_state
-from workstates.validateConfiguration_state import validateConfiguration_state
-from workstates.verifyDatabase_state import verifyDatabase_state
 
 STATE_TYPES = {
     "validateConfiguration": validateConfiguration_state,

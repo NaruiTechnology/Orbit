@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import json
-import os
 import subprocess
 import sys
 from pathlib import Path
@@ -42,11 +41,6 @@ class OrbitAutomationState(WorkState):
         return str(candidate) if candidate.is_file() else sys.executable
 
     def run_project_script(self, script: str, *arguments: str) -> None:
-        environment = os.environ.copy()
-        backend_root = str(self.project_root / "backend")
-        environment["PYTHONPATH"] = os.pathsep.join(
-            [backend_root, environment.get("PYTHONPATH", "")]
-        ).rstrip(os.pathsep)
         command = [
             self.python_executable(),
             str(self.project_root / script),
@@ -55,7 +49,6 @@ class OrbitAutomationState(WorkState):
         completed = subprocess.run(
             command,
             cwd=self.project_root,
-            env=environment,
             check=False,
             text=True,
             capture_output=True,

@@ -2,21 +2,14 @@
 
 from __future__ import annotations
 
-import sys
-
-from workstates.orbitAutomation_state import OrbitAutomationState
+from automation.workstates.orbitAutomation_state import OrbitAutomationState
 
 
 class verifyDatabase_state(OrbitAutomationState):
     def DoWork(self):
-        backend_root = str(self.project_root / "backend")
-        if backend_root not in sys.path:
-            sys.path.insert(0, backend_root)
-
         import psycopg
-        from psycopg.rows import dict_row
-
         from app.config import get_settings
+        from psycopg.rows import dict_row
 
         settings = get_settings().database
         with psycopg.connect(
