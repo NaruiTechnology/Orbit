@@ -4,6 +4,9 @@ const translations = {
   en: {
     appSubtitle: "Workflow operations fabric",
     navigator: "Workflow cascade",
+    businessArea: "Business area",
+    customerRelations: "Customer Relations",
+    peopleOperations: "People Operations",
     domain: "Domain",
     master: "Master flow",
     subworkflow: "Subworkflow",
@@ -29,6 +32,9 @@ const translations = {
   "zh-CN": {
     appSubtitle: "全流程业务运营中枢",
     navigator: "流程级联选择",
+    businessArea: "业务分区",
+    customerRelations: "客户关系",
+    peopleOperations: "人力资源",
     domain: "业务域",
     master: "主流程",
     subworkflow: "子流程",
@@ -54,6 +60,9 @@ const translations = {
   "zh-HK": {
     appSubtitle: "全流程業務營運中樞",
     navigator: "流程級聯選擇",
+    businessArea: "業務分區",
+    customerRelations: "客戶關係",
+    peopleOperations: "人力資源",
     domain: "業務域",
     master: "主流程",
     subworkflow: "子流程",

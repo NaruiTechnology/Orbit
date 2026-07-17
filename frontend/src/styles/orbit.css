@@ -1147,6 +1147,113 @@ input:focus-visible {
   }
 }
 
+/* The navigator is a two-level tab set: business area, then workflow. */
+.cascade {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  grid-template-rows: 30px minmax(0, 1fr);
+  gap: 8px 14px;
+  padding: 10px 12px;
+}
+
+.cascade__tabs {
+  grid-column: 1;
+  grid-row: 1;
+  display: flex;
+  min-width: 0;
+  gap: 7px;
+  overflow-x: auto;
+  scrollbar-width: thin;
+}
+
+.cascade__tabs button {
+  display: flex;
+  min-width: 180px;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 7px 10px;
+  color: var(--control-fg);
+  text-align: left;
+  background: color-mix(in srgb, var(--surface) 84%, transparent);
+  border: 1px solid var(--line);
+  cursor: pointer;
+}
+
+.cascade__tabs button:hover,
+.cascade__tabs button.is-active {
+  color: var(--control-active-fg);
+  background: var(--control-active-bg);
+  border-color: var(--forest);
+}
+
+.cascade__tabs button small {
+  color: var(--signal);
+  font-size: 10px;
+  font-weight: 800;
+}
+
+.cascade__lane--workflows {
+  grid-column: 1;
+  grid-row: 2;
+  display: grid;
+  grid-template-rows: 15px minmax(0, 1fr);
+  padding: 0;
+}
+
+.cascade__lane--workflows .cascade__scroll {
+  gap: 6px;
+}
+
+.cascade__lane--workflows button {
+  min-width: 148px;
+  height: 58px;
+  padding: 8px;
+}
+
+@media (max-width: 900px) {
+  .cascade {
+    grid-template-columns: 1fr;
+    grid-template-rows: 25px 34px minmax(0, 1fr);
+    gap: 5px 0;
+  }
+
+  .cascade__title {
+    grid-column: 1;
+    grid-row: 1;
+    border-right: 0;
+    padding: 0;
+  }
+
+  .cascade__title small {
+    display: none;
+  }
+
+  .cascade__tabs,
+  .cascade__lane--workflows {
+    grid-column: 1;
+  }
+
+  .cascade__tabs {
+    grid-row: 2;
+  }
+
+  .cascade__lane--workflows {
+    grid-row: 3;
+  }
+}
+
+@media (max-width: 620px) {
+  .cascade {
+    grid-template-rows: 22px 32px minmax(0, 1fr);
+    padding: 7px;
+  }
+
+  .cascade__tabs button {
+    min-width: 145px;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,

@@ -67,8 +67,9 @@ export function App() {
   useEffect(() => {
     const workflows = workflowsQuery.data;
     if (!workflows?.length) return;
-    if (!workflows.some((workflow) => workflow.key === workspace.selectedWorkflow)) {
-      const first = workflows[0];
+    const selected = workflows.find((workflow) => workflow.key === workspace.selectedWorkflow);
+    if (!selected || selected.is_master) {
+      const first = workflows.find((workflow) => !workflow.is_master);
       if (first) {
         dispatch(selectGroup(first.group_key));
         dispatch(selectWorkflow(first.key));
@@ -77,11 +78,18 @@ export function App() {
   }, [dispatch, workspace.selectedWorkflow, workflowsQuery.data]);
 
   function handleGroupSelect(group: string) {
-    dispatch(selectGroup(group));
+    const isPeopleOperations = group === "people-operations";
     const first = workflowsQuery.data?.find(
-      (workflow) => workflow.group_key === group && !workflow.is_master,
+      (workflow) =>
+        !workflow.is_master &&
+        (isPeopleOperations
+          ? workflow.group_key === "hr"
+          : workflow.group_key !== "hr"),
     );
-    if (first) dispatch(selectWorkflow(first.key));
+    if (first) {
+      dispatch(selectGroup(first.group_key));
+      dispatch(selectWorkflow(first.key));
+    }
   }
 
   function handleWorkflowSelect(workflowKey: string) {
