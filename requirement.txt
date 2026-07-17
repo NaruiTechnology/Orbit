@@ -1,3 +1,0 @@
-# Compatibility filename requested by the project; prefer requirements.txt.
--r requirements.txt
-

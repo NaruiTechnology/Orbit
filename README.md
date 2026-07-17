@@ -125,8 +125,8 @@ external path injection. The snapshot provenance is recorded in
 ```
 
 The root `pyproject.toml` is the canonical Python project definition.
-`requirements.txt` installs it with development tooling, while the requested
-`requirement.txt` filename delegates to that canonical manifest.
+`requirements.txt` installs it with development tooling and is the single
+source of truth for Python dependencies.
 
 ## API Surface
 
@@ -174,6 +174,5 @@ Orbit/
 ├── frontend/         React/Redux/TypeScript/AG Grid application
 ├── scripts/          Workbook, DB, local cluster, and API operations
 ├── pyproject.toml    Canonical Python package and tool configuration
-├── requirement.txt   Requested compatibility dependency manifest
 └── requirements.txt  Canonical editable development installation
 ```
