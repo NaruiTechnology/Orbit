@@ -43,7 +43,6 @@ export function WorkflowCascade({
   return (
     <section className="cascade" aria-label={translate(locale, "navigator")}>
       <div className="cascade__title">
-        <span>01</span>
         <div>
           <b>{translate(locale, "navigator")}</b>
           <small>Workbook → domain → workflow</small>
@@ -104,4 +103,3 @@ export function WorkflowCascade({
     </section>
   );
 }
-

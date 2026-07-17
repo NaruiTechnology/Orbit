@@ -131,18 +131,6 @@ export function WorkflowGrid({
     }),
   );
   const columnDefinitions: ColDef<WorkflowRecord>[] = [
-    {
-      colId: "record_order",
-      field: "record_order",
-      headerName: "#",
-      pinned: "left",
-      lockPinned: true,
-      width: 64,
-      minWidth: 64,
-      maxWidth: 64,
-      editable: false,
-      cellClass: "grid-cell--sequence",
-    },
     ...dynamicColumns,
   ];
   const rowData = records.map((record) => ({

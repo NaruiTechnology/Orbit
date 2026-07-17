@@ -141,7 +141,6 @@ export function App() {
 
           <div className="data-panel__toolbar">
             <div className="workflow-heading">
-              <span>{String(workflow?.display_order || 0).padStart(2, "0")}</span>
               <div>
                 <h1>{workflow?.name || translate(workspace.locale, "loading")}</h1>
                 <p>
