@@ -159,9 +159,9 @@
           "record_order": 1,
           "source_row": 2,
           "label_i18n": {
-            "en": "客户档案建立",
+            "en": "Customer Profile Setup",
             "zh_CN": "客户档案建立",
-            "zh_HK": "客户档案建立"
+            "zh_HK": "客戶檔案建立"
           },
           "values": {
             "stage_number": 1,
@@ -193,9 +193,9 @@
           "record_order": 2,
           "source_row": 3,
           "label_i18n": {
-            "en": "客户跟进维护",
+            "en": "Customer Follow-up",
             "zh_CN": "客户跟进维护",
-            "zh_HK": "客户跟进维护"
+            "zh_HK": "客戶跟進維護"
           },
           "values": {
             "stage_number": 2,
@@ -227,9 +227,9 @@
           "record_order": 3,
           "source_row": 4,
           "label_i18n": {
-            "en": "报价管理",
+            "en": "Quotation Management",
             "zh_CN": "报价管理",
-            "zh_HK": "报价管理"
+            "zh_HK": "報價管理"
           },
           "values": {
             "stage_number": 3,
@@ -261,9 +261,9 @@
           "record_order": 4,
           "source_row": 5,
           "label_i18n": {
-            "en": "合同签订与审核",
+            "en": "Contract Signing and Review",
             "zh_CN": "合同签订与审核",
-            "zh_HK": "合同签订与审核"
+            "zh_HK": "合同簽訂與審核"
           },
           "values": {
             "stage_number": 4,
@@ -295,9 +295,9 @@
           "record_order": 5,
           "source_row": 6,
           "label_i18n": {
-            "en": "订单下达",
+            "en": "Order Placement",
             "zh_CN": "订单下达",
-            "zh_HK": "订单下达"
+            "zh_HK": "訂單下達"
           },
           "values": {
             "stage_number": 5,
@@ -329,9 +329,9 @@
           "record_order": 6,
           "source_row": 7,
           "label_i18n": {
-            "en": "技术评估",
+            "en": "Technical Evaluation",
             "zh_CN": "技术评估",
-            "zh_HK": "技术评估"
+            "zh_HK": "技術評估"
           },
           "values": {
             "stage_number": 6,
@@ -363,9 +363,9 @@
           "record_order": 7,
           "source_row": 8,
           "label_i18n": {
-            "en": "芯片留存",
+            "en": "Chip Retention",
             "zh_CN": "芯片留存",
-            "zh_HK": "芯片留存"
+            "zh_HK": "晶片留存"
           },
           "values": {
             "stage_number": 7,
@@ -397,9 +397,9 @@
           "record_order": 8,
           "source_row": 9,
           "label_i18n": {
-            "en": "加工执行",
+            "en": "Processing Execution",
             "zh_CN": "加工执行",
-            "zh_HK": "加工执行"
+            "zh_HK": "加工執行"
           },
           "values": {
             "stage_number": 8,
@@ -431,9 +431,9 @@
           "record_order": 9,
           "source_row": 10,
           "label_i18n": {
-            "en": "设备异常反馈与维修",
+            "en": "Equipment Incident and Repair",
             "zh_CN": "设备异常反馈与维修",
-            "zh_HK": "设备异常反馈与维修"
+            "zh_HK": "設備異常反饋與維修"
           },
           "values": {
             "stage_number": 9,
@@ -465,9 +465,9 @@
           "record_order": 10,
           "source_row": 11,
           "label_i18n": {
-            "en": "开具费用",
+            "en": "Billing Preparation",
             "zh_CN": "开具费用",
-            "zh_HK": "开具费用"
+            "zh_HK": "開具費用"
           },
           "values": {
             "stage_number": 10,
@@ -499,9 +499,9 @@
           "record_order": 11,
           "source_row": 12,
           "label_i18n": {
-            "en": "回访",
+            "en": "Customer Follow-up Visit",
             "zh_CN": "回访",
-            "zh_HK": "回访"
+            "zh_HK": "回訪"
           },
           "values": {
             "stage_number": 11,
@@ -533,7 +533,7 @@
           "record_order": 12,
           "source_row": 13,
           "label_i18n": {
-            "en": "失效分析",
+            "en": "Failure Analysis",
             "zh_CN": "失效分析",
             "zh_HK": "失效分析"
           },
@@ -567,9 +567,9 @@
           "record_order": 13,
           "source_row": 14,
           "label_i18n": {
-            "en": "对账",
+            "en": "Account Reconciliation",
             "zh_CN": "对账",
-            "zh_HK": "对账"
+            "zh_HK": "對賬"
           },
           "values": {
             "stage_number": 13,
@@ -601,9 +601,9 @@
           "record_order": 14,
           "source_row": 15,
           "label_i18n": {
-            "en": "开票",
+            "en": "Invoice Issuance",
             "zh_CN": "开票",
-            "zh_HK": "开票"
+            "zh_HK": "開票"
           },
           "values": {
             "stage_number": 14,
@@ -635,9 +635,9 @@
           "record_order": 15,
           "source_row": 16,
           "label_i18n": {
-            "en": "发票红冲",
+            "en": "Invoice Red Letter Reversal",
             "zh_CN": "发票红冲",
-            "zh_HK": "发票红冲"
+            "zh_HK": "發票紅沖"
           },
           "values": {
             "stage_number": 15,
@@ -669,7 +669,7 @@
           "record_order": 16,
           "source_row": 17,
           "label_i18n": {
-            "en": "回款",
+            "en": "Payment Collection",
             "zh_CN": "回款",
             "zh_HK": "回款"
           },
@@ -703,7 +703,7 @@
           "record_order": 17,
           "source_row": 18,
           "label_i18n": {
-            "en": "公海回收",
+            "en": "Public Pool Reclamation",
             "zh_CN": "公海回收",
             "zh_HK": "公海回收"
           },
@@ -957,9 +957,9 @@
           "record_order": 1,
           "source_row": 2,
           "label_i18n": {
-            "en": "销售创建评估订单",
+            "en": "Sales Creates Evaluation Order",
             "zh_CN": "销售创建评估订单",
-            "zh_HK": "销售创建评估订单"
+            "zh_HK": "銷售創建評估訂單"
           },
           "values": {
             "step_number": 1,
@@ -987,9 +987,9 @@
           "record_order": 2,
           "source_row": 3,
           "label_i18n": {
-            "en": "系统开始计时",
+            "en": "System Starts Timer",
             "zh_CN": "系统开始计时",
-            "zh_HK": "系统开始计时"
+            "zh_HK": "系統開始計時"
           },
           "values": {
             "step_number": 2,
@@ -1017,9 +1017,9 @@
           "record_order": 3,
           "source_row": 4,
           "label_i18n": {
-            "en": "技术部接收评估",
+            "en": "Technical Team Receives Evaluation",
             "zh_CN": "技术部接收评估",
-            "zh_HK": "技术部接收评估"
+            "zh_HK": "技術部接收評估"
           },
           "values": {
             "step_number": 3,
@@ -1047,9 +1047,9 @@
           "record_order": 4,
           "source_row": 5,
           "label_i18n": {
-            "en": "异地技术接收评估（如适用）",
+            "en": "Remote Technical Team Receives Evaluation (If Applicable)",
             "zh_CN": "异地技术接收评估（如适用）",
-            "zh_HK": "异地技术接收评估（如适用）"
+            "zh_HK": "異地技術接收評估（如適用）"
           },
           "values": {
             "step_number": 4,
@@ -1077,9 +1077,9 @@
           "record_order": 5,
           "source_row": 6,
           "label_i18n": {
-            "en": "技术部执行评估",
+            "en": "Technical Team Performs Evaluation",
             "zh_CN": "技术部执行评估",
-            "zh_HK": "技术部执行评估"
+            "zh_HK": "技術部執行評估"
           },
           "values": {
             "step_number": 5,
@@ -1107,9 +1107,9 @@
           "record_order": 6,
           "source_row": 7,
           "label_i18n": {
-            "en": "评估结果反馈",
+            "en": "Evaluation Result Feedback",
             "zh_CN": "评估结果反馈",
-            "zh_HK": "评估结果反馈"
+            "zh_HK": "評估結果反饋"
           },
           "values": {
             "step_number": 6,
@@ -1137,9 +1137,9 @@
           "record_order": 7,
           "source_row": 8,
           "label_i18n": {
-            "en": "销售确认评估结果",
+            "en": "Sales Confirms Evaluation Result",
             "zh_CN": "销售确认评估结果",
-            "zh_HK": "销售确认评估结果"
+            "zh_HK": "銷售確認評估結果"
           },
           "values": {
             "step_number": 7,
@@ -1167,9 +1167,9 @@
           "record_order": 8,
           "source_row": 9,
           "label_i18n": {
-            "en": "进入正式下单",
+            "en": "Proceed to Official Order",
             "zh_CN": "进入正式下单",
-            "zh_HK": "进入正式下单"
+            "zh_HK": "進入正式下單"
           },
           "values": {
             "step_number": 8,
@@ -1197,9 +1197,9 @@
           "record_order": 9,
           "source_row": 10,
           "label_i18n": {
-            "en": "进入正式下单",
+            "en": "Proceed to Official Order",
             "zh_CN": "进入正式下单",
-            "zh_HK": "进入正式下单"
+            "zh_HK": "進入正式下單"
           },
           "values": {
             "step_number": 8,
@@ -1437,7 +1437,7 @@
           "label_i18n": {
             "en": "客户跟进提醒(蓝)",
             "zh_CN": "客户跟进提醒(蓝)",
-            "zh_HK": "客户跟进提醒(蓝)"
+            "zh_HK": "客戶跟進提醒(蓝)"
           },
           "values": {
             "sequence_number": 1,
@@ -1473,7 +1473,7 @@
           "label_i18n": {
             "en": "客户跟进预警(黄)",
             "zh_CN": "客户跟进预警(黄)",
-            "zh_HK": "客户跟进预警(黄)"
+            "zh_HK": "客戶跟進預警(黄)"
           },
           "values": {
             "sequence_number": 2,
@@ -1509,7 +1509,7 @@
           "label_i18n": {
             "en": "客户跟进告警(红)",
             "zh_CN": "客户跟进告警(红)",
-            "zh_HK": "客户跟进告警(红)"
+            "zh_HK": "客戶跟進告警(紅)"
           },
           "values": {
             "sequence_number": 3,
@@ -1545,7 +1545,7 @@
           "label_i18n": {
             "en": "报价有效期提醒",
             "zh_CN": "报价有效期提醒",
-            "zh_HK": "报价有效期提醒"
+            "zh_HK": "報價有效期提醒"
           },
           "values": {
             "sequence_number": 4,
@@ -1581,7 +1581,7 @@
           "label_i18n": {
             "en": "报价超期告警",
             "zh_CN": "报价超期告警",
-            "zh_HK": "报价超期告警"
+            "zh_HK": "報價超期告警"
           },
           "values": {
             "sequence_number": 5,
@@ -1653,7 +1653,7 @@
           "label_i18n": {
             "en": "技术评估超时",
             "zh_CN": "技术评估超时",
-            "zh_HK": "技术评估超时"
+            "zh_HK": "技術評估超時"
           },
           "values": {
             "sequence_number": 7,
@@ -1689,7 +1689,7 @@
           "label_i18n": {
             "en": "对账逾期提醒",
             "zh_CN": "对账逾期提醒",
-            "zh_HK": "对账逾期提醒"
+            "zh_HK": "對賬逾期提醒"
           },
           "values": {
             "sequence_number": 8,
@@ -1725,7 +1725,7 @@
           "label_i18n": {
             "en": "对账超期干预",
             "zh_CN": "对账超期干预",
-            "zh_HK": "对账超期干预"
+            "zh_HK": "對賬超期干預"
           },
           "values": {
             "sequence_number": 9,
@@ -1761,7 +1761,7 @@
           "label_i18n": {
             "en": "开票逾期提醒",
             "zh_CN": "开票逾期提醒",
-            "zh_HK": "开票逾期提醒"
+            "zh_HK": "開票逾期提醒"
           },
           "values": {
             "sequence_number": 10,
@@ -1797,7 +1797,7 @@
           "label_i18n": {
             "en": "开票超期干预",
             "zh_CN": "开票超期干预",
-            "zh_HK": "开票超期干预"
+            "zh_HK": "開票超期干預"
           },
           "values": {
             "sequence_number": 11,
@@ -1869,7 +1869,7 @@
           "label_i18n": {
             "en": "回款到期前预警(7天)",
             "zh_CN": "回款到期前预警(7天)",
-            "zh_HK": "回款到期前预警(7天)"
+            "zh_HK": "回款到期前預警(7天)"
           },
           "values": {
             "sequence_number": 13,
@@ -2013,7 +2013,7 @@
           "label_i18n": {
             "en": "新客户未成交提醒(60天)",
             "zh_CN": "新客户未成交提醒(60天)",
-            "zh_HK": "新客户未成交提醒(60天)"
+            "zh_HK": "新客戶未成交提醒(60天)"
           },
           "values": {
             "sequence_number": 17,
@@ -2049,7 +2049,7 @@
           "label_i18n": {
             "en": "新客户未成交预警(75天)",
             "zh_CN": "新客户未成交预警(75天)",
-            "zh_HK": "新客户未成交预警(75天)"
+            "zh_HK": "新客戶未成交預警(75天)"
           },
           "values": {
             "sequence_number": 18,
@@ -2085,7 +2085,7 @@
           "label_i18n": {
             "en": "新客户回收告警(90天)",
             "zh_CN": "新客户回收告警(90天)",
-            "zh_HK": "新客户回收告警(90天)"
+            "zh_HK": "新客戶回收告警(90天)"
           },
           "values": {
             "sequence_number": 19,
@@ -2121,7 +2121,7 @@
           "label_i18n": {
             "en": "未结款逾期提醒",
             "zh_CN": "未结款逾期提醒",
-            "zh_HK": "未结款逾期提醒"
+            "zh_HK": "未結款逾期提醒"
           },
           "values": {
             "sequence_number": 20,
@@ -2157,7 +2157,7 @@
           "label_i18n": {
             "en": "未结款停服告警",
             "zh_CN": "未结款停服告警",
-            "zh_HK": "未结款停服告警"
+            "zh_HK": "未結款停服告警"
           },
           "values": {
             "sequence_number": 21,
@@ -2409,7 +2409,7 @@
           "label_i18n": {
             "en": "费用确认单异常",
             "zh_CN": "费用确认单异常",
-            "zh_HK": "费用确认单异常"
+            "zh_HK": "費用確認單異常"
           },
           "values": {
             "sequence_number": 28,
@@ -2445,7 +2445,7 @@
           "label_i18n": {
             "en": "未按时返样",
             "zh_CN": "未按时返样",
-            "zh_HK": "未按时返样"
+            "zh_HK": "未按時返樣"
           },
           "values": {
             "sequence_number": 29,
@@ -2481,7 +2481,7 @@
           "label_i18n": {
             "en": "离职客户交接",
             "zh_CN": "离职客户交接",
-            "zh_HK": "离职客户交接"
+            "zh_HK": "离职客戶交接"
           },
           "values": {
             "sequence_number": 30,
@@ -2517,7 +2517,7 @@
           "label_i18n": {
             "en": "技术评估超时(15分钟)",
             "zh_CN": "技术评估超时(15分钟)",
-            "zh_HK": "技术评估超时(15分钟)"
+            "zh_HK": "技術評估超時(15分钟)"
           },
           "values": {
             "sequence_number": 31,
@@ -2553,7 +2553,7 @@
           "label_i18n": {
             "en": "技术评估超时(20分钟)",
             "zh_CN": "技术评估超时(20分钟)",
-            "zh_HK": "技术评估超时(20分钟)"
+            "zh_HK": "技術評估超時(20分钟)"
           },
           "values": {
             "sequence_number": 32,
@@ -2589,7 +2589,7 @@
           "label_i18n": {
             "en": "开盖准备超时",
             "zh_CN": "开盖准备超时",
-            "zh_HK": "开盖准备超时"
+            "zh_HK": "開盖准備超時"
           },
           "values": {
             "sequence_number": 33,
@@ -2625,7 +2625,7 @@
           "label_i18n": {
             "en": "返样超时预警(18小时)",
             "zh_CN": "返样超时预警(18小时)",
-            "zh_HK": "返样超时预警(18小时)"
+            "zh_HK": "返樣超時預警(18小時)"
           },
           "values": {
             "sequence_number": 34,
@@ -2661,7 +2661,7 @@
           "label_i18n": {
             "en": "返样超时告警(24小时)",
             "zh_CN": "返样超时告警(24小时)",
-            "zh_HK": "返样超时告警(24小时)"
+            "zh_HK": "返樣超時告警(24小時)"
           },
           "values": {
             "sequence_number": 35,
@@ -2697,7 +2697,7 @@
           "label_i18n": {
             "en": "返样前检查未通过",
             "zh_CN": "返样前检查未通过",
-            "zh_HK": "返样前检查未通过"
+            "zh_HK": "返樣前檢查未通过"
           },
           "values": {
             "sequence_number": 36,
@@ -2769,7 +2769,7 @@
           "label_i18n": {
             "en": "设备维护逾期",
             "zh_CN": "设备维护逾期",
-            "zh_HK": "设备维护逾期"
+            "zh_HK": "設備維護逾期"
           },
           "values": {
             "sequence_number": 38,
@@ -2805,7 +2805,7 @@
           "label_i18n": {
             "en": "机台故障未修复",
             "zh_CN": "机台故障未修复",
-            "zh_HK": "机台故障未修复"
+            "zh_HK": "机台故障未修復"
           },
           "values": {
             "sequence_number": 39,
@@ -2949,7 +2949,7 @@
           "label_i18n": {
             "en": "故障工单超时未接单",
             "zh_CN": "故障工单超时未接单",
-            "zh_HK": "故障工单超时未接单"
+            "zh_HK": "故障工單超時未接單"
           },
           "values": {
             "sequence_number": 43,
@@ -2985,7 +2985,7 @@
           "label_i18n": {
             "en": "故障工单超时未修复(24h)",
             "zh_CN": "故障工单超时未修复(24h)",
-            "zh_HK": "故障工单超时未修复(24h)"
+            "zh_HK": "故障工單超時未修復(24h)"
           },
           "values": {
             "sequence_number": 44,
@@ -3021,7 +3021,7 @@
           "label_i18n": {
             "en": "期望恢复时间无法满足",
             "zh_CN": "期望恢复时间无法满足",
-            "zh_HK": "期望恢复时间无法满足"
+            "zh_HK": "期望恢復時间无法满足"
           },
           "values": {
             "sequence_number": 45,
@@ -3057,7 +3057,7 @@
           "label_i18n": {
             "en": "维修受阻登记",
             "zh_CN": "维修受阻登记",
-            "zh_HK": "维修受阻登记"
+            "zh_HK": "維修受阻登记"
           },
           "values": {
             "sequence_number": 46,
@@ -3165,7 +3165,7 @@
           "label_i18n": {
             "en": "设备空时率异常",
             "zh_CN": "设备空时率异常",
-            "zh_HK": "设备空时率异常"
+            "zh_HK": "設備空時率異常"
           },
           "values": {
             "sequence_number": 49,
@@ -3201,7 +3201,7 @@
           "label_i18n": {
             "en": "日常维护逾期",
             "zh_CN": "日常维护逾期",
-            "zh_HK": "日常维护逾期"
+            "zh_HK": "日常維護逾期"
           },
           "values": {
             "sequence_number": 50,
@@ -3237,7 +3237,7 @@
           "label_i18n": {
             "en": "维修时长超标",
             "zh_CN": "维修时长超标",
-            "zh_HK": "维修时长超标"
+            "zh_HK": "維修時长超标"
           },
           "values": {
             "sequence_number": 51,
@@ -3273,7 +3273,7 @@
           "label_i18n": {
             "en": "异地订单超时未接单",
             "zh_CN": "异地订单超时未接单",
-            "zh_HK": "异地订单超时未接单"
+            "zh_HK": "異地訂單超時未接單"
           },
           "values": {
             "sequence_number": 52,
@@ -3309,7 +3309,7 @@
           "label_i18n": {
             "en": "异地订单加工超时",
             "zh_CN": "异地订单加工超时",
-            "zh_HK": "异地订单加工超时"
+            "zh_HK": "異地訂單加工超時"
           },
           "values": {
             "sequence_number": 53,
@@ -3345,7 +3345,7 @@
           "label_i18n": {
             "en": "异地物流异常",
             "zh_CN": "异地物流异常",
-            "zh_HK": "异地物流异常"
+            "zh_HK": "異地物流異常"
           },
           "values": {
             "sequence_number": 54,
@@ -3381,7 +3381,7 @@
           "label_i18n": {
             "en": "异地转单失败",
             "zh_CN": "异地转单失败",
-            "zh_HK": "异地转单失败"
+            "zh_HK": "異地轉單失败"
           },
           "values": {
             "sequence_number": 55,
@@ -3417,7 +3417,7 @@
           "label_i18n": {
             "en": "异地订单沟通断层",
             "zh_CN": "异地订单沟通断层",
-            "zh_HK": "异地订单沟通断层"
+            "zh_HK": "異地訂單沟通断层"
           },
           "values": {
             "sequence_number": 56,
@@ -3453,7 +3453,7 @@
           "label_i18n": {
             "en": "异地实验室产能预警",
             "zh_CN": "异地实验室产能预警",
-            "zh_HK": "异地实验室产能预警"
+            "zh_HK": "異地實驗室产能預警"
           },
           "values": {
             "sequence_number": 57,
@@ -3489,7 +3489,7 @@
           "label_i18n": {
             "en": "红冲申请待审批",
             "zh_CN": "红冲申请待审批",
-            "zh_HK": "红冲申请待审批"
+            "zh_HK": "紅沖申請待審批"
           },
           "values": {
             "sequence_number": 59,
@@ -3525,7 +3525,7 @@
           "label_i18n": {
             "en": "红冲超期告警",
             "zh_CN": "红冲超期告警",
-            "zh_HK": "红冲超期告警"
+            "zh_HK": "紅沖超期告警"
           },
           "values": {
             "sequence_number": 60,
@@ -3561,7 +3561,7 @@
           "label_i18n": {
             "en": "预付款余额提醒(20%)",
             "zh_CN": "预付款余额提醒(20%)",
-            "zh_HK": "预付款余额提醒(20%)"
+            "zh_HK": "預付款余额提醒(20%)"
           },
           "values": {
             "sequence_number": 61,
@@ -3597,7 +3597,7 @@
           "label_i18n": {
             "en": "预付款余额告警(10%)",
             "zh_CN": "预付款余额告警(10%)",
-            "zh_HK": "预付款余额告警(10%)"
+            "zh_HK": "預付款余额告警(10%)"
           },
           "values": {
             "sequence_number": 62,
@@ -3633,7 +3633,7 @@
           "label_i18n": {
             "en": "预付款耗尽停服",
             "zh_CN": "预付款耗尽停服",
-            "zh_HK": "预付款耗尽停服"
+            "zh_HK": "預付款耗尽停服"
           },
           "values": {
             "sequence_number": 63,
@@ -3669,7 +3669,7 @@
           "label_i18n": {
             "en": "回款机时未填写",
             "zh_CN": "回款机时未填写",
-            "zh_HK": "回款机时未填写"
+            "zh_HK": "回款机時未填寫"
           },
           "values": {
             "sequence_number": 64,
@@ -3705,7 +3705,7 @@
           "label_i18n": {
             "en": "故障工单超时未接单",
             "zh_CN": "故障工单超时未接单",
-            "zh_HK": "故障工单超时未接单"
+            "zh_HK": "故障工單超時未接單"
           },
           "values": {
             "sequence_number": 65,
@@ -3741,7 +3741,7 @@
           "label_i18n": {
             "en": "故障工单超时未修复(24h)",
             "zh_CN": "故障工单超时未修复(24h)",
-            "zh_HK": "故障工单超时未修复(24h)"
+            "zh_HK": "故障工單超時未修復(24h)"
           },
           "values": {
             "sequence_number": 66,
@@ -3777,7 +3777,7 @@
           "label_i18n": {
             "en": "期望恢复时间无法满足",
             "zh_CN": "期望恢复时间无法满足",
-            "zh_HK": "期望恢复时间无法满足"
+            "zh_HK": "期望恢復時间无法满足"
           },
           "values": {
             "sequence_number": 67,
@@ -3813,7 +3813,7 @@
           "label_i18n": {
             "en": "维修受阻登记",
             "zh_CN": "维修受阻登记",
-            "zh_HK": "维修受阻登记"
+            "zh_HK": "維修受阻登记"
           },
           "values": {
             "sequence_number": 68,
@@ -4357,7 +4357,7 @@
           "label_i18n": {
             "en": "客户跟进预警",
             "zh_CN": "客户跟进预警",
-            "zh_HK": "客户跟进预警"
+            "zh_HK": "客戶跟進預警"
           },
           "values": {
             "sequence_number": 1,
@@ -4385,7 +4385,7 @@
           "label_i18n": {
             "en": "报价到期提醒",
             "zh_CN": "报价到期提醒",
-            "zh_HK": "报价到期提醒"
+            "zh_HK": "報價到期提醒"
           },
           "values": {
             "sequence_number": 2,
@@ -4441,7 +4441,7 @@
           "label_i18n": {
             "en": "对账逾期提醒",
             "zh_CN": "对账逾期提醒",
-            "zh_HK": "对账逾期提醒"
+            "zh_HK": "對賬逾期提醒"
           },
           "values": {
             "sequence_number": 4,
@@ -4469,7 +4469,7 @@
           "label_i18n": {
             "en": "对账超期干预",
             "zh_CN": "对账超期干预",
-            "zh_HK": "对账超期干预"
+            "zh_HK": "對賬超期干預"
           },
           "values": {
             "sequence_number": 5,
@@ -4497,7 +4497,7 @@
           "label_i18n": {
             "en": "开票逾期提醒",
             "zh_CN": "开票逾期提醒",
-            "zh_HK": "开票逾期提醒"
+            "zh_HK": "開票逾期提醒"
           },
           "values": {
             "sequence_number": 6,
@@ -4525,7 +4525,7 @@
           "label_i18n": {
             "en": "开票超期干预",
             "zh_CN": "开票超期干预",
-            "zh_HK": "开票超期干预"
+            "zh_HK": "開票超期干預"
           },
           "values": {
             "sequence_number": 7,
@@ -4693,7 +4693,7 @@
           "label_i18n": {
             "en": "费用确认单发送",
             "zh_CN": "费用确认单发送",
-            "zh_HK": "费用确认单发送"
+            "zh_HK": "費用確認單發送"
           },
           "values": {
             "sequence_number": 13,
@@ -4721,7 +4721,7 @@
           "label_i18n": {
             "en": "对账单发送",
             "zh_CN": "对账单发送",
-            "zh_HK": "对账单发送"
+            "zh_HK": "對賬單發送"
           },
           "values": {
             "sequence_number": 14,
@@ -4749,7 +4749,7 @@
           "label_i18n": {
             "en": "自动回访",
             "zh_CN": "自动回访",
-            "zh_HK": "自动回访"
+            "zh_HK": "自动回訪"
           },
           "values": {
             "sequence_number": 15,
@@ -4805,7 +4805,7 @@
           "label_i18n": {
             "en": "技术评估超时提醒",
             "zh_CN": "技术评估超时提醒",
-            "zh_HK": "技术评估超时提醒"
+            "zh_HK": "技術評估超時提醒"
           },
           "values": {
             "sequence_number": 17,
@@ -4833,7 +4833,7 @@
           "label_i18n": {
             "en": "返样超时预警",
             "zh_CN": "返样超时预警",
-            "zh_HK": "返样超时预警"
+            "zh_HK": "返樣超時預警"
           },
           "values": {
             "sequence_number": 18,
@@ -4861,7 +4861,7 @@
           "label_i18n": {
             "en": "返样超时告警",
             "zh_CN": "返样超时告警",
-            "zh_HK": "返样超时告警"
+            "zh_HK": "返樣超時告警"
           },
           "values": {
             "sequence_number": 19,
@@ -4917,7 +4917,7 @@
           "label_i18n": {
             "en": "设备维护提醒",
             "zh_CN": "设备维护提醒",
-            "zh_HK": "设备维护提醒"
+            "zh_HK": "設備維護提醒"
           },
           "values": {
             "sequence_number": 21,
@@ -4945,7 +4945,7 @@
           "label_i18n": {
             "en": "设备维修告警",
             "zh_CN": "设备维修告警",
-            "zh_HK": "设备维修告警"
+            "zh_HK": "設備維修告警"
           },
           "values": {
             "sequence_number": 22,
@@ -5001,7 +5001,7 @@
           "label_i18n": {
             "en": "客户测试结果通知",
             "zh_CN": "客户测试结果通知",
-            "zh_HK": "客户测试结果通知"
+            "zh_HK": "客戶測試結果通知"
           },
           "values": {
             "sequence_number": 24,
@@ -5029,7 +5029,7 @@
           "label_i18n": {
             "en": "分析报告完成通知",
             "zh_CN": "分析报告完成通知",
-            "zh_HK": "分析报告完成通知"
+            "zh_HK": "分析報告完成通知"
           },
           "values": {
             "sequence_number": 25,
@@ -5057,7 +5057,7 @@
           "label_i18n": {
             "en": "故障工单提交通知",
             "zh_CN": "故障工单提交通知",
-            "zh_HK": "故障工单提交通知"
+            "zh_HK": "故障工單提交通知"
           },
           "values": {
             "sequence_number": 26,
@@ -5085,7 +5085,7 @@
           "label_i18n": {
             "en": "故障工单超时未接单",
             "zh_CN": "故障工单超时未接单",
-            "zh_HK": "故障工单超时未接单"
+            "zh_HK": "故障工單超時未接單"
           },
           "values": {
             "sequence_number": 27,
@@ -5113,7 +5113,7 @@
           "label_i18n": {
             "en": "维修完成验收通知",
             "zh_CN": "维修完成验收通知",
-            "zh_HK": "维修完成验收通知"
+            "zh_HK": "維修完成驗收通知"
           },
           "values": {
             "sequence_number": 28,
@@ -5141,7 +5141,7 @@
           "label_i18n": {
             "en": "期望恢复时间无法满足",
             "zh_CN": "期望恢复时间无法满足",
-            "zh_HK": "期望恢复时间无法满足"
+            "zh_HK": "期望恢復時间无法满足"
           },
           "values": {
             "sequence_number": 29,
@@ -5169,7 +5169,7 @@
           "label_i18n": {
             "en": "耗材库存预警",
             "zh_CN": "耗材库存预警",
-            "zh_HK": "耗材库存预警"
+            "zh_HK": "耗材库存預警"
           },
           "values": {
             "sequence_number": 30,
@@ -5225,7 +5225,7 @@
           "label_i18n": {
             "en": "维修受阻通知",
             "zh_CN": "维修受阻通知",
-            "zh_HK": "维修受阻通知"
+            "zh_HK": "維修受阻通知"
           },
           "values": {
             "sequence_number": 32,
@@ -5253,7 +5253,7 @@
           "label_i18n": {
             "en": "设备空时率周报",
             "zh_CN": "设备空时率周报",
-            "zh_HK": "设备空时率周报"
+            "zh_HK": "設備空時率周報"
           },
           "values": {
             "sequence_number": 33,
@@ -5281,7 +5281,7 @@
           "label_i18n": {
             "en": "维修时长统计月报",
             "zh_CN": "维修时长统计月报",
-            "zh_HK": "维修时长统计月报"
+            "zh_HK": "維修時长統計月報"
           },
           "values": {
             "sequence_number": 34,
@@ -5309,7 +5309,7 @@
           "label_i18n": {
             "en": "异地订单通知-技术",
             "zh_CN": "异地订单通知-技术",
-            "zh_HK": "异地订单通知-技术"
+            "zh_HK": "異地訂單通知-技術"
           },
           "values": {
             "sequence_number": 35,
@@ -5337,7 +5337,7 @@
           "label_i18n": {
             "en": "异地评估结果反馈",
             "zh_CN": "异地评估结果反馈",
-            "zh_HK": "异地评估结果反馈"
+            "zh_HK": "異地評估結果反饋"
           },
           "values": {
             "sequence_number": 36,
@@ -5365,7 +5365,7 @@
           "label_i18n": {
             "en": "异地订单接单确认",
             "zh_CN": "异地订单接单确认",
-            "zh_HK": "异地订单接单确认"
+            "zh_HK": "異地訂單接單確認"
           },
           "values": {
             "sequence_number": 37,
@@ -5393,7 +5393,7 @@
           "label_i18n": {
             "en": "异地样品寄出通知",
             "zh_CN": "异地样品寄出通知",
-            "zh_HK": "异地样品寄出通知"
+            "zh_HK": "異地樣品寄出通知"
           },
           "values": {
             "sequence_number": 38,
@@ -5421,7 +5421,7 @@
           "label_i18n": {
             "en": "异地订单转回通知",
             "zh_CN": "异地订单转回通知",
-            "zh_HK": "异地订单转回通知"
+            "zh_HK": "異地訂單轉回通知"
           },
           "values": {
             "sequence_number": 39,
@@ -5449,7 +5449,7 @@
           "label_i18n": {
             "en": "异地物流异常提醒",
             "zh_CN": "异地物流异常提醒",
-            "zh_HK": "异地物流异常提醒"
+            "zh_HK": "異地物流異常提醒"
           },
           "values": {
             "sequence_number": 40,
@@ -5477,7 +5477,7 @@
           "label_i18n": {
             "en": "红冲申请提交",
             "zh_CN": "红冲申请提交",
-            "zh_HK": "红冲申请提交"
+            "zh_HK": "紅沖申請提交"
           },
           "values": {
             "sequence_number": 41,
@@ -5505,7 +5505,7 @@
           "label_i18n": {
             "en": "红冲审批通过通知",
             "zh_CN": "红冲审批通过通知",
-            "zh_HK": "红冲审批通过通知"
+            "zh_HK": "紅沖審批通过通知"
           },
           "values": {
             "sequence_number": 42,
@@ -5533,7 +5533,7 @@
           "label_i18n": {
             "en": "红冲审批驳回通知",
             "zh_CN": "红冲审批驳回通知",
-            "zh_HK": "红冲审批驳回通知"
+            "zh_HK": "紅沖審批驳回通知"
           },
           "values": {
             "sequence_number": 43,
@@ -5561,7 +5561,7 @@
           "label_i18n": {
             "en": "开票实验室跳转通知",
             "zh_CN": "开票实验室跳转通知",
-            "zh_HK": "开票实验室跳转通知"
+            "zh_HK": "開票實驗室跳轉通知"
           },
           "values": {
             "sequence_number": 44,
@@ -5589,7 +5589,7 @@
           "label_i18n": {
             "en": "预付款余额提醒",
             "zh_CN": "预付款余额提醒",
-            "zh_HK": "预付款余额提醒"
+            "zh_HK": "預付款余额提醒"
           },
           "values": {
             "sequence_number": 45,
@@ -5617,7 +5617,7 @@
           "label_i18n": {
             "en": "预付款耗尽告警",
             "zh_CN": "预付款耗尽告警",
-            "zh_HK": "预付款耗尽告警"
+            "zh_HK": "預付款耗尽告警"
           },
           "values": {
             "sequence_number": 46,
@@ -5645,7 +5645,7 @@
           "label_i18n": {
             "en": "回款机时反馈提醒",
             "zh_CN": "回款机时反馈提醒",
-            "zh_HK": "回款机时反馈提醒"
+            "zh_HK": "回款机時反饋提醒"
           },
           "values": {
             "sequence_number": 47,
@@ -5673,7 +5673,7 @@
           "label_i18n": {
             "en": "预付款充值确认",
             "zh_CN": "预付款充值确认",
-            "zh_HK": "预付款充值确认"
+            "zh_HK": "預付款充值確認"
           },
           "values": {
             "sequence_number": 48,
@@ -5701,7 +5701,7 @@
           "label_i18n": {
             "en": "红冲执行完成通知",
             "zh_CN": "红冲执行完成通知",
-            "zh_HK": "红冲执行完成通知"
+            "zh_HK": "紅沖執行完成通知"
           },
           "values": {
             "sequence_number": 49,
@@ -5729,7 +5729,7 @@
           "label_i18n": {
             "en": "故障工单提交通知",
             "zh_CN": "故障工单提交通知",
-            "zh_HK": "故障工单提交通知"
+            "zh_HK": "故障工單提交通知"
           },
           "values": {
             "sequence_number": 51,
@@ -5757,7 +5757,7 @@
           "label_i18n": {
             "en": "期望恢复时间无法满足",
             "zh_CN": "期望恢复时间无法满足",
-            "zh_HK": "期望恢复时间无法满足"
+            "zh_HK": "期望恢復時间无法满足"
           },
           "values": {
             "sequence_number": 52,
@@ -5785,7 +5785,7 @@
           "label_i18n": {
             "en": "维修完成验收通知",
             "zh_CN": "维修完成验收通知",
-            "zh_HK": "维修完成验收通知"
+            "zh_HK": "維修完成驗收通知"
           },
           "values": {
             "sequence_number": 53,
@@ -6269,9 +6269,9 @@
           "record_order": 1,
           "source_row": 3,
           "label_i18n": {
-            "en": "销售选择异地实验室下单",
+            "en": "Sales Selects Remote Laboratory",
             "zh_CN": "销售选择异地实验室下单",
-            "zh_HK": "销售选择异地实验室下单"
+            "zh_HK": "銷售選擇異地實驗室下單"
           },
           "values": {
             "step_number": 1,
@@ -6303,9 +6303,9 @@
           "record_order": 2,
           "source_row": 4,
           "label_i18n": {
-            "en": "系统识别异地订单",
+            "en": "System Identifies Remote Order",
             "zh_CN": "系统识别异地订单",
-            "zh_HK": "系统识别异地订单"
+            "zh_HK": "系統識別異地訂單"
           },
           "values": {
             "step_number": 2,
@@ -6339,7 +6339,7 @@
           "label_i18n": {
             "en": "异地技术接收评估",
             "zh_CN": "异地技术接收评估",
-            "zh_HK": "异地技术接收评估"
+            "zh_HK": "異地技術接收評估"
           },
           "values": {
             "step_number": 3,
@@ -6371,9 +6371,9 @@
           "record_order": 4,
           "source_row": 6,
           "label_i18n": {
-            "en": "评估结果反馈",
+            "en": "Evaluation Result Feedback",
             "zh_CN": "评估结果反馈",
-            "zh_HK": "评估结果反馈"
+            "zh_HK": "評估結果反饋"
           },
           "values": {
             "step_number": 4,
@@ -6407,7 +6407,7 @@
           "label_i18n": {
             "en": "销售确认正式下单",
             "zh_CN": "销售确认正式下单",
-            "zh_HK": "销售确认正式下单"
+            "zh_HK": "銷售確認正式下單"
           },
           "values": {
             "step_number": 5,
@@ -6439,9 +6439,9 @@
           "record_order": 6,
           "source_row": 8,
           "label_i18n": {
-            "en": "异地技术接收正式订单",
+            "en": "Remote Technical Team Receives Official Order",
             "zh_CN": "异地技术接收正式订单",
-            "zh_HK": "异地技术接收正式订单"
+            "zh_HK": "異地技術接收正式訂單"
           },
           "values": {
             "step_number": 6,
@@ -6473,9 +6473,9 @@
           "record_order": 7,
           "source_row": 9,
           "label_i18n": {
-            "en": "设备异常上报（如发生）",
+            "en": "Report Equipment Incident (If Any)",
             "zh_CN": "设备异常上报（如发生）",
-            "zh_HK": "设备异常上报（如发生）"
+            "zh_HK": "設備異常上報（如發生）"
           },
           "values": {
             "step_number": 7,
@@ -6507,9 +6507,9 @@
           "record_order": 8,
           "source_row": 10,
           "label_i18n": {
-            "en": "执行开盖与加工",
+            "en": "Perform Lid Opening and Processing",
             "zh_CN": "执行开盖与加工",
-            "zh_HK": "执行开盖与加工"
+            "zh_HK": "執行開盖與加工"
           },
           "values": {
             "step_number": 8,
@@ -6541,9 +6541,9 @@
           "record_order": 9,
           "source_row": 11,
           "label_i18n": {
-            "en": "返样前检查",
+            "en": "Pre-Return Sample Inspection",
             "zh_CN": "返样前检查",
-            "zh_HK": "返样前检查"
+            "zh_HK": "返樣前檢查"
           },
           "values": {
             "step_number": 9,
@@ -6575,9 +6575,9 @@
           "record_order": 10,
           "source_row": 12,
           "label_i18n": {
-            "en": "样品寄回",
+            "en": "Return Sample by Shipment",
             "zh_CN": "样品寄回",
-            "zh_HK": "样品寄回"
+            "zh_HK": "樣品寄回"
           },
           "values": {
             "step_number": 10,
@@ -6609,9 +6609,9 @@
           "record_order": 11,
           "source_row": 13,
           "label_i18n": {
-            "en": "费用确认单生成与发送",
+            "en": "Generate and Send Fee Confirmation",
             "zh_CN": "费用确认单生成与发送",
-            "zh_HK": "费用确认单生成与发送"
+            "zh_HK": "費用確認單生成與發送"
           },
           "values": {
             "step_number": 11,
@@ -6643,9 +6643,9 @@
           "record_order": 12,
           "source_row": 14,
           "label_i18n": {
-            "en": "订单转单回原销售",
+            "en": "Transfer Order Back to Original Sales",
             "zh_CN": "订单转单回原销售",
-            "zh_HK": "订单转单回原销售"
+            "zh_HK": "訂單轉單回原銷售"
           },
           "values": {
             "step_number": 12,
@@ -6679,7 +6679,7 @@
           "label_i18n": {
             "en": "9个实验室：北京、上海、深圳、西安、无锡、杭州、成都、天津、泰兴",
             "zh_CN": "9个实验室：北京、上海、深圳、西安、无锡、杭州、成都、天津、泰兴",
-            "zh_HK": "9个实验室：北京、上海、深圳、西安、无锡、杭州、成都、天津、泰兴"
+            "zh_HK": "9个實驗室：北京、上海、深圳、西安、无锡、杭州、成都、天津、泰兴"
           },
           "values": {
             "step_number": "9个实验室：北京、上海、深圳、西安、无锡、杭州、成都、天津、泰兴"
@@ -6695,7 +6695,7 @@
           "label_i18n": {
             "en": "核心逻辑：来源销售下单 → 目标实验室技术执行 → 样品寄回来源地址 → 费用确认单关联来源客户 → 订单自动转回来源销售 → 回访/对账/开票/回款闭环在来源销售端完成",
             "zh_CN": "核心逻辑：来源销售下单 → 目标实验室技术执行 → 样品寄回来源地址 → 费用确认单关联来源客户 → 订单自动转回来源销售 → 回访/对账/开票/回款闭环在来源销售端完成",
-            "zh_HK": "核心逻辑：来源销售下单 → 目标实验室技术执行 → 样品寄回来源地址 → 费用确认单关联来源客户 → 订单自动转回来源销售 → 回访/对账/开票/回款闭环在来源销售端完成"
+            "zh_HK": "核心逻辑：来源銷售下單 → 目标實驗室技術執行 → 樣品寄回来源地址 → 費用確認單关联来源客戶 → 訂單自动轉回来源銷售 → 回訪/對賬/開票/回款闭环在来源銷售端完成"
           },
           "values": {
             "step_number": "核心逻辑：来源销售下单 → 目标实验室技术执行 → 样品寄回来源地址 → 费用确认单关联来源客户 → 订单自动转回来源销售 → 回访/对账/开票/回款闭环在来源销售端完成"
@@ -6923,9 +6923,9 @@
           "record_order": 1,
           "source_row": 2,
           "label_i18n": {
-            "en": "技术加工完毕",
+            "en": "Technical Processing Complete",
             "zh_CN": "技术加工完毕",
-            "zh_HK": "技术加工完毕"
+            "zh_HK": "技術加工完毕"
           },
           "values": {
             "step_number": 1,
@@ -6955,9 +6955,9 @@
           "record_order": 2,
           "source_row": 3,
           "label_i18n": {
-            "en": "系统生成费用确认单",
+            "en": "System Generates Fee Confirmation",
             "zh_CN": "系统生成费用确认单",
-            "zh_HK": "系统生成费用确认单"
+            "zh_HK": "系統生成費用確認單"
           },
           "values": {
             "step_number": 2,
@@ -6987,9 +6987,9 @@
           "record_order": 3,
           "source_row": 4,
           "label_i18n": {
-            "en": "销售确认费用信息",
+            "en": "Sales Confirms Fee Information",
             "zh_CN": "销售确认费用信息",
-            "zh_HK": "销售确认费用信息"
+            "zh_HK": "銷售確認費用信息"
           },
           "values": {
             "step_number": 3,
@@ -7019,9 +7019,9 @@
           "record_order": 4,
           "source_row": 5,
           "label_i18n": {
-            "en": "发送费用确认单",
+            "en": "Send Fee Confirmation",
             "zh_CN": "发送费用确认单",
-            "zh_HK": "发送费用确认单"
+            "zh_HK": "發送費用確認單"
           },
           "values": {
             "step_number": 4,
@@ -7051,9 +7051,9 @@
           "record_order": 5,
           "source_row": 6,
           "label_i18n": {
-            "en": "客户回复验收",
+            "en": "Customer Replies with Acceptance",
             "zh_CN": "客户回复验收",
-            "zh_HK": "客户回复验收"
+            "zh_HK": "客戶回復驗收"
           },
           "values": {
             "step_number": 5,
@@ -7083,9 +7083,9 @@
           "record_order": 6,
           "source_row": 7,
           "label_i18n": {
-            "en": "返样前检查",
+            "en": "Pre-Return Sample Inspection",
             "zh_CN": "返样前检查",
-            "zh_HK": "返样前检查"
+            "zh_HK": "返樣前檢查"
           },
           "values": {
             "step_number": 6,
@@ -7117,7 +7117,7 @@
           "label_i18n": {
             "en": "失效分析（如测试失败）",
             "zh_CN": "失效分析（如测试失败）",
-            "zh_HK": "失效分析（如测试失败）"
+            "zh_HK": "失效分析（如測試失败）"
           },
           "values": {
             "step_number": 7,
@@ -7147,9 +7147,9 @@
           "record_order": 8,
           "source_row": 9,
           "label_i18n": {
-            "en": "样品寄回",
+            "en": "Return Sample by Shipment",
             "zh_CN": "样品寄回",
-            "zh_HK": "样品寄回"
+            "zh_HK": "樣品寄回"
           },
           "values": {
             "step_number": 8,
@@ -7179,9 +7179,9 @@
           "record_order": 9,
           "source_row": 10,
           "label_i18n": {
-            "en": "系统跳转回访",
+            "en": "System Opens Follow-up",
             "zh_CN": "系统跳转回访",
-            "zh_HK": "系统跳转回访"
+            "zh_HK": "系統跳轉回訪"
           },
           "values": {
             "step_number": 9,
@@ -7211,9 +7211,9 @@
           "record_order": 10,
           "source_row": 11,
           "label_i18n": {
-            "en": "执行回访",
+            "en": "Perform Follow-up",
             "zh_CN": "执行回访",
-            "zh_HK": "执行回访"
+            "zh_HK": "執行回訪"
           },
           "values": {
             "step_number": 10,
@@ -7243,9 +7243,9 @@
           "record_order": 11,
           "source_row": 12,
           "label_i18n": {
-            "en": "生成对账单",
+            "en": "Generate Reconciliation Statement",
             "zh_CN": "生成对账单",
-            "zh_HK": "生成对账单"
+            "zh_HK": "生成對賬單"
           },
           "values": {
             "step_number": 11,
@@ -7275,9 +7275,9 @@
           "record_order": 12,
           "source_row": 13,
           "label_i18n": {
-            "en": "销售发送对账单",
+            "en": "Sales Sends Reconciliation Statement",
             "zh_CN": "销售发送对账单",
-            "zh_HK": "销售发送对账单"
+            "zh_HK": "銷售發送對賬單"
           },
           "values": {
             "step_number": 12,
@@ -7307,9 +7307,9 @@
           "record_order": 13,
           "source_row": 14,
           "label_i18n": {
-            "en": "客户确认对账",
+            "en": "Customer Confirms Reconciliation",
             "zh_CN": "客户确认对账",
-            "zh_HK": "客户确认对账"
+            "zh_HK": "客戶確認對賬"
           },
           "values": {
             "step_number": 13,
@@ -7339,9 +7339,9 @@
           "record_order": 14,
           "source_row": 15,
           "label_i18n": {
-            "en": "财务开具发票",
+            "en": "Finance Issues Invoice",
             "zh_CN": "财务开具发票",
-            "zh_HK": "财务开具发票"
+            "zh_HK": "財務開具發票"
           },
           "values": {
             "step_number": 14,
@@ -7371,9 +7371,9 @@
           "record_order": 15,
           "source_row": 16,
           "label_i18n": {
-            "en": "发票红冲申请",
+            "en": "Invoice Reversal Request",
             "zh_CN": "发票红冲申请",
-            "zh_HK": "发票红冲申请"
+            "zh_HK": "發票紅沖申請"
           },
           "values": {
             "step_number": 15,
@@ -7403,9 +7403,9 @@
           "record_order": 16,
           "source_row": 17,
           "label_i18n": {
-            "en": "预付款抵扣",
+            "en": "Prepayment Deduction",
             "zh_CN": "预付款抵扣",
-            "zh_HK": "预付款抵扣"
+            "zh_HK": "預付款抵扣"
           },
           "values": {
             "step_number": 16,
@@ -7435,9 +7435,9 @@
           "record_order": 17,
           "source_row": 18,
           "label_i18n": {
-            "en": "回款机时填写反馈",
+            "en": "Enter Payment Collection Feedback",
             "zh_CN": "回款机时填写反馈",
-            "zh_HK": "回款机时填写反馈"
+            "zh_HK": "回款机時填寫反饋"
           },
           "values": {
             "step_number": 17,
@@ -7467,9 +7467,9 @@
           "record_order": 18,
           "source_row": 19,
           "label_i18n": {
-            "en": "财务导入回款",
+            "en": "Finance Imports Payment Collection",
             "zh_CN": "财务导入回款",
-            "zh_HK": "财务导入回款"
+            "zh_HK": "財務導入回款"
           },
           "values": {
             "step_number": 18,
@@ -7499,9 +7499,9 @@
           "record_order": 19,
           "source_row": 20,
           "label_i18n": {
-            "en": "回款跟踪与预警",
+            "en": "Payment Collection Tracking and Alerts",
             "zh_CN": "回款跟踪与预警",
-            "zh_HK": "回款跟踪与预警"
+            "zh_HK": "回款跟踪與預警"
           },
           "values": {
             "step_number": 19,
@@ -7763,9 +7763,9 @@
           "record_order": 1,
           "source_row": 2,
           "label_i18n": {
-            "en": "系统定时扫描",
+            "en": "Scheduled System Scan",
             "zh_CN": "系统定时扫描",
-            "zh_HK": "系统定时扫描"
+            "zh_HK": "系統定時扫描"
           },
           "values": {
             "step_number": 1,
@@ -7793,9 +7793,9 @@
           "record_order": 2,
           "source_row": 3,
           "label_i18n": {
-            "en": "判定回收条件",
+            "en": "Determine Reclamation Conditions",
             "zh_CN": "判定回收条件",
-            "zh_HK": "判定回收条件"
+            "zh_HK": "判定回收條件"
           },
           "values": {
             "step_number": 2,
@@ -7823,9 +7823,9 @@
           "record_order": 3,
           "source_row": 4,
           "label_i18n": {
-            "en": "预警通知",
+            "en": "Alert Notification",
             "zh_CN": "预警通知",
-            "zh_HK": "预警通知"
+            "zh_HK": "預警通知"
           },
           "values": {
             "step_number": 3,
@@ -7853,9 +7853,9 @@
           "record_order": 4,
           "source_row": 5,
           "label_i18n": {
-            "en": "回收执行",
+            "en": "Execute Reclamation",
             "zh_CN": "回收执行",
-            "zh_HK": "回收执行"
+            "zh_HK": "回收執行"
           },
           "values": {
             "step_number": 4,
@@ -7883,7 +7883,7 @@
           "record_order": 5,
           "source_row": 6,
           "label_i18n": {
-            "en": "公海池展示",
+            "en": "Display in Public Pool",
             "zh_CN": "公海池展示",
             "zh_HK": "公海池展示"
           },
@@ -7913,9 +7913,9 @@
           "record_order": 6,
           "source_row": 7,
           "label_i18n": {
-            "en": "新销售认领",
+            "en": "New Salesperson Claims Customer",
             "zh_CN": "新销售认领",
-            "zh_HK": "新销售认领"
+            "zh_HK": "新銷售認領"
           },
           "values": {
             "step_number": 6,
@@ -7943,9 +7943,9 @@
           "record_order": 7,
           "source_row": 8,
           "label_i18n": {
-            "en": "认领后跟进",
+            "en": "Follow-up After Claim",
             "zh_CN": "认领后跟进",
-            "zh_HK": "认领后跟进"
+            "zh_HK": "認領後跟進"
           },
           "values": {
             "step_number": 7,
@@ -8159,7 +8159,7 @@
           "label_i18n": {
             "en": "客户简称",
             "zh_CN": "客户简称",
-            "zh_HK": "客户简称"
+            "zh_HK": "客戶简称"
           },
           "values": {
             "sequence_number": 1,
@@ -8191,7 +8191,7 @@
           "label_i18n": {
             "en": "客户代码",
             "zh_CN": "客户代码",
-            "zh_HK": "客户代码"
+            "zh_HK": "客戶代码"
           },
           "values": {
             "sequence_number": 2,
@@ -8385,7 +8385,7 @@
           "label_i18n": {
             "en": "芯片分类(应用方向)",
             "zh_CN": "芯片分类(应用方向)",
-            "zh_HK": "芯片分类(应用方向)"
+            "zh_HK": "晶片分类(应用方向)"
           },
           "values": {
             "sequence_number": 8,
@@ -8419,7 +8419,7 @@
           "label_i18n": {
             "en": "客户来源",
             "zh_CN": "客户来源",
-            "zh_HK": "客户来源"
+            "zh_HK": "客戶来源"
           },
           "values": {
             "sequence_number": 9,
@@ -8453,7 +8453,7 @@
           "label_i18n": {
             "en": "客户阶段",
             "zh_CN": "客户阶段",
-            "zh_HK": "客户阶段"
+            "zh_HK": "客戶阶段"
           },
           "values": {
             "sequence_number": 10,
@@ -8487,7 +8487,7 @@
           "label_i18n": {
             "en": "客户状态",
             "zh_CN": "客户状态",
-            "zh_HK": "客户状态"
+            "zh_HK": "客戶状态"
           },
           "values": {
             "sequence_number": 11,
@@ -8521,7 +8521,7 @@
           "label_i18n": {
             "en": "客户锁定",
             "zh_CN": "客户锁定",
-            "zh_HK": "客户锁定"
+            "zh_HK": "客戶锁定"
           },
           "values": {
             "sequence_number": 12,
@@ -8555,7 +8555,7 @@
           "label_i18n": {
             "en": "客户级别",
             "zh_CN": "客户级别",
-            "zh_HK": "客户级别"
+            "zh_HK": "客戶级別"
           },
           "values": {
             "sequence_number": 13,
@@ -8589,7 +8589,7 @@
           "label_i18n": {
             "en": "竞争对手",
             "zh_CN": "竞争对手",
-            "zh_HK": "竞争对手"
+            "zh_HK": "竞争對手"
           },
           "values": {
             "sequence_number": 14,
@@ -8687,7 +8687,7 @@
           "label_i18n": {
             "en": "所属实验室",
             "zh_CN": "所属实验室",
-            "zh_HK": "所属实验室"
+            "zh_HK": "所属實驗室"
           },
           "values": {
             "sequence_number": 17,
@@ -8721,7 +8721,7 @@
           "label_i18n": {
             "en": "开票实验室",
             "zh_CN": "开票实验室",
-            "zh_HK": "开票实验室"
+            "zh_HK": "開票實驗室"
           },
           "values": {
             "sequence_number": 18,
@@ -8755,7 +8755,7 @@
           "label_i18n": {
             "en": "销售负责人",
             "zh_CN": "销售负责人",
-            "zh_HK": "销售负责人"
+            "zh_HK": "銷售负责人"
           },
           "values": {
             "sequence_number": 19,
@@ -8789,7 +8789,7 @@
           "label_i18n": {
             "en": "公海倒计时天数",
             "zh_CN": "公海倒计时天数",
-            "zh_HK": "公海倒计时天数"
+            "zh_HK": "公海倒計時天数"
           },
           "values": {
             "sequence_number": 20,
@@ -8891,7 +8891,7 @@
           "label_i18n": {
             "en": "联系人职务",
             "zh_CN": "联系人职务",
-            "zh_HK": "联系人职务"
+            "zh_HK": "联系人职務"
           },
           "values": {
             "sequence_number": 23,
@@ -8925,7 +8925,7 @@
           "label_i18n": {
             "en": "是否关键决策人",
             "zh_CN": "是否关键决策人",
-            "zh_HK": "是否关键决策人"
+            "zh_HK": "是否关键決策人"
           },
           "values": {
             "sequence_number": 24,
@@ -9023,7 +9023,7 @@
           "label_i18n": {
             "en": "结款方式",
             "zh_CN": "结款方式",
-            "zh_HK": "结款方式"
+            "zh_HK": "結款方式"
           },
           "values": {
             "sequence_number": 27,
@@ -9057,7 +9057,7 @@
           "label_i18n": {
             "en": "预付余额",
             "zh_CN": "预付余额",
-            "zh_HK": "预付余额"
+            "zh_HK": "預付余额"
           },
           "values": {
             "sequence_number": 28,
@@ -9091,7 +9091,7 @@
           "label_i18n": {
             "en": "预付充值记录",
             "zh_CN": "预付充值记录",
-            "zh_HK": "预付充值记录"
+            "zh_HK": "預付充值记录"
           },
           "values": {
             "sequence_number": 29,
@@ -9407,7 +9407,7 @@
           "label_i18n": {
             "en": "长期未联系(按级别)",
             "zh_CN": "长期未联系(按级别)",
-            "zh_HK": "长期未联系(按级别)"
+            "zh_HK": "长期未联系(按级別)"
           },
           "values": {
             "reclaim_trigger": "长期未联系(按级别)",
@@ -9435,7 +9435,7 @@
           "label_i18n": {
             "en": "长期未结款",
             "zh_CN": "长期未结款",
-            "zh_HK": "长期未结款"
+            "zh_HK": "长期未結款"
           },
           "values": {
             "reclaim_trigger": "长期未结款",
@@ -9491,7 +9491,7 @@
           "label_i18n": {
             "en": "销售离职/变更",
             "zh_CN": "销售离职/变更",
-            "zh_HK": "销售离职/变更"
+            "zh_HK": "銷售离职/变更"
           },
           "values": {
             "reclaim_trigger": "销售离职/变更",
@@ -9697,9 +9697,9 @@
           "record_order": 1,
           "source_row": 3,
           "label_i18n": {
-            "en": "招聘需求提报",
+            "en": "Submit Recruitment Request",
             "zh_CN": "招聘需求提报",
-            "zh_HK": "招聘需求提报"
+            "zh_HK": "招聘需求提報"
           },
           "values": {
             "stage_number": 1,
@@ -9733,9 +9733,9 @@
           "record_order": 2,
           "source_row": 4,
           "label_i18n": {
-            "en": "招聘计划制定",
+            "en": "Create Recruitment Plan",
             "zh_CN": "招聘计划制定",
-            "zh_HK": "招聘计划制定"
+            "zh_HK": "招聘計划制定"
           },
           "values": {
             "stage_number": 2,
@@ -9769,9 +9769,9 @@
           "record_order": 3,
           "source_row": 5,
           "label_i18n": {
-            "en": "简历筛选",
+            "en": "Resume Screening",
             "zh_CN": "简历筛选",
-            "zh_HK": "简历筛选"
+            "zh_HK": "简历筛選"
           },
           "values": {
             "stage_number": 3,
@@ -9805,9 +9805,9 @@
           "record_order": 4,
           "source_row": 6,
           "label_i18n": {
-            "en": "面试安排",
+            "en": "Interview Scheduling",
             "zh_CN": "面试安排",
-            "zh_HK": "面试安排"
+            "zh_HK": "面試安排"
           },
           "values": {
             "stage_number": 4,
@@ -9841,9 +9841,9 @@
           "record_order": 5,
           "source_row": 7,
           "label_i18n": {
-            "en": "面试执行",
+            "en": "Conduct Interview",
             "zh_CN": "面试执行",
-            "zh_HK": "面试执行"
+            "zh_HK": "面試執行"
           },
           "values": {
             "stage_number": 5,
@@ -9877,9 +9877,9 @@
           "record_order": 6,
           "source_row": 8,
           "label_i18n": {
-            "en": "录用决策",
+            "en": "Hiring Decision",
             "zh_CN": "录用决策",
-            "zh_HK": "录用决策"
+            "zh_HK": "录用決策"
           },
           "values": {
             "stage_number": 6,
@@ -9913,9 +9913,9 @@
           "record_order": 7,
           "source_row": 9,
           "label_i18n": {
-            "en": "offer发放与确认",
+            "en": "Offer Issuance and Confirmation",
             "zh_CN": "offer发放与确认",
-            "zh_HK": "offer发放与确认"
+            "zh_HK": "offer發放與確認"
           },
           "values": {
             "stage_number": 7,
@@ -9949,9 +9949,9 @@
           "record_order": 8,
           "source_row": 10,
           "label_i18n": {
-            "en": "入职准备",
+            "en": "Onboarding Preparation",
             "zh_CN": "入职准备",
-            "zh_HK": "入职准备"
+            "zh_HK": "入职准備"
           },
           "values": {
             "stage_number": 8,
@@ -9985,7 +9985,7 @@
           "record_order": 9,
           "source_row": 11,
           "label_i18n": {
-            "en": "入职办理",
+            "en": "Onboarding Processing",
             "zh_CN": "入职办理",
             "zh_HK": "入职办理"
           },
@@ -10021,7 +10021,7 @@
           "record_order": 10,
           "source_row": 12,
           "label_i18n": {
-            "en": "入职培训",
+            "en": "Onboarding Training",
             "zh_CN": "入职培训",
             "zh_HK": "入职培训"
           },
@@ -10057,9 +10057,9 @@
           "record_order": 11,
           "source_row": 13,
           "label_i18n": {
-            "en": "试用期管理",
+            "en": "Probation Management",
             "zh_CN": "试用期管理",
-            "zh_HK": "试用期管理"
+            "zh_HK": "試用期管理"
           },
           "values": {
             "stage_number": 11,
@@ -10093,9 +10093,9 @@
           "record_order": 12,
           "source_row": 14,
           "label_i18n": {
-            "en": "转正评估",
+            "en": "Permanent Employment Evaluation",
             "zh_CN": "转正评估",
-            "zh_HK": "转正评估"
+            "zh_HK": "轉正評估"
           },
           "values": {
             "stage_number": 12,
@@ -10129,7 +10129,7 @@
           "record_order": 13,
           "source_row": 15,
           "label_i18n": {
-            "en": "日常考勤管理",
+            "en": "Daily Attendance Management",
             "zh_CN": "日常考勤管理",
             "zh_HK": "日常考勤管理"
           },
@@ -10165,9 +10165,9 @@
           "record_order": 14,
           "source_row": 16,
           "label_i18n": {
-            "en": "薪酬核算与发放",
+            "en": "Payroll Calculation and Payment",
             "zh_CN": "薪酬核算与发放",
-            "zh_HK": "薪酬核算与发放"
+            "zh_HK": "薪酬核算與發放"
           },
           "values": {
             "stage_number": 14,
@@ -10201,7 +10201,7 @@
           "record_order": 15,
           "source_row": 17,
           "label_i18n": {
-            "en": "社保公积金管理",
+            "en": "Social Security and Housing Fund Management",
             "zh_CN": "社保公积金管理",
             "zh_HK": "社保公积金管理"
           },
@@ -10237,7 +10237,7 @@
           "record_order": 16,
           "source_row": 18,
           "label_i18n": {
-            "en": "绩效考核",
+            "en": "Performance Assessment",
             "zh_CN": "绩效考核",
             "zh_HK": "绩效考核"
           },
@@ -10273,9 +10273,9 @@
           "record_order": 17,
           "source_row": 19,
           "label_i18n": {
-            "en": "培训与发展",
+            "en": "Training and Development",
             "zh_CN": "培训与发展",
-            "zh_HK": "培训与发展"
+            "zh_HK": "培训與發展"
           },
           "values": {
             "stage_number": 17,
@@ -10309,9 +10309,9 @@
           "record_order": 18,
           "source_row": 20,
           "label_i18n": {
-            "en": "人才盘点与晋升",
+            "en": "Talent Review and Promotion",
             "zh_CN": "人才盘点与晋升",
-            "zh_HK": "人才盘点与晋升"
+            "zh_HK": "人才盘点與晋升"
           },
           "values": {
             "stage_number": 18,
@@ -10345,7 +10345,7 @@
           "record_order": 19,
           "source_row": 21,
           "label_i18n": {
-            "en": "薪酬调整",
+            "en": "Compensation Adjustment",
             "zh_CN": "薪酬调整",
             "zh_HK": "薪酬调整"
           },
@@ -10381,9 +10381,9 @@
           "record_order": 20,
           "source_row": 22,
           "label_i18n": {
-            "en": "岗位异动管理",
+            "en": "Position Change Management",
             "zh_CN": "岗位异动管理",
-            "zh_HK": "岗位异动管理"
+            "zh_HK": "岗位異动管理"
           },
           "values": {
             "stage_number": 20,
@@ -10417,9 +10417,9 @@
           "record_order": 21,
           "source_row": 23,
           "label_i18n": {
-            "en": "离职申请与审批",
+            "en": "Resignation Request and Approval",
             "zh_CN": "离职申请与审批",
-            "zh_HK": "离职申请与审批"
+            "zh_HK": "离职申請與審批"
           },
           "values": {
             "stage_number": 21,
@@ -10453,7 +10453,7 @@
           "record_order": 22,
           "source_row": 24,
           "label_i18n": {
-            "en": "工作交接",
+            "en": "Work Handover",
             "zh_CN": "工作交接",
             "zh_HK": "工作交接"
           },
@@ -10489,9 +10489,9 @@
           "record_order": 23,
           "source_row": 25,
           "label_i18n": {
-            "en": "离职结算",
+            "en": "Offboarding Settlement",
             "zh_CN": "离职结算",
-            "zh_HK": "离职结算"
+            "zh_HK": "离职結算"
           },
           "values": {
             "stage_number": 23,
@@ -10525,9 +10525,9 @@
           "record_order": 24,
           "source_row": 26,
           "label_i18n": {
-            "en": "离职证明开具",
+            "en": "Issue Separation Certificate",
             "zh_CN": "离职证明开具",
-            "zh_HK": "离职证明开具"
+            "zh_HK": "离职证明開具"
           },
           "values": {
             "stage_number": 24,
@@ -10561,9 +10561,9 @@
           "record_order": 25,
           "source_row": 27,
           "label_i18n": {
-            "en": "档案转出与后续",
+            "en": "File Transfer and Follow-up",
             "zh_CN": "档案转出与后续",
-            "zh_HK": "档案转出与后续"
+            "zh_HK": "檔案轉出與後续"
           },
           "values": {
             "stage_number": 25,
@@ -10879,7 +10879,7 @@
           "record_order": 1,
           "source_row": 3,
           "label_i18n": {
-            "en": "部门提交招聘需求",
+            "en": "Department Submits Recruitment Request",
             "zh_CN": "部门提交招聘需求",
             "zh_HK": "部门提交招聘需求"
           },
@@ -10911,9 +10911,9 @@
           "record_order": 2,
           "source_row": 4,
           "label_i18n": {
-            "en": "HR审核需求",
+            "en": "HR Reviews Request",
             "zh_CN": "HR审核需求",
-            "zh_HK": "HR审核需求"
+            "zh_HK": "HR審核需求"
           },
           "values": {
             "step_number": 2,
@@ -10943,9 +10943,9 @@
           "record_order": 3,
           "source_row": 5,
           "label_i18n": {
-            "en": "制定招聘计划",
+            "en": "Create Recruitment Plan",
             "zh_CN": "制定招聘计划",
-            "zh_HK": "制定招聘计划"
+            "zh_HK": "制定招聘計划"
           },
           "values": {
             "step_number": 3,
@@ -10975,9 +10975,9 @@
           "record_order": 4,
           "source_row": 6,
           "label_i18n": {
-            "en": "简历收集与筛选",
+            "en": "Resume Collection and Screening",
             "zh_CN": "简历收集与筛选",
-            "zh_HK": "简历收集与筛选"
+            "zh_HK": "简历收集與筛選"
           },
           "values": {
             "step_number": 4,
@@ -11007,7 +11007,7 @@
           "record_order": 5,
           "source_row": 7,
           "label_i18n": {
-            "en": "电话初筛",
+            "en": "Phone Screening",
             "zh_CN": "电话初筛",
             "zh_HK": "电话初筛"
           },
@@ -11039,9 +11039,9 @@
           "record_order": 6,
           "source_row": 8,
           "label_i18n": {
-            "en": "面试安排",
+            "en": "Interview Scheduling",
             "zh_CN": "面试安排",
-            "zh_HK": "面试安排"
+            "zh_HK": "面試安排"
           },
           "values": {
             "step_number": 6,
@@ -11071,9 +11071,9 @@
           "record_order": 7,
           "source_row": 9,
           "label_i18n": {
-            "en": "初试（HR面）",
+            "en": "Initial Interview (HR)",
             "zh_CN": "初试（HR面）",
-            "zh_HK": "初试（HR面）"
+            "zh_HK": "初試（HR面）"
           },
           "values": {
             "step_number": 7,
@@ -11103,9 +11103,9 @@
           "record_order": 8,
           "source_row": 10,
           "label_i18n": {
-            "en": "复试（业务面）",
+            "en": "Second Interview (Business)",
             "zh_CN": "复试（业务面）",
-            "zh_HK": "复试（业务面）"
+            "zh_HK": "復試（业務面）"
           },
           "values": {
             "step_number": 8,
@@ -11135,7 +11135,7 @@
           "record_order": 9,
           "source_row": 11,
           "label_i18n": {
-            "en": "终面（高管面）",
+            "en": "Final Interview (Executive)",
             "zh_CN": "终面（高管面）",
             "zh_HK": "终面（高管面）"
           },
@@ -11167,7 +11167,7 @@
           "record_order": 10,
           "source_row": 12,
           "label_i18n": {
-            "en": "背景调查",
+            "en": "Background Check",
             "zh_CN": "背景调查",
             "zh_HK": "背景调查"
           },
@@ -11199,9 +11199,9 @@
           "record_order": 11,
           "source_row": 13,
           "label_i18n": {
-            "en": "薪资谈判与offer发放",
+            "en": "Salary Negotiation and Offer Issuance",
             "zh_CN": "薪资谈判与offer发放",
-            "zh_HK": "薪资谈判与offer发放"
+            "zh_HK": "薪资谈判與offer發放"
           },
           "values": {
             "step_number": 11,
@@ -11231,9 +11231,9 @@
           "record_order": 12,
           "source_row": 14,
           "label_i18n": {
-            "en": "入职准备",
+            "en": "Onboarding Preparation",
             "zh_CN": "入职准备",
-            "zh_HK": "入职准备"
+            "zh_HK": "入职准備"
           },
           "values": {
             "step_number": 12,
@@ -11263,9 +11263,9 @@
           "record_order": 13,
           "source_row": 15,
           "label_i18n": {
-            "en": "入职报到",
+            "en": "Employee Check-in",
             "zh_CN": "入职报到",
-            "zh_HK": "入职报到"
+            "zh_HK": "入职報到"
           },
           "values": {
             "step_number": 13,
@@ -11295,7 +11295,7 @@
           "record_order": 14,
           "source_row": 16,
           "label_i18n": {
-            "en": "入职培训启动",
+            "en": "Start Onboarding Training",
             "zh_CN": "入职培训启动",
             "zh_HK": "入职培训启动"
           },
@@ -11555,7 +11555,7 @@
           "record_order": 1,
           "source_row": 3,
           "label_i18n": {
-            "en": "日常打卡",
+            "en": "Daily Clock-in",
             "zh_CN": "日常打卡",
             "zh_HK": "日常打卡"
           },
@@ -11589,9 +11589,9 @@
           "record_order": 2,
           "source_row": 4,
           "label_i18n": {
-            "en": "请假申请与审批",
+            "en": "Leave Request and Approval",
             "zh_CN": "请假申请与审批",
-            "zh_HK": "请假申请与审批"
+            "zh_HK": "請假申請與審批"
           },
           "values": {
             "step_number": 2,
@@ -11623,9 +11623,9 @@
           "record_order": 3,
           "source_row": 5,
           "label_i18n": {
-            "en": "加班申请与审批",
+            "en": "Overtime Request and Approval",
             "zh_CN": "加班申请与审批",
-            "zh_HK": "加班申请与审批"
+            "zh_HK": "加班申請與審批"
           },
           "values": {
             "step_number": 3,
@@ -11657,9 +11657,9 @@
           "record_order": 4,
           "source_row": 6,
           "label_i18n": {
-            "en": "出差申请与报销",
+            "en": "Business Travel Request and Reimbursement",
             "zh_CN": "出差申请与报销",
-            "zh_HK": "出差申请与报销"
+            "zh_HK": "出差申請與報銷"
           },
           "values": {
             "step_number": 4,
@@ -11691,9 +11691,9 @@
           "record_order": 5,
           "source_row": 7,
           "label_i18n": {
-            "en": "考勤汇总与异常核查",
+            "en": "Attendance Summary and Exception Review",
             "zh_CN": "考勤汇总与异常核查",
-            "zh_HK": "考勤汇总与异常核查"
+            "zh_HK": "考勤汇总與異常核查"
           },
           "values": {
             "step_number": 5,
@@ -11725,7 +11725,7 @@
           "record_order": 6,
           "source_row": 8,
           "label_i18n": {
-            "en": "薪资核算",
+            "en": "Payroll Calculation",
             "zh_CN": "薪资核算",
             "zh_HK": "薪资核算"
           },
@@ -11759,9 +11759,9 @@
           "record_order": 7,
           "source_row": 9,
           "label_i18n": {
-            "en": "薪资审批与发放",
+            "en": "Payroll Approval and Payment",
             "zh_CN": "薪资审批与发放",
-            "zh_HK": "薪资审批与发放"
+            "zh_HK": "薪资審批與發放"
           },
           "values": {
             "step_number": 7,
@@ -11793,7 +11793,7 @@
           "record_order": 8,
           "source_row": 10,
           "label_i18n": {
-            "en": "社保公积金核算",
+            "en": "Social Security and Housing Fund Calculation",
             "zh_CN": "社保公积金核算",
             "zh_HK": "社保公积金核算"
           },
@@ -11827,9 +11827,9 @@
           "record_order": 9,
           "source_row": 11,
           "label_i18n": {
-            "en": "个税申报",
+            "en": "Individual Income Tax Filing",
             "zh_CN": "个税申报",
-            "zh_HK": "个税申报"
+            "zh_HK": "个税申報"
           },
           "values": {
             "step_number": 9,
@@ -11861,7 +11861,7 @@
           "record_order": 10,
           "source_row": 12,
           "label_i18n": {
-            "en": "年度薪酬回顾",
+            "en": "Annual Compensation Review",
             "zh_CN": "年度薪酬回顾",
             "zh_HK": "年度薪酬回顾"
           },
@@ -12099,7 +12099,7 @@
           "record_order": 1,
           "source_row": 3,
           "label_i18n": {
-            "en": "制定绩效目标",
+            "en": "Set Performance Goals",
             "zh_CN": "制定绩效目标",
             "zh_HK": "制定绩效目标"
           },
@@ -12133,9 +12133,9 @@
           "record_order": 2,
           "source_row": 4,
           "label_i18n": {
-            "en": "过程跟踪与辅导",
+            "en": "Progress Tracking and Coaching",
             "zh_CN": "过程跟踪与辅导",
-            "zh_HK": "过程跟踪与辅导"
+            "zh_HK": "过程跟踪與辅導"
           },
           "values": {
             "step_number": 2,
@@ -12167,7 +12167,7 @@
           "record_order": 3,
           "source_row": 5,
           "label_i18n": {
-            "en": "期中回顾",
+            "en": "Midterm Review",
             "zh_CN": "期中回顾",
             "zh_HK": "期中回顾"
           },
@@ -12201,9 +12201,9 @@
           "record_order": 4,
           "source_row": 6,
           "label_i18n": {
-            "en": "期末考核评分",
+            "en": "Final Performance Scoring",
             "zh_CN": "期末考核评分",
-            "zh_HK": "期末考核评分"
+            "zh_HK": "期末考核評分"
           },
           "values": {
             "step_number": 4,
@@ -12235,7 +12235,7 @@
           "record_order": 5,
           "source_row": 7,
           "label_i18n": {
-            "en": "绩效面谈",
+            "en": "Performance Discussion",
             "zh_CN": "绩效面谈",
             "zh_HK": "绩效面谈"
           },
@@ -12269,9 +12269,9 @@
           "record_order": 6,
           "source_row": 8,
           "label_i18n": {
-            "en": "绩效结果应用",
+            "en": "Apply Performance Results",
             "zh_CN": "绩效结果应用",
-            "zh_HK": "绩效结果应用"
+            "zh_HK": "绩效結果应用"
           },
           "values": {
             "step_number": 6,
@@ -12303,7 +12303,7 @@
           "record_order": 7,
           "source_row": 9,
           "label_i18n": {
-            "en": "培训需求分析",
+            "en": "Training Needs Analysis",
             "zh_CN": "培训需求分析",
             "zh_HK": "培训需求分析"
           },
@@ -12337,9 +12337,9 @@
           "record_order": 8,
           "source_row": 10,
           "label_i18n": {
-            "en": "培训实施",
+            "en": "Deliver Training",
             "zh_CN": "培训实施",
-            "zh_HK": "培训实施"
+            "zh_HK": "培训實施"
           },
           "values": {
             "step_number": 8,
@@ -12371,9 +12371,9 @@
           "record_order": 9,
           "source_row": 11,
           "label_i18n": {
-            "en": "培训效果评估",
+            "en": "Evaluate Training Effectiveness",
             "zh_CN": "培训效果评估",
-            "zh_HK": "培训效果评估"
+            "zh_HK": "培训效果評估"
           },
           "values": {
             "step_number": 9,
@@ -12405,9 +12405,9 @@
           "record_order": 10,
           "source_row": 12,
           "label_i18n": {
-            "en": "人才盘点与继任计划",
+            "en": "Talent Review and Succession Planning",
             "zh_CN": "人才盘点与继任计划",
-            "zh_HK": "人才盘点与继任计划"
+            "zh_HK": "人才盘点與继任計划"
           },
           "values": {
             "step_number": 10,
@@ -12439,9 +12439,9 @@
           "record_order": 11,
           "source_row": 13,
           "label_i18n": {
-            "en": "技术能力评估",
+            "en": "Technical Capability Evaluation",
             "zh_CN": "技术能力评估",
-            "zh_HK": "技术能力评估"
+            "zh_HK": "技術能力評估"
           },
           "values": {
             "step_number": 11,
@@ -12471,9 +12471,9 @@
           "record_order": 12,
           "source_row": 14,
           "label_i18n": {
-            "en": "技术培训需求分析",
+            "en": "Technical Training Needs Analysis",
             "zh_CN": "技术培训需求分析",
-            "zh_HK": "技术培训需求分析"
+            "zh_HK": "技術培训需求分析"
           },
           "values": {
             "step_number": 12,
@@ -12503,9 +12503,9 @@
           "record_order": 13,
           "source_row": 15,
           "label_i18n": {
-            "en": "设备能力评估",
+            "en": "Equipment Capability Evaluation",
             "zh_CN": "设备能力评估",
-            "zh_HK": "设备能力评估"
+            "zh_HK": "設備能力評估"
           },
           "values": {
             "step_number": 13,
@@ -12537,9 +12537,9 @@
           "record_order": 14,
           "source_row": 16,
           "label_i18n": {
-            "en": "设备培训需求分析",
+            "en": "Equipment Training Needs Analysis",
             "zh_CN": "设备培训需求分析",
-            "zh_HK": "设备培训需求分析"
+            "zh_HK": "設備培训需求分析"
           },
           "values": {
             "step_number": 14,
@@ -12787,9 +12787,9 @@
           "record_order": 1,
           "source_row": 3,
           "label_i18n": {
-            "en": "员工提交离职申请",
+            "en": "Employee Submits Resignation",
             "zh_CN": "员工提交离职申请",
-            "zh_HK": "员工提交离职申请"
+            "zh_HK": "员工提交离职申請"
           },
           "values": {
             "step_number": 1,
@@ -12819,7 +12819,7 @@
           "record_order": 2,
           "source_row": 4,
           "label_i18n": {
-            "en": "直属上级沟通",
+            "en": "Direct Manager Discussion",
             "zh_CN": "直属上级沟通",
             "zh_HK": "直属上级沟通"
           },
@@ -12851,7 +12851,7 @@
           "record_order": 3,
           "source_row": 5,
           "label_i18n": {
-            "en": "HR离职面谈",
+            "en": "HR Exit Interview",
             "zh_CN": "HR离职面谈",
             "zh_HK": "HR离职面谈"
           },
@@ -12883,9 +12883,9 @@
           "record_order": 4,
           "source_row": 6,
           "label_i18n": {
-            "en": "离职审批",
+            "en": "Resignation Approval",
             "zh_CN": "离职审批",
-            "zh_HK": "离职审批"
+            "zh_HK": "离职審批"
           },
           "values": {
             "step_number": 4,
@@ -12915,9 +12915,9 @@
           "record_order": 5,
           "source_row": 7,
           "label_i18n": {
-            "en": "工作交接计划",
+            "en": "Work Handover Plan",
             "zh_CN": "工作交接计划",
-            "zh_HK": "工作交接计划"
+            "zh_HK": "工作交接計划"
           },
           "values": {
             "step_number": 5,
@@ -12947,9 +12947,9 @@
           "record_order": 6,
           "source_row": 8,
           "label_i18n": {
-            "en": "工作交接执行",
+            "en": "Execute Work Handover",
             "zh_CN": "工作交接执行",
-            "zh_HK": "工作交接执行"
+            "zh_HK": "工作交接執行"
           },
           "values": {
             "step_number": 6,
@@ -12979,7 +12979,7 @@
           "record_order": 7,
           "source_row": 9,
           "label_i18n": {
-            "en": "资产回收",
+            "en": "Asset Recovery",
             "zh_CN": "资产回收",
             "zh_HK": "资产回收"
           },
@@ -13011,9 +13011,9 @@
           "record_order": 8,
           "source_row": 10,
           "label_i18n": {
-            "en": "薪资与福利结算",
+            "en": "Salary and Benefits Settlement",
             "zh_CN": "薪资与福利结算",
-            "zh_HK": "薪资与福利结算"
+            "zh_HK": "薪资與福利結算"
           },
           "values": {
             "step_number": 8,
@@ -13043,7 +13043,7 @@
           "record_order": 9,
           "source_row": 11,
           "label_i18n": {
-            "en": "社保公积金处理",
+            "en": "Social Security and Housing Fund Processing",
             "zh_CN": "社保公积金处理",
             "zh_HK": "社保公积金处理"
           },
@@ -13075,9 +13075,9 @@
           "record_order": 10,
           "source_row": 12,
           "label_i18n": {
-            "en": "离职证明开具",
+            "en": "Issue Separation Certificate",
             "zh_CN": "离职证明开具",
-            "zh_HK": "离职证明开具"
+            "zh_HK": "离职证明開具"
           },
           "values": {
             "step_number": 10,
@@ -13107,9 +13107,9 @@
           "record_order": 11,
           "source_row": 13,
           "label_i18n": {
-            "en": "档案转出",
+            "en": "Transfer Personnel File",
             "zh_CN": "档案转出",
-            "zh_HK": "档案转出"
+            "zh_HK": "檔案轉出"
           },
           "values": {
             "step_number": 11,
@@ -13139,9 +13139,9 @@
           "record_order": 12,
           "source_row": 14,
           "label_i18n": {
-            "en": "离职后跟进",
+            "en": "Post-Departure Follow-up",
             "zh_CN": "离职后跟进",
-            "zh_HK": "离职后跟进"
+            "zh_HK": "离职後跟進"
           },
           "values": {
             "step_number": 12,
@@ -13413,7 +13413,7 @@
           "label_i18n": {
             "en": "试用期到期提醒(15天)",
             "zh_CN": "试用期到期提醒(15天)",
-            "zh_HK": "试用期到期提醒(15天)"
+            "zh_HK": "試用期到期提醒(15天)"
           },
           "values": {
             "sequence_number": 1,
@@ -13451,7 +13451,7 @@
           "label_i18n": {
             "en": "试用期到期预警(7天)",
             "zh_CN": "试用期到期预警(7天)",
-            "zh_HK": "试用期到期预警(7天)"
+            "zh_HK": "試用期到期預警(7天)"
           },
           "values": {
             "sequence_number": 2,
@@ -13489,7 +13489,7 @@
           "label_i18n": {
             "en": "试用期逾期告警(到期当天)",
             "zh_CN": "试用期逾期告警(到期当天)",
-            "zh_HK": "试用期逾期告警(到期当天)"
+            "zh_HK": "試用期逾期告警(到期当天)"
           },
           "values": {
             "sequence_number": 3,
@@ -13565,7 +13565,7 @@
           "label_i18n": {
             "en": "合同到期预警(30天)",
             "zh_CN": "合同到期预警(30天)",
-            "zh_HK": "合同到期预警(30天)"
+            "zh_HK": "合同到期預警(30天)"
           },
           "values": {
             "sequence_number": 5,
@@ -13641,7 +13641,7 @@
           "label_i18n": {
             "en": "考勤异常提醒",
             "zh_CN": "考勤异常提醒",
-            "zh_HK": "考勤异常提醒"
+            "zh_HK": "考勤異常提醒"
           },
           "values": {
             "sequence_number": 7,
@@ -13755,7 +13755,7 @@
           "label_i18n": {
             "en": "薪资发放逾期告警",
             "zh_CN": "薪资发放逾期告警",
-            "zh_HK": "薪资发放逾期告警"
+            "zh_HK": "薪资發放逾期告警"
           },
           "values": {
             "sequence_number": 10,
@@ -13983,7 +13983,7 @@
           "label_i18n": {
             "en": "离职率异常告警",
             "zh_CN": "离职率异常告警",
-            "zh_HK": "离职率异常告警"
+            "zh_HK": "离职率異常告警"
           },
           "values": {
             "sequence_number": 16,
@@ -14021,7 +14021,7 @@
           "label_i18n": {
             "en": "关键人才流失预警",
             "zh_CN": "关键人才流失预警",
-            "zh_HK": "关键人才流失预警"
+            "zh_HK": "关键人才流失預警"
           },
           "values": {
             "sequence_number": 17,
@@ -14059,7 +14059,7 @@
           "label_i18n": {
             "en": "招聘周期超期预警",
             "zh_CN": "招聘周期超期预警",
-            "zh_HK": "招聘周期超期预警"
+            "zh_HK": "招聘周期超期預警"
           },
           "values": {
             "sequence_number": 18,
@@ -14097,7 +14097,7 @@
           "label_i18n": {
             "en": "试用期不通过提醒",
             "zh_CN": "试用期不通过提醒",
-            "zh_HK": "试用期不通过提醒"
+            "zh_HK": "試用期不通过提醒"
           },
           "values": {
             "sequence_number": 19,
@@ -14135,7 +14135,7 @@
           "label_i18n": {
             "en": "背景调查异常告警",
             "zh_CN": "背景调查异常告警",
-            "zh_HK": "背景调查异常告警"
+            "zh_HK": "背景调查異常告警"
           },
           "values": {
             "sequence_number": 20,
@@ -14173,7 +14173,7 @@
           "label_i18n": {
             "en": "加班时长超标预警",
             "zh_CN": "加班时长超标预警",
-            "zh_HK": "加班时长超标预警"
+            "zh_HK": "加班時长超标預警"
           },
           "values": {
             "sequence_number": 21,
@@ -14287,7 +14287,7 @@
           "label_i18n": {
             "en": "劳动合同续签到期(无固定期限提醒)",
             "zh_CN": "劳动合同续签到期(无固定期限提醒)",
-            "zh_HK": "劳动合同续签到期(无固定期限提醒)"
+            "zh_HK": "劳动合同续簽到期(无固定期限提醒)"
           },
           "values": {
             "sequence_number": 24,
@@ -14759,7 +14759,7 @@
           "label_i18n": {
             "en": "性别",
             "zh_CN": "性别",
-            "zh_HK": "性别"
+            "zh_HK": "性別"
           },
           "values": {
             "sequence_number": 4,
@@ -15089,7 +15089,7 @@
           "label_i18n": {
             "en": "紧急联系人与本人关系",
             "zh_CN": "紧急联系人与本人关系",
-            "zh_HK": "紧急联系人与本人关系"
+            "zh_HK": "紧急联系人與本人关系"
           },
           "values": {
             "sequence_number": 14,
@@ -15189,7 +15189,7 @@
           "label_i18n": {
             "en": "岗位级别",
             "zh_CN": "岗位级别",
-            "zh_HK": "岗位级别"
+            "zh_HK": "岗位级別"
           },
           "values": {
             "sequence_number": 17,
@@ -15291,7 +15291,7 @@
           "label_i18n": {
             "en": "试用期到期日",
             "zh_CN": "试用期到期日",
-            "zh_HK": "试用期到期日"
+            "zh_HK": "試用期到期日"
           },
           "values": {
             "sequence_number": 20,
@@ -15425,7 +15425,7 @@
           "label_i18n": {
             "en": "银行账号",
             "zh_CN": "银行账号",
-            "zh_HK": "银行账号"
+            "zh_HK": "银行賬号"
           },
           "values": {
             "sequence_number": 24,
@@ -15459,7 +15459,7 @@
           "label_i18n": {
             "en": "开户行",
             "zh_CN": "开户行",
-            "zh_HK": "开户行"
+            "zh_HK": "開戶行"
           },
           "values": {
             "sequence_number": 25,
@@ -15589,7 +15589,7 @@
           "label_i18n": {
             "en": "毕业时间",
             "zh_CN": "毕业时间",
-            "zh_HK": "毕业时间"
+            "zh_HK": "毕业時间"
           },
           "values": {
             "sequence_number": 29,
@@ -15655,7 +15655,7 @@
           "label_i18n": {
             "en": "所属技术团队",
             "zh_CN": "所属技术团队",
-            "zh_HK": "所属技术团队"
+            "zh_HK": "所属技術团队"
           },
           "values": {
             "sequence_number": 31,
@@ -15689,7 +15689,7 @@
           "label_i18n": {
             "en": "技术岗位类别",
             "zh_CN": "技术岗位类别",
-            "zh_HK": "技术岗位类别"
+            "zh_HK": "技術岗位类別"
           },
           "values": {
             "sequence_number": 32,
@@ -15723,7 +15723,7 @@
           "label_i18n": {
             "en": "技术等级",
             "zh_CN": "技术等级",
-            "zh_HK": "技术等级"
+            "zh_HK": "技術等级"
           },
           "values": {
             "sequence_number": 33,
@@ -15791,7 +15791,7 @@
           "label_i18n": {
             "en": "个人开盖成功率",
             "zh_CN": "个人开盖成功率",
-            "zh_HK": "个人开盖成功率"
+            "zh_HK": "个人開盖成功率"
           },
           "values": {
             "sequence_number": 35,
@@ -15859,7 +15859,7 @@
           "label_i18n": {
             "en": "加班时长(月)",
             "zh_CN": "加班时长(月)",
-            "zh_HK": "加班时长(月)"
+            "zh_HK": "加班時长(月)"
           },
           "values": {
             "sequence_number": 37,
@@ -15961,7 +15961,7 @@
           "label_i18n": {
             "en": "设备维护负责范围",
             "zh_CN": "设备维护负责范围",
-            "zh_HK": "设备维护负责范围"
+            "zh_HK": "設備維護负责范围"
           },
           "values": {
             "sequence_number": 40,
@@ -15995,7 +15995,7 @@
           "label_i18n": {
             "en": "所属设备团队",
             "zh_CN": "所属设备团队",
-            "zh_HK": "所属设备团队"
+            "zh_HK": "所属設備团队"
           },
           "values": {
             "sequence_number": 41,
@@ -16029,7 +16029,7 @@
           "label_i18n": {
             "en": "设备岗位类别",
             "zh_CN": "设备岗位类别",
-            "zh_HK": "设备岗位类别"
+            "zh_HK": "設備岗位类別"
           },
           "values": {
             "sequence_number": 42,
@@ -16063,7 +16063,7 @@
           "label_i18n": {
             "en": "设备维修资质等级",
             "zh_CN": "设备维修资质等级",
-            "zh_HK": "设备维修资质等级"
+            "zh_HK": "設備維修资质等级"
           },
           "values": {
             "sequence_number": 43,
@@ -16097,7 +16097,7 @@
           "label_i18n": {
             "en": "负责设备编号",
             "zh_CN": "负责设备编号",
-            "zh_HK": "负责设备编号"
+            "zh_HK": "负责設備编号"
           },
           "values": {
             "sequence_number": 44,
@@ -16131,7 +16131,7 @@
           "label_i18n": {
             "en": "维修成功率",
             "zh_CN": "维修成功率",
-            "zh_HK": "维修成功率"
+            "zh_HK": "維修成功率"
           },
           "values": {
             "sequence_number": 45,
@@ -16165,7 +16165,7 @@
           "label_i18n": {
             "en": "平均维修时长",
             "zh_CN": "平均维修时长",
-            "zh_HK": "平均维修时长"
+            "zh_HK": "平均維修時长"
           },
           "values": {
             "sequence_number": 46,
@@ -16199,7 +16199,7 @@
           "label_i18n": {
             "en": "维修受阻次数",
             "zh_CN": "维修受阻次数",
-            "zh_HK": "维修受阻次数"
+            "zh_HK": "維修受阻次数"
           },
           "values": {
             "sequence_number": 47,
@@ -16267,7 +16267,7 @@
           "label_i18n": {
             "en": "所属实验室",
             "zh_CN": "所属实验室",
-            "zh_HK": "所属实验室"
+            "zh_HK": "所属實驗室"
           },
           "values": {
             "sequence_number": 49,
@@ -16301,7 +16301,7 @@
           "label_i18n": {
             "en": "可接收异地订单",
             "zh_CN": "可接收异地订单",
-            "zh_HK": "可接收异地订单"
+            "zh_HK": "可接收異地訂單"
           },
           "values": {
             "sequence_number": 50,
@@ -16335,7 +16335,7 @@
           "label_i18n": {
             "en": "异地订单接单权限",
             "zh_CN": "异地订单接单权限",
-            "zh_HK": "异地订单接单权限"
+            "zh_HK": "異地訂單接單权限"
           },
           "values": {
             "sequence_number": 51,
@@ -16369,7 +16369,7 @@
           "label_i18n": {
             "en": "异地订单响应时效",
             "zh_CN": "异地订单响应时效",
-            "zh_HK": "异地订单响应时效"
+            "zh_HK": "異地訂單响应時效"
           },
           "values": {
             "sequence_number": 52,
@@ -16403,7 +16403,7 @@
           "label_i18n": {
             "en": "异地订单处理量",
             "zh_CN": "异地订单处理量",
-            "zh_HK": "异地订单处理量"
+            "zh_HK": "異地訂單处理量"
           },
           "values": {
             "sequence_number": 53,
@@ -16875,7 +16875,7 @@
           "label_i18n": {
             "en": "面试邀约通知",
             "zh_CN": "面试邀约通知",
-            "zh_HK": "面试邀约通知"
+            "zh_HK": "面試邀约通知"
           },
           "values": {
             "sequence_number": 1,
@@ -16905,7 +16905,7 @@
           "label_i18n": {
             "en": "面试评价提醒",
             "zh_CN": "面试评价提醒",
-            "zh_HK": "面试评价提醒"
+            "zh_HK": "面試評價提醒"
           },
           "values": {
             "sequence_number": 2,
@@ -16935,7 +16935,7 @@
           "label_i18n": {
             "en": "offer发放通知",
             "zh_CN": "offer发放通知",
-            "zh_HK": "offer发放通知"
+            "zh_HK": "offer發放通知"
           },
           "values": {
             "sequence_number": 3,
@@ -16995,7 +16995,7 @@
           "label_i18n": {
             "en": "试用期到期提醒",
             "zh_CN": "试用期到期提醒",
-            "zh_HK": "试用期到期提醒"
+            "zh_HK": "試用期到期提醒"
           },
           "values": {
             "sequence_number": 5,
@@ -17025,7 +17025,7 @@
           "label_i18n": {
             "en": "转正通知",
             "zh_CN": "转正通知",
-            "zh_HK": "转正通知"
+            "zh_HK": "轉正通知"
           },
           "values": {
             "sequence_number": 6,
@@ -17055,7 +17055,7 @@
           "label_i18n": {
             "en": "考勤异常提醒",
             "zh_CN": "考勤异常提醒",
-            "zh_HK": "考勤异常提醒"
+            "zh_HK": "考勤異常提醒"
           },
           "values": {
             "sequence_number": 7,
@@ -17085,7 +17085,7 @@
           "label_i18n": {
             "en": "薪资发放通知",
             "zh_CN": "薪资发放通知",
-            "zh_HK": "薪资发放通知"
+            "zh_HK": "薪资發放通知"
           },
           "values": {
             "sequence_number": 8,
@@ -17115,7 +17115,7 @@
           "label_i18n": {
             "en": "绩效评估提醒",
             "zh_CN": "绩效评估提醒",
-            "zh_HK": "绩效评估提醒"
+            "zh_HK": "绩效評估提醒"
           },
           "values": {
             "sequence_number": 9,
@@ -17175,7 +17175,7 @@
           "label_i18n": {
             "en": "培训邀请通知",
             "zh_CN": "培训邀请通知",
-            "zh_HK": "培训邀请通知"
+            "zh_HK": "培训邀請通知"
           },
           "values": {
             "sequence_number": 11,
@@ -17235,7 +17235,7 @@
           "label_i18n": {
             "en": "离职申请通知",
             "zh_CN": "离职申请通知",
-            "zh_HK": "离职申请通知"
+            "zh_HK": "离职申請通知"
           },
           "values": {
             "sequence_number": 13,
@@ -17265,7 +17265,7 @@
           "label_i18n": {
             "en": "离职面谈邀请",
             "zh_CN": "离职面谈邀请",
-            "zh_HK": "离职面谈邀请"
+            "zh_HK": "离职面谈邀請"
           },
           "values": {
             "sequence_number": 14,
@@ -17295,7 +17295,7 @@
           "label_i18n": {
             "en": "离职结算通知",
             "zh_CN": "离职结算通知",
-            "zh_HK": "离职结算通知"
+            "zh_HK": "离职結算通知"
           },
           "values": {
             "sequence_number": 15,
@@ -17325,7 +17325,7 @@
           "label_i18n": {
             "en": "离职证明领取",
             "zh_CN": "离职证明领取",
-            "zh_HK": "离职证明领取"
+            "zh_HK": "离职证明領取"
           },
           "values": {
             "sequence_number": 16,
@@ -17415,7 +17415,7 @@
           "label_i18n": {
             "en": "招聘进度周报",
             "zh_CN": "招聘进度周报",
-            "zh_HK": "招聘进度周报"
+            "zh_HK": "招聘進度周報"
           },
           "values": {
             "sequence_number": 19,
@@ -17445,7 +17445,7 @@
           "label_i18n": {
             "en": "离职率月报告警",
             "zh_CN": "离职率月报告警",
-            "zh_HK": "离职率月报告警"
+            "zh_HK": "离职率月報告警"
           },
           "values": {
             "sequence_number": 20,
@@ -17723,9 +17723,9 @@
           "record_order": 1,
           "source_row": 2,
           "label_i18n": {
-            "en": "销售提交技术工单",
+            "en": "Sales Submits Technical Work Order",
             "zh_CN": "销售提交技术工单",
-            "zh_HK": "销售提交技术工单"
+            "zh_HK": "銷售提交技術工單"
           },
           "values": {
             "step_number": 1,
@@ -17755,9 +17755,9 @@
           "record_order": 2,
           "source_row": 3,
           "label_i18n": {
-            "en": "系统开始计时",
+            "en": "System Starts Timer",
             "zh_CN": "系统开始计时",
-            "zh_HK": "系统开始计时"
+            "zh_HK": "系統開始計時"
           },
           "values": {
             "step_number": 2,
@@ -17787,9 +17787,9 @@
           "record_order": 3,
           "source_row": 4,
           "label_i18n": {
-            "en": "技术部接收并评估",
+            "en": "Technical Team Receives and Evaluates",
             "zh_CN": "技术部接收并评估",
-            "zh_HK": "技术部接收并评估"
+            "zh_HK": "技術部接收並評估"
           },
           "values": {
             "step_number": 3,
@@ -17819,9 +17819,9 @@
           "record_order": 4,
           "source_row": 5,
           "label_i18n": {
-            "en": "技术评估超时预警",
+            "en": "Technical Evaluation Timeout Alert",
             "zh_CN": "技术评估超时预警",
-            "zh_HK": "技术评估超时预警"
+            "zh_HK": "技術評估超時預警"
           },
           "values": {
             "step_number": 4,
@@ -17851,9 +17851,9 @@
           "record_order": 5,
           "source_row": 6,
           "label_i18n": {
-            "en": "评估结果反馈销售",
+            "en": "Send Evaluation Result to Sales",
             "zh_CN": "评估结果反馈销售",
-            "zh_HK": "评估结果反馈销售"
+            "zh_HK": "評估結果反饋銷售"
           },
           "values": {
             "step_number": 5,
@@ -17883,9 +17883,9 @@
           "record_order": 6,
           "source_row": 7,
           "label_i18n": {
-            "en": "销售确认分析结果",
+            "en": "Sales Confirms Analysis Result",
             "zh_CN": "销售确认分析结果",
-            "zh_HK": "销售确认分析结果"
+            "zh_HK": "銷售確認分析結果"
           },
           "values": {
             "step_number": 6,
@@ -18093,9 +18093,9 @@
           "record_order": 1,
           "source_row": 2,
           "label_i18n": {
-            "en": "销售正式下单",
+            "en": "Sales Places Official Order",
             "zh_CN": "销售正式下单",
-            "zh_HK": "销售正式下单"
+            "zh_HK": "銷售正式下單"
           },
           "values": {
             "step_number": 1,
@@ -18127,9 +18127,9 @@
           "record_order": 2,
           "source_row": 3,
           "label_i18n": {
-            "en": "技术接单与准备",
+            "en": "Technical Order Acceptance and Preparation",
             "zh_CN": "技术接单与准备",
-            "zh_HK": "技术接单与准备"
+            "zh_HK": "技術接單與准備"
           },
           "values": {
             "step_number": 2,
@@ -18161,9 +18161,9 @@
           "record_order": 3,
           "source_row": 4,
           "label_i18n": {
-            "en": "设备异常上报（如发生）",
+            "en": "Report Equipment Incident (If Any)",
             "zh_CN": "设备异常上报（如发生）",
-            "zh_HK": "设备异常上报（如发生）"
+            "zh_HK": "設備異常上報（如發生）"
           },
           "values": {
             "step_number": 3,
@@ -18195,9 +18195,9 @@
           "record_order": 4,
           "source_row": 5,
           "label_i18n": {
-            "en": "执行开盖操作",
+            "en": "Perform Lid-Opening Operation",
             "zh_CN": "执行开盖操作",
-            "zh_HK": "执行开盖操作"
+            "zh_HK": "執行開盖操作"
           },
           "values": {
             "step_number": 4,
@@ -18229,9 +18229,9 @@
           "record_order": 5,
           "source_row": 6,
           "label_i18n": {
-            "en": "技术加工执行",
+            "en": "Technical Processing Execution",
             "zh_CN": "技术加工执行",
-            "zh_HK": "技术加工执行"
+            "zh_HK": "技術加工執行"
           },
           "values": {
             "step_number": 5,
@@ -18263,9 +18263,9 @@
           "record_order": 6,
           "source_row": 7,
           "label_i18n": {
-            "en": "返样前检查",
+            "en": "Pre-Return Sample Inspection",
             "zh_CN": "返样前检查",
-            "zh_HK": "返样前检查"
+            "zh_HK": "返樣前檢查"
           },
           "values": {
             "step_number": 6,
@@ -18297,9 +18297,9 @@
           "record_order": 7,
           "source_row": 8,
           "label_i18n": {
-            "en": "返还样品",
+            "en": "Return Sample",
             "zh_CN": "返还样品",
-            "zh_HK": "返还样品"
+            "zh_HK": "返還樣品"
           },
           "values": {
             "step_number": 7,
@@ -18331,9 +18331,9 @@
           "record_order": 8,
           "source_row": 9,
           "label_i18n": {
-            "en": "客户测试反馈",
+            "en": "Customer Test Feedback",
             "zh_CN": "客户测试反馈",
-            "zh_HK": "客户测试反馈"
+            "zh_HK": "客戶測試反饋"
           },
           "values": {
             "step_number": 8,
@@ -18367,7 +18367,7 @@
           "label_i18n": {
             "en": "失效分析（如测试失败）",
             "zh_CN": "失效分析（如测试失败）",
-            "zh_HK": "失效分析（如测试失败）"
+            "zh_HK": "失效分析（如測試失败）"
           },
           "values": {
             "step_number": 9,
@@ -18399,9 +18399,9 @@
           "record_order": 10,
           "source_row": 11,
           "label_i18n": {
-            "en": "客户决策（补做/暂停）",
+            "en": "Customer Decision (Redo / Pause)",
             "zh_CN": "客户决策（补做/暂停）",
-            "zh_HK": "客户决策（补做/暂停）"
+            "zh_HK": "客戶決策（補做/暫停）"
           },
           "values": {
             "step_number": 10,
@@ -18433,9 +18433,9 @@
           "record_order": 11,
           "source_row": 12,
           "label_i18n": {
-            "en": "订单转回来源销售",
+            "en": "Return Order to Source Sales",
             "zh_CN": "订单转回来源销售",
-            "zh_HK": "订单转回来源销售"
+            "zh_HK": "訂單轉回来源銷售"
           },
           "values": {
             "step_number": 11,
@@ -18467,9 +18467,9 @@
           "record_order": 12,
           "source_row": 13,
           "label_i18n": {
-            "en": "客户决策（补做/暂停）",
+            "en": "Customer Decision (Redo / Pause)",
             "zh_CN": "客户决策（补做/暂停）",
-            "zh_HK": "客户决策（补做/暂停）"
+            "zh_HK": "客戶決策（補做/暫停）"
           },
           "values": {
             "step_number": 12,
@@ -18693,7 +18693,7 @@
           "label_i18n": {
             "en": "工单号",
             "zh_CN": "工单号",
-            "zh_HK": "工单号"
+            "zh_HK": "工單号"
           },
           "values": {
             "sequence_number": 1,
@@ -18781,7 +18781,7 @@
           "label_i18n": {
             "en": "客户预期效果",
             "zh_CN": "客户预期效果",
-            "zh_HK": "客户预期效果"
+            "zh_HK": "客戶預期效果"
           },
           "values": {
             "sequence_number": 4,
@@ -18809,7 +18809,7 @@
           "label_i18n": {
             "en": "目前测试结果",
             "zh_CN": "目前测试结果",
-            "zh_HK": "目前测试结果"
+            "zh_HK": "目前測試結果"
           },
           "values": {
             "sequence_number": 5,
@@ -18865,7 +18865,7 @@
           "label_i18n": {
             "en": "失效芯片状态",
             "zh_CN": "失效芯片状态",
-            "zh_HK": "失效芯片状态"
+            "zh_HK": "失效晶片状态"
           },
           "values": {
             "sequence_number": 7,
@@ -18925,7 +18925,7 @@
           "label_i18n": {
             "en": "分析结果",
             "zh_CN": "分析结果",
-            "zh_HK": "分析结果"
+            "zh_HK": "分析結果"
           },
           "values": {
             "sequence_number": 9,
@@ -19045,7 +19045,7 @@
           "label_i18n": {
             "en": "分析时间",
             "zh_CN": "分析时间",
-            "zh_HK": "分析时间"
+            "zh_HK": "分析時间"
           },
           "values": {
             "sequence_number": 13,
@@ -19075,7 +19075,7 @@
           "label_i18n": {
             "en": "主管审核意见",
             "zh_CN": "主管审核意见",
-            "zh_HK": "主管审核意见"
+            "zh_HK": "主管審核意见"
           },
           "values": {
             "sequence_number": 14,
@@ -19319,7 +19319,7 @@
           "label_i18n": {
             "en": "开盖称功率成功率",
             "zh_CN": "开盖称功率成功率",
-            "zh_HK": "开盖称功率成功率"
+            "zh_HK": "開盖称功率成功率"
           },
           "values": {
             "sequence_number": 1,
@@ -19383,7 +19383,7 @@
           "label_i18n": {
             "en": "补做成功率",
             "zh_CN": "补做成功率",
-            "zh_HK": "补做成功率"
+            "zh_HK": "補做成功率"
           },
           "values": {
             "sequence_number": 3,
@@ -19447,7 +19447,7 @@
           "label_i18n": {
             "en": "加班时长",
             "zh_CN": "加班时长",
-            "zh_HK": "加班时长"
+            "zh_HK": "加班時长"
           },
           "values": {
             "sequence_number": 5,
@@ -19573,7 +19573,7 @@
           "label_i18n": {
             "en": "团队补做成功率",
             "zh_CN": "团队补做成功率",
-            "zh_HK": "团队补做成功率"
+            "zh_HK": "团队補做成功率"
           },
           "values": {
             "sequence_number": 9,
@@ -19635,7 +19635,7 @@
           "label_i18n": {
             "en": "实验室综合良率",
             "zh_CN": "实验室综合良率",
-            "zh_HK": "实验室综合良率"
+            "zh_HK": "實驗室综合良率"
           },
           "values": {
             "sequence_number": 11,
@@ -19667,7 +19667,7 @@
           "label_i18n": {
             "en": "实验室FIB成功率",
             "zh_CN": "实验室FIB成功率",
-            "zh_HK": "实验室FIB成功率"
+            "zh_HK": "實驗室FIB成功率"
           },
           "values": {
             "sequence_number": 12,
@@ -19697,7 +19697,7 @@
           "label_i18n": {
             "en": "实验室机台使用率",
             "zh_CN": "实验室机台使用率",
-            "zh_HK": "实验室机台使用率"
+            "zh_HK": "實驗室机台使用率"
           },
           "values": {
             "sequence_number": 13,
@@ -19729,7 +19729,7 @@
           "label_i18n": {
             "en": "实验室机台故障率",
             "zh_CN": "实验室机台故障率",
-            "zh_HK": "实验室机台故障率"
+            "zh_HK": "實驗室机台故障率"
           },
           "values": {
             "sequence_number": 14,
@@ -19761,7 +19761,7 @@
           "label_i18n": {
             "en": "周报自动生成",
             "zh_CN": "周报自动生成",
-            "zh_HK": "周报自动生成"
+            "zh_HK": "周報自动生成"
           },
           "values": {
             "sequence_number": 15,
@@ -19793,7 +19793,7 @@
           "label_i18n": {
             "en": "月报自动生成",
             "zh_CN": "月报自动生成",
-            "zh_HK": "月报自动生成"
+            "zh_HK": "月報自动生成"
           },
           "values": {
             "sequence_number": 16,
@@ -19825,7 +19825,7 @@
           "label_i18n": {
             "en": "季报自动生成",
             "zh_CN": "季报自动生成",
-            "zh_HK": "季报自动生成"
+            "zh_HK": "季報自动生成"
           },
           "values": {
             "sequence_number": 17,
@@ -19857,7 +19857,7 @@
           "label_i18n": {
             "en": "设备空时率",
             "zh_CN": "设备空时率",
-            "zh_HK": "设备空时率"
+            "zh_HK": "設備空時率"
           },
           "values": {
             "sequence_number": 19,
@@ -19889,7 +19889,7 @@
           "label_i18n": {
             "en": "维修时长统计",
             "zh_CN": "维修时长统计",
-            "zh_HK": "维修时长统计"
+            "zh_HK": "維修時长統計"
           },
           "values": {
             "sequence_number": 20,
@@ -19921,7 +19921,7 @@
           "label_i18n": {
             "en": "维修受阻率",
             "zh_CN": "维修受阻率",
-            "zh_HK": "维修受阻率"
+            "zh_HK": "維修受阻率"
           },
           "values": {
             "sequence_number": 21,
@@ -19953,7 +19953,7 @@
           "label_i18n": {
             "en": "耗材消耗统计",
             "zh_CN": "耗材消耗统计",
-            "zh_HK": "耗材消耗统计"
+            "zh_HK": "耗材消耗統計"
           },
           "values": {
             "sequence_number": 22,
@@ -19985,7 +19985,7 @@
           "label_i18n": {
             "en": "设备完好率",
             "zh_CN": "设备完好率",
-            "zh_HK": "设备完好率"
+            "zh_HK": "設備完好率"
           },
           "values": {
             "sequence_number": 23,
@@ -20017,7 +20017,7 @@
           "label_i18n": {
             "en": "维修成功率",
             "zh_CN": "维修成功率",
-            "zh_HK": "维修成功率"
+            "zh_HK": "維修成功率"
           },
           "values": {
             "sequence_number": 24,
@@ -20319,7 +20319,7 @@
           "label_i18n": {
             "en": "技术填写设备故障表",
             "zh_CN": "技术填写设备故障表",
-            "zh_HK": "技术填写设备故障表"
+            "zh_HK": "技術填寫設備故障表"
           },
           "values": {
             "step_number": 1,
@@ -20351,7 +20351,7 @@
           "label_i18n": {
             "en": "设备部接收故障工单",
             "zh_CN": "设备部接收故障工单",
-            "zh_HK": "设备部接收故障工单"
+            "zh_HK": "設備部接收故障工單"
           },
           "values": {
             "step_number": 2,
@@ -20383,7 +20383,7 @@
           "label_i18n": {
             "en": "各实验室设备员维修",
             "zh_CN": "各实验室设备员维修",
-            "zh_HK": "各实验室设备员维修"
+            "zh_HK": "各實驗室設備员維修"
           },
           "values": {
             "step_number": 3,
@@ -20415,7 +20415,7 @@
           "label_i18n": {
             "en": "升级至设备经理",
             "zh_CN": "升级至设备经理",
-            "zh_HK": "升级至设备经理"
+            "zh_HK": "升级至設備经理"
           },
           "values": {
             "step_number": 4,
@@ -20447,7 +20447,7 @@
           "label_i18n": {
             "en": "维修受阻统计",
             "zh_CN": "维修受阻统计",
-            "zh_HK": "维修受阻统计"
+            "zh_HK": "維修受阻統計"
           },
           "values": {
             "step_number": 5,
@@ -20479,7 +20479,7 @@
           "label_i18n": {
             "en": "维修完成验收",
             "zh_CN": "维修完成验收",
-            "zh_HK": "维修完成验收"
+            "zh_HK": "維修完成驗收"
           },
           "values": {
             "step_number": 6,
@@ -20511,7 +20511,7 @@
           "label_i18n": {
             "en": "设备空时率统计",
             "zh_CN": "设备空时率统计",
-            "zh_HK": "设备空时率统计"
+            "zh_HK": "設備空時率統計"
           },
           "values": {
             "step_number": 7,
@@ -20543,7 +20543,7 @@
           "label_i18n": {
             "en": "维修时长统计",
             "zh_CN": "维修时长统计",
-            "zh_HK": "维修时长统计"
+            "zh_HK": "維修時长統計"
           },
           "values": {
             "step_number": 8,
@@ -20575,7 +20575,7 @@
           "label_i18n": {
             "en": "设备状态更新",
             "zh_CN": "设备状态更新",
-            "zh_HK": "设备状态更新"
+            "zh_HK": "設備状态更新"
           },
           "values": {
             "step_number": 9,
@@ -21291,7 +21291,7 @@
           "label_i18n": {
             "en": "聚焦离子束系统",
             "zh_CN": "聚焦离子束系统",
-            "zh_HK": "聚焦离子束系统"
+            "zh_HK": "聚焦离子束系統"
           },
           "values": {
             "sequence_number": 1,
@@ -21323,7 +21323,7 @@
           "label_i18n": {
             "en": "聚焦离子束系统",
             "zh_CN": "聚焦离子束系统",
-            "zh_HK": "聚焦离子束系统"
+            "zh_HK": "聚焦离子束系統"
           },
           "values": {
             "sequence_number": 2,
@@ -21355,7 +21355,7 @@
           "label_i18n": {
             "en": "聚焦离子束系统",
             "zh_CN": "聚焦离子束系统",
-            "zh_HK": "聚焦离子束系统"
+            "zh_HK": "聚焦离子束系統"
           },
           "values": {
             "sequence_number": 3,
@@ -21387,7 +21387,7 @@
           "label_i18n": {
             "en": "聚焦离子束系统",
             "zh_CN": "聚焦离子束系统",
-            "zh_HK": "聚焦离子束系统"
+            "zh_HK": "聚焦离子束系統"
           },
           "values": {
             "sequence_number": 4,
@@ -21515,7 +21515,7 @@
           "label_i18n": {
             "en": "开盖机",
             "zh_CN": "开盖机",
-            "zh_HK": "开盖机"
+            "zh_HK": "開盖机"
           },
           "values": {
             "sequence_number": 8,
@@ -21547,7 +21547,7 @@
           "label_i18n": {
             "en": "开盖机",
             "zh_CN": "开盖机",
-            "zh_HK": "开盖机"
+            "zh_HK": "開盖机"
           },
           "values": {
             "sequence_number": 9,
@@ -21579,7 +21579,7 @@
           "label_i18n": {
             "en": "开盖机",
             "zh_CN": "开盖机",
-            "zh_HK": "开盖机"
+            "zh_HK": "開盖机"
           },
           "values": {
             "sequence_number": 10,
@@ -21611,7 +21611,7 @@
           "label_i18n": {
             "en": "统计汇总",
             "zh_CN": "统计汇总",
-            "zh_HK": "统计汇总"
+            "zh_HK": "統計汇总"
           },
           "values": {
             "sequence_number": "统计汇总"
@@ -21627,7 +21627,7 @@
           "label_i18n": {
             "en": "按设备统计",
             "zh_CN": "按设备统计",
-            "zh_HK": "按设备统计"
+            "zh_HK": "按設備統計"
           },
           "values": {
             "sequence_number": "按设备统计",
@@ -21645,7 +21645,7 @@
           "label_i18n": {
             "en": "按人员统计",
             "zh_CN": "按人员统计",
-            "zh_HK": "按人员统计"
+            "zh_HK": "按人员統計"
           },
           "values": {
             "sequence_number": "按人员统计",
@@ -21663,7 +21663,7 @@
           "label_i18n": {
             "en": "按时间统计",
             "zh_CN": "按时间统计",
-            "zh_HK": "按时间统计"
+            "zh_HK": "按時间統計"
           },
           "values": {
             "sequence_number": "按时间统计",
@@ -21681,7 +21681,7 @@
           "label_i18n": {
             "en": "按类型统计",
             "zh_CN": "按类型统计",
-            "zh_HK": "按类型统计"
+            "zh_HK": "按类型統計"
           },
           "values": {
             "sequence_number": "按类型统计",

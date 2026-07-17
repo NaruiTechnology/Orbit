@@ -34,6 +34,17 @@ def test_catalog_contains_language_keys() -> None:
     assert workflow["name_i18n"]["zh_HK"] == "異地實驗室下單流程"
 
 
+def test_workflow_tree_record_labels_are_localized() -> None:
+    catalog = build_catalog(WORKBOOK)
+    record = catalog["workflows"][0]["records"][0]
+
+    assert record["label_i18n"] == {
+        "en": "Customer Profile Setup",
+        "zh_CN": "客户档案建立",
+        "zh_HK": "客戶檔案建立",
+    }
+
+
 def test_notification_templates_are_lookup_tables_not_workflows() -> None:
     catalog = build_catalog(WORKBOOK)
     definitions = {workflow["key"]: workflow for workflow in catalog["workflows"]}
