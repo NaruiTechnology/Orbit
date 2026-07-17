@@ -16,10 +16,10 @@
 # form or by any means without the express written consent of
 
 #-------------- -----------------------------------------------------------------
-from buildingblocks.decorators import hierarchyValidation
-from buildingblocks.workflow.work_thread import WorkThread
-from buildingblocks.definitions import Consts
-import buildingblocks.utils as util
+from AutomationPy.buildingblocks.decorators import hierarchyValidation
+from AutomationPy.buildingblocks.workflow.work_thread import WorkThread
+from AutomationPy.buildingblocks.definitions import Consts
+import AutomationPy.buildingblocks.utils as util
 import sys
 try:
     import Queue as queue

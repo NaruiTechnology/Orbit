@@ -19,8 +19,8 @@
 import sys, os
 sys.path.append(os.path.split(os.path.dirname(os.getcwd()))[0])
 import unittest
-import buildingblocks.unittest.test_buildingblocks as tsBuildingblocks
-import buildingblocks.unittest.test_decoders as tsDecoders
+import AutomationPy.buildingblocks.unittest.test_buildingblocks as tsBuildingblocks
+import AutomationPy.buildingblocks.unittest.test_decoders as tsDecoders
 
 loader = unittest.TestLoader()
 suite = unittest.TestSuite()

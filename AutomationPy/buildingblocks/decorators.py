@@ -9,12 +9,28 @@
 # Licence:     <your licence>
 #-------------- -----------------------------------------------------------------
 import time
+from functools import wraps
 
 
 def overrides(interfaceClass):
     def overrider(method):
         assert(method.__name__ in dir(interfaceClass))
         return method
+    return overrider
+
+
+def hierarchyValidation(interfaceClass):
+    def overrider(method):
+        @wraps(method)
+        def wrapper(self, *args, **kwargs):
+            if not isinstance(self, interfaceClass):
+                raise TypeError(
+                    f"{type(self).__name__} must inherit from {interfaceClass.__name__}"
+                )
+            return method(self, *args, **kwargs)
+
+        return wrapper
+
     return overrider
 
 
