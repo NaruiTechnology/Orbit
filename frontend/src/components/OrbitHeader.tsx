@@ -1,4 +1,4 @@
-import type { HealthResponse, Locale, SessionInfo } from "../types";
+import type { HealthResponse, Locale, SessionInfo, ThemeMode } from "../types";
 import { translate } from "../i18n/translations";
 
 interface OrbitHeaderProps {
@@ -6,6 +6,8 @@ interface OrbitHeaderProps {
   session: SessionInfo | undefined;
   health: HealthResponse | undefined;
   onLocaleChange: (locale: Locale) => void;
+  theme: ThemeMode;
+  onThemeChange: (theme: ThemeMode) => void;
 }
 
 const localeLabels: Record<Locale, string> = {
@@ -19,6 +21,8 @@ export function OrbitHeader({
   session,
   health,
   onLocaleChange,
+  theme,
+  onThemeChange,
 }: OrbitHeaderProps) {
   return (
     <header className="orbit-header">
@@ -29,7 +33,7 @@ export function OrbitHeader({
         </div>
         <div className="orbit-brand__copy">
           <div className="orbit-brand__line">
-            <strong>ORBIT</strong>
+            <strong>IonbeamTech ORBIT</strong>
             <span>AUTOMATION</span>
           </div>
           <small>{translate(locale, "appSubtitle")}</small>
@@ -76,6 +80,20 @@ export function OrbitHeader({
               aria-pressed={item === locale}
             >
               {localeLabels[item]}
+            </button>
+          ))}
+        </div>
+
+        <div className="theme-switch" aria-label="Theme">
+          {(["light", "dark"] as ThemeMode[]).map((item) => (
+            <button
+              className={item === theme ? "is-active" : ""}
+              key={item}
+              onClick={() => onThemeChange(item)}
+              type="button"
+              aria-pressed={item === theme}
+            >
+              {item === "light" ? "Light" : "Dark"}
             </button>
           ))}
         </div>

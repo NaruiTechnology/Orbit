@@ -1,8 +1,10 @@
 :root {
-  color-scheme: light;
   --paper: #f2efe6;
   --paper-bright: #fbfaf5;
   --paper-deep: #ded8c9;
+  --surface: #fbfaf5;
+  --surface-raised: #f2efe6;
+  --surface-muted: #ded8c9;
   --ink: #172421;
   --ink-soft: #53605c;
   --forest: #203a35;
@@ -13,9 +15,51 @@
   --acid: #d4df86;
   --line: #c8c1b0;
   --line-strong: #928b7c;
+  --control-bg: #ded8c9;
+  --control-fg: #53605c;
+  --control-active-bg: #203a35;
+  --control-active-fg: #fbfaf5;
   --shadow: 0 12px 30px rgba(28, 40, 36, 0.12);
   --font-ui: "IBM Plex Sans", "Noto Sans SC", "Noto Sans TC", "Microsoft YaHei", sans-serif;
   --font-display: "IBM Plex Serif", "Noto Serif SC", "Noto Serif TC", "Songti SC", serif;
+}
+
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --paper: #0f1613;
+  --paper-bright: #eef5f0;
+  --paper-deep: #22302a;
+  --surface: #121916;
+  --surface-raised: #18221e;
+  --surface-muted: #24322c;
+  --ink: #eef5f0;
+  --ink-soft: #a9b7b0;
+  --forest: #1f3a32;
+  --forest-deep: #13221d;
+  --signal: #f06a3b;
+  --signal-soft: #3d2921;
+  --blueprint: #79a9b8;
+  --acid: #d4df86;
+  --line: #31423c;
+  --line-strong: #4b6058;
+  --control-bg: #22302a;
+  --control-fg: #dce7e1;
+  --control-active-bg: #49675c;
+  --control-active-fg: #eef5f0;
+  --shadow: 0 16px 32px rgba(0, 0, 0, 0.34);
+}
+
+:root[data-theme="dark"] body {
+  background:
+    radial-gradient(circle at 12% 18%, rgba(240, 106, 59, 0.16), transparent 23rem),
+    radial-gradient(circle at 88% 88%, rgba(121, 169, 184, 0.14), transparent 30rem),
+    repeating-linear-gradient(
+      90deg,
+      transparent 0,
+      transparent 79px,
+      rgba(238, 245, 240, 0.04) 80px
+    ),
+    var(--paper);
 }
 
 * {
@@ -82,7 +126,7 @@ input:focus-visible {
   gap: 24px;
   min-width: 0;
   padding: 10px 18px 10px 22px;
-  background: rgba(251, 250, 245, 0.92);
+  background: color-mix(in srgb, var(--surface) 92%, transparent);
   border-bottom: 1px solid var(--line-strong);
   box-shadow: 0 3px 18px rgba(23, 36, 33, 0.08);
   backdrop-filter: blur(16px);
@@ -143,7 +187,7 @@ input:focus-visible {
   height: 10px;
   background: var(--signal);
   border-radius: 50%;
-  box-shadow: 0 0 0 4px var(--paper-bright);
+  box-shadow: 0 0 0 4px var(--surface);
 }
 
 .orbit-mark i {
@@ -202,6 +246,7 @@ input:focus-visible {
   gap: 9px;
   padding: 5px 11px;
   border-left: 1px solid var(--line);
+  background: color-mix(in srgb, var(--surface-muted) 55%, transparent);
 }
 
 .runtime-chip b,
@@ -261,14 +306,22 @@ input:focus-visible {
   display: grid;
   grid-template-columns: repeat(3, 34px);
   padding: 3px;
-  background: var(--paper-deep);
+  background: var(--control-bg);
+  border: 1px solid var(--line);
+}
+
+.theme-switch {
+  display: grid;
+  grid-template-columns: repeat(2, 52px);
+  padding: 3px;
+  background: var(--control-bg);
   border: 1px solid var(--line);
 }
 
 .locale-switch button {
   height: 29px;
   padding: 0;
-  color: var(--ink-soft);
+  color: var(--control-fg);
   font-size: 11px;
   font-weight: 800;
   background: transparent;
@@ -277,8 +330,25 @@ input:focus-visible {
 }
 
 .locale-switch button.is-active {
-  color: var(--paper-bright);
-  background: var(--forest);
+  color: var(--control-active-fg);
+  background: var(--control-active-bg);
+  box-shadow: 2px 2px 0 var(--signal);
+}
+
+.theme-switch button {
+  height: 29px;
+  padding: 0;
+  color: var(--control-fg);
+  font-size: 11px;
+  font-weight: 800;
+  background: transparent;
+  border: 0;
+  cursor: pointer;
+}
+
+.theme-switch button.is-active {
+  color: var(--control-active-fg);
+  background: var(--control-active-bg);
   box-shadow: 2px 2px 0 var(--signal);
 }
 
@@ -295,7 +365,7 @@ input:focus-visible {
 .tree-panel {
   min-width: 0;
   min-height: 0;
-  background: rgba(251, 250, 245, 0.94);
+  background: color-mix(in srgb, var(--surface) 96%, transparent);
   border: 1px solid var(--line-strong);
   box-shadow: var(--shadow);
 }
@@ -312,9 +382,9 @@ input:focus-visible {
   min-width: 0;
   padding: 10px 12px;
   background:
-    linear-gradient(90deg, rgba(32, 58, 53, 0.04) 1px, transparent 1px),
-    linear-gradient(rgba(32, 58, 53, 0.04) 1px, transparent 1px),
-    #ebe6da;
+    linear-gradient(90deg, color-mix(in srgb, var(--forest) 5%, transparent) 1px, transparent 1px),
+    linear-gradient(color-mix(in srgb, var(--forest) 5%, transparent) 1px, transparent 1px),
+    var(--surface-raised);
   background-size: 18px 18px;
   border-bottom: 1px solid var(--line-strong);
 }
@@ -385,7 +455,7 @@ input:focus-visible {
   gap: 8px;
   padding: 9px;
   text-align: left;
-  background: rgba(251, 250, 245, 0.78);
+  background: color-mix(in srgb, var(--surface) 84%, transparent);
   border: 1px solid var(--line);
   cursor: pointer;
   transition: border-color 120ms ease, background 120ms ease, transform 120ms ease;
@@ -397,8 +467,8 @@ input:focus-visible {
 }
 
 .cascade__lane button.is-active {
-  color: var(--paper-bright);
-  background: var(--forest);
+  color: var(--control-active-fg);
+  background: var(--control-active-bg);
   border-color: var(--forest);
   box-shadow: inset 4px 0 0 var(--signal);
 }
@@ -505,7 +575,7 @@ input:focus-visible {
   align-items: center;
   gap: 6px;
   padding: 0 9px;
-  background: var(--paper);
+  background: var(--surface-muted);
   border: 1px solid var(--line);
 }
 
@@ -561,9 +631,9 @@ input:focus-visible {
 }
 
 .access-badge.is-editable {
-  color: #315b38;
-  background: #e6edd0;
-  border-color: #a8b96d;
+  color: var(--forest);
+  background: color-mix(in srgb, var(--acid) 38%, var(--surface) 62%);
+  border-color: color-mix(in srgb, var(--acid) 55%, var(--line) 45%);
 }
 
 .grid-frame {
@@ -597,7 +667,7 @@ input:focus-visible {
   color: var(--signal);
   font-family: var(--font-display);
   font-weight: 800;
-  background: #e9e4d7;
+  background: var(--surface-raised);
 }
 
 .grid-frame .grid-cell--multiline {
@@ -609,7 +679,7 @@ input:focus-visible {
 .grid-frame .grid-cell--alert {
   color: #a43f2c;
   font-weight: 800;
-  background: #f5d9cf;
+  background: color-mix(in srgb, var(--signal-soft) 72%, var(--surface) 28%);
 }
 
 .grid-empty {
@@ -623,8 +693,8 @@ input:focus-visible {
   overflow: hidden;
   color: var(--paper-bright);
   background:
-    linear-gradient(rgba(255, 255, 255, 0.025) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(255, 255, 255, 0.025) 1px, transparent 1px),
+    linear-gradient(color-mix(in srgb, var(--paper-bright) 3%, transparent) 1px, transparent 1px),
+    linear-gradient(90deg, color-mix(in srgb, var(--paper-bright) 3%, transparent) 1px, transparent 1px),
     var(--forest-deep);
   background-size: 24px 24px;
   border-color: var(--forest-deep);
@@ -636,7 +706,7 @@ input:focus-visible {
   justify-content: space-between;
   gap: 16px;
   padding: 12px 15px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.14);
+  border-bottom: 1px solid color-mix(in srgb, var(--paper-bright) 14%, transparent);
 }
 
 .eyebrow {
@@ -659,7 +729,7 @@ input:focus-visible {
   color: var(--acid);
   font-family: var(--font-display);
   font-size: 16px;
-  border: 1px solid rgba(212, 223, 134, 0.6);
+  border: 1px solid color-mix(in srgb, var(--acid) 60%, transparent);
   border-radius: 50%;
   place-items: center;
 }
@@ -668,7 +738,7 @@ input:focus-visible {
   margin: 12px 13px 4px;
   padding: 11px 12px;
   color: var(--ink);
-  background: var(--acid);
+  background: color-mix(in srgb, var(--acid) 88%, var(--surface) 12%);
   border-left: 4px solid var(--signal);
   box-shadow: 4px 4px 0 rgba(0, 0, 0, 0.22);
 }
@@ -752,7 +822,7 @@ input:focus-visible {
   left: 19px;
   width: 1px;
   content: "";
-  background: rgba(255, 255, 255, 0.18);
+  background: color-mix(in srgb, var(--paper-bright) 18%, transparent);
 }
 
 .workflow-node:first-child .workflow-node__rail::before {
@@ -770,11 +840,11 @@ input:focus-visible {
   width: 27px;
   height: 27px;
   margin-top: 7px;
-  color: rgba(255, 255, 255, 0.56);
+  color: color-mix(in srgb, var(--paper-bright) 56%, transparent);
   font-family: var(--font-display);
   font-size: 9px;
   background: var(--forest-deep);
-  border: 1px solid rgba(255, 255, 255, 0.26);
+  border: 1px solid color-mix(in srgb, var(--paper-bright) 26%, transparent);
   border-radius: 50%;
   place-items: center;
 }
@@ -782,8 +852,8 @@ input:focus-visible {
 .workflow-node__body {
   margin: 0 0 8px;
   padding: 8px 10px;
-  background: rgba(255, 255, 255, 0.045);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: color-mix(in srgb, var(--paper-bright) 4.5%, transparent);
+  border: 1px solid color-mix(in srgb, var(--paper-bright) 10%, transparent);
   transition: transform 140ms ease, border-color 140ms ease;
 }
 
@@ -814,14 +884,14 @@ input:focus-visible {
 
 .workflow-node__body span {
   margin-top: 5px;
-  color: rgba(255, 255, 255, 0.52);
+  color: color-mix(in srgb, var(--paper-bright) 52%, transparent);
   font-size: 8px;
 }
 
 .workflow-node--complete .workflow-node__rail > span {
   color: var(--forest-deep);
-  background: #789169;
-  border-color: #789169;
+  background: color-mix(in srgb, var(--acid) 54%, #789169 46%);
+  border-color: color-mix(in srgb, var(--acid) 54%, #789169 46%);
 }
 
 .workflow-node--complete .workflow-node__body {
@@ -837,7 +907,7 @@ input:focus-visible {
 
 .workflow-node--current .workflow-node__body {
   color: var(--ink);
-  background: var(--paper-bright);
+  background: var(--surface-raised);
   border-color: var(--signal);
   box-shadow: 4px 4px 0 var(--signal);
 }
@@ -861,9 +931,9 @@ input:focus-visible {
   margin-left: 42px;
   background: linear-gradient(
     90deg,
-    rgba(255, 255, 255, 0.04),
-    rgba(255, 255, 255, 0.12),
-    rgba(255, 255, 255, 0.04)
+    color-mix(in srgb, var(--paper-bright) 4%, transparent),
+    color-mix(in srgb, var(--paper-bright) 12%, transparent),
+    color-mix(in srgb, var(--paper-bright) 4%, transparent)
   );
   background-size: 200% 100%;
   animation: shimmer 1.1s linear infinite;

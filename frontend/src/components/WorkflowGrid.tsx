@@ -10,13 +10,13 @@ import { AgGridReact } from "ag-grid-react";
 import type {
   ColumnDefinition,
   Locale,
+  ThemeMode,
   WorkflowDetail,
   WorkflowRecord,
 } from "../types";
 import { translate } from "../i18n/translations";
 
-
-const orbitGridTheme = themeQuartz.withParams({
+const orbitGridLightTheme = themeQuartz.withParams({
   accentColor: "#e4572e",
   backgroundColor: "#fbfaf5",
   foregroundColor: "#172421",
@@ -33,8 +33,26 @@ const orbitGridTheme = themeQuartz.withParams({
   wrapperBorderRadius: 0,
 });
 
+const orbitGridDarkTheme = themeQuartz.withParams({
+  accentColor: "#f06a3b",
+  backgroundColor: "#101814",
+  foregroundColor: "#ecf4ef",
+  borderColor: "#31423c",
+  headerBackgroundColor: "#182420",
+  headerTextColor: "#f8fbf7",
+  oddRowBackgroundColor: "#13211c",
+  rowHoverColor: "#21332c",
+  selectedRowBackgroundColor: "#244137",
+  fontFamily: "IBM Plex Sans, Noto Sans SC, Noto Sans TC, sans-serif",
+  fontSize: 13,
+  spacing: 6,
+  borderRadius: 0,
+  wrapperBorderRadius: 0,
+});
+
 interface WorkflowGridProps {
   locale: Locale;
+  theme: ThemeMode;
   workflow: WorkflowDetail | undefined;
   records: WorkflowRecord[];
   loading: boolean;
@@ -74,6 +92,7 @@ function displayValue(value: unknown, locale: Locale): string {
 
 export function WorkflowGrid({
   locale,
+  theme,
   workflow,
   records,
   loading,
@@ -81,6 +100,7 @@ export function WorkflowGrid({
   onRecordUpdate,
   onSortChange,
 }: WorkflowGridProps) {
+  const orbitGridTheme = theme === "dark" ? orbitGridDarkTheme : orbitGridLightTheme;
   const collator = new Intl.Collator(locale, {
     numeric: true,
     sensitivity: "base",

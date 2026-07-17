@@ -5,13 +5,14 @@ from __future__ import annotations
 
 import argparse
 import json
+import sys
 from pathlib import Path
 
 import psycopg
-from app.config import get_settings
-from app.services.catalog_importer import import_catalog
 from psycopg.rows import dict_row
 
+PROJECT_ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(PROJECT_ROOT / "backend"))
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
@@ -20,6 +21,9 @@ def parse_args() -> argparse.Namespace:
 
 
 def main() -> int:
+    from app.config import get_settings
+    from app.services.catalog_importer import import_catalog
+
     args = parse_args()
     settings = get_settings()
     catalog_path = (args.catalog or settings.workflow_catalog).resolve()

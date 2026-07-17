@@ -6,15 +6,15 @@ from __future__ import annotations
 import argparse
 import json
 import os
+import sys
 from pathlib import Path
 
 import psycopg
-from app.config import get_settings
-from app.services.catalog_importer import import_catalog
 from psycopg import sql
 from psycopg.rows import dict_row
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(PROJECT_ROOT / "backend"))
 
 
 def parse_args() -> argparse.Namespace:
@@ -33,6 +33,8 @@ def parse_args() -> argparse.Namespace:
 
 
 def _admin_connection(args: argparse.Namespace) -> psycopg.Connection:
+    from app.config import get_settings
+
     database = get_settings().database
     host = args.admin_host
     if host is None:
@@ -54,6 +56,8 @@ def _admin_connection(args: argparse.Namespace) -> psycopg.Connection:
 
 
 def _ensure_role_and_database(args: argparse.Namespace) -> None:
+    from app.config import get_settings
+
     database = get_settings().database
     with _admin_connection(args) as connection:
         role_exists = connection.execute(
@@ -105,6 +109,9 @@ def _ensure_role_and_database(args: argparse.Namespace) -> None:
 
 
 def _apply_schema_and_seed(skip_catalog: bool) -> dict[str, int] | None:
+    from app.config import get_settings
+    from app.services.catalog_importer import import_catalog
+
     settings = get_settings()
     database = settings.database
     with psycopg.connect(

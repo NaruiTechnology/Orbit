@@ -19,7 +19,7 @@ const translations = {
     retry: "Retry",
     editable: "Editable",
     readOnly: "Read only",
-    encoding: "UTF-8 synchronized",
+    encoding: "Synchronized",
     cell: "Cell",
     currentStep: "Current",
     completedStep: "Previous",
@@ -44,7 +44,7 @@ const translations = {
     retry: "重试",
     editable: "可编辑",
     readOnly: "只读",
-    encoding: "UTF-8 已同步",
+    encoding: "已同步",
     cell: "单元格",
     currentStep: "当前",
     completedStep: "已经过",
@@ -69,7 +69,7 @@ const translations = {
     retry: "重試",
     editable: "可編輯",
     readOnly: "唯讀",
-    encoding: "UTF-8 已同步",
+    encoding: "已同步",
     cell: "儲存格",
     currentStep: "目前",
     completedStep: "已經過",
@@ -83,4 +83,3 @@ export type TranslationKey = keyof (typeof translations)["en"];
 export function translate(locale: Locale, key: TranslationKey): string {
   return translations[locale][key];
 }
-

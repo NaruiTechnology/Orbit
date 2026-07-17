@@ -22,6 +22,7 @@ import {
   setLocale,
   setSearch,
   setSort,
+  setTheme,
 } from "./features/workflows/workspaceSlice";
 import { translate } from "./i18n/translations";
 import type { WorkflowRecord } from "./types";
@@ -58,6 +59,10 @@ export function App() {
   useEffect(() => {
     document.documentElement.lang = workspace.locale;
   }, [workspace.locale]);
+
+  useEffect(() => {
+    document.documentElement.dataset.theme = workspace.theme;
+  }, [workspace.theme]);
 
   useEffect(() => {
     const workflows = workflowsQuery.data;
@@ -119,6 +124,8 @@ export function App() {
         session={sessionQuery.data}
         health={healthQuery.data}
         onLocaleChange={(locale) => dispatch(setLocale(locale))}
+        theme={workspace.theme}
+        onThemeChange={(theme) => dispatch(setTheme(theme))}
       />
 
       <main className="orbit-workspace">
@@ -175,6 +182,7 @@ export function App() {
           ) : (
             <WorkflowGrid
               locale={workspace.locale}
+              theme={workspace.theme}
               workflow={workflow}
               records={records}
               loading={recordsQuery.isLoading || workflowQuery.isLoading}

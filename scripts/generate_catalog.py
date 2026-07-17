@@ -4,11 +4,11 @@
 from __future__ import annotations
 
 import argparse
+import sys
 from pathlib import Path
 
-from app.services.workbook import build_catalog, workflow_counts, write_catalog
-
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(PROJECT_ROOT / "backend"))
 
 
 def parse_args() -> argparse.Namespace:
@@ -29,6 +29,8 @@ def parse_args() -> argparse.Namespace:
 
 
 def main() -> int:
+    from app.services.workbook import build_catalog, workflow_counts, write_catalog
+
     args = parse_args()
     catalog = build_catalog(args.source.resolve())
     write_catalog(catalog, args.output.resolve())

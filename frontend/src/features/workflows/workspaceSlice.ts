@@ -1,6 +1,6 @@
 import { createSlice, type PayloadAction } from "@reduxjs/toolkit";
 
-import type { Locale } from "../../types";
+import type { Locale, ThemeMode } from "../../types";
 
 interface SelectionState {
   recordId: string | null;
@@ -9,6 +9,7 @@ interface SelectionState {
 
 interface WorkspaceState {
   locale: Locale;
+  theme: ThemeMode;
   selectedGroup: string;
   selectedWorkflow: string;
   selection: SelectionState;
@@ -18,11 +19,13 @@ interface WorkspaceState {
 }
 
 const savedLocale = window.localStorage.getItem("orbit:locale") as Locale | null;
+const savedTheme = window.localStorage.getItem("orbit:theme") as ThemeMode | null;
 
 const initialState: WorkspaceState = {
   locale: savedLocale && ["en", "zh-CN", "zh-HK"].includes(savedLocale)
     ? savedLocale
     : "zh-CN",
+  theme: savedTheme === "dark" ? "dark" : "light",
   selectedGroup: "sales",
   selectedWorkflow: "master-workflow",
   selection: { recordId: null, cellKey: null },
@@ -38,6 +41,10 @@ const workspaceSlice = createSlice({
     setLocale(state, action: PayloadAction<Locale>) {
       state.locale = action.payload;
       window.localStorage.setItem("orbit:locale", action.payload);
+    },
+    setTheme(state, action: PayloadAction<ThemeMode>) {
+      state.theme = action.payload;
+      window.localStorage.setItem("orbit:theme", action.payload);
     },
     selectGroup(state, action: PayloadAction<string>) {
       state.selectedGroup = action.payload;
@@ -70,9 +77,9 @@ export const {
   selectGroup,
   selectWorkflow,
   setLocale,
+  setTheme,
   setSearch,
   setSort,
 } = workspaceSlice.actions;
 
 export default workspaceSlice.reducer;
-

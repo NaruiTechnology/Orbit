@@ -1,4 +1,5 @@
 export type Locale = "en" | "zh-CN" | "zh-HK";
+export type ThemeMode = "light" | "dark";
 
 export interface ScopeInfo {
   organization_id: string;
@@ -119,4 +120,3 @@ export interface HealthResponse {
   workflow_count: number;
   record_count: number;
 }
-

@@ -43,7 +43,6 @@ cd /home/vboxuser/Project/OrbitAutomation/Orbit
 .venv/bin/python scripts/run_api.py --reload
 
 # 4. In another terminal, start React (127.0.0.1:5274).
-cd frontend
 npm run dev
 ```
 
