@@ -7,6 +7,7 @@ interface WorkflowTreePanelProps {
   locale: Locale;
   tree: WorkflowTree | undefined;
   columns: ColumnDefinition[];
+  isWorkflow: boolean;
   loading: boolean;
 }
 
@@ -20,6 +21,7 @@ export function WorkflowTreePanel({
   locale,
   tree,
   columns,
+  isWorkflow,
   loading,
 }: WorkflowTreePanelProps) {
   const selectedRef = useRef<HTMLLIElement | null>(null);
@@ -34,7 +36,7 @@ export function WorkflowTreePanel({
       <div className="tree-panel__header">
         <div>
           <span className="eyebrow">LIVE CONTEXT</span>
-          <h2>{translate(locale, "workflowTree")}</h2>
+          <h2>{translate(locale, isWorkflow ? "workflowTree" : "backgroundLogic")}</h2>
         </div>
         <span className="tree-panel__count">{tree?.nodes.length || 0}</span>
       </div>

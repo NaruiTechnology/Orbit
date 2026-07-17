@@ -42,20 +42,20 @@ export function App() {
   const workflowQuery = useGetWorkflowQuery({
     workflowKey: workspace.selectedWorkflow,
     locale: workspace.locale,
-  });
+  }, { refetchOnMountOrArgChange: true });
   const recordsQuery = useGetRecordsQuery({
     workflowKey: workspace.selectedWorkflow,
     locale: workspace.locale,
     search: deferredSearch,
     sortBy: workspace.sortBy,
     sortDirection: workspace.sortDirection,
-  });
+  }, { refetchOnMountOrArgChange: true });
   const treeQuery = useGetWorkflowTreeQuery({
     workflowKey: workspace.selectedWorkflow,
     locale: workspace.locale,
     recordId: deferredSelection.recordId,
     cellKey: deferredSelection.cellKey,
-  });
+  }, { refetchOnMountOrArgChange: true });
   const [updateRecord] = useUpdateRecordMutation();
   const [createRecord] = useCreateRecordMutation();
   const [deleteRecord] = useDeleteRecordMutation();
@@ -71,8 +71,15 @@ export function App() {
   useEffect(() => {
     const workflows = workflowsQuery.data;
     if (!workflows?.length) return;
-    if (!workflows.some((workflow) => workflow.key === workspace.selectedWorkflow)) {
-      const first = workflows[0];
+    if (!workflows.some(
+      (workflow) =>
+        workflow.key === workspace.selectedWorkflow &&
+        !workflow.is_master &&
+        workflow.definition_type === "workflow",
+    )) {
+      const first = workflows.find(
+        (workflow) => !workflow.is_master && workflow.definition_type === "workflow",
+      );
       if (first) {
         dispatch(selectGroup(first.group_key));
         dispatch(selectWorkflow(first.key));
@@ -87,6 +94,7 @@ export function App() {
     const first = workflowsQuery.data?.find(
       (workflow) =>
         !workflow.is_master &&
+        workflow.definition_type === "workflow" &&
         (isPeopleOperations
           ? workflow.group_key === "hr"
           : workflow.group_key !== "hr"),
@@ -205,6 +213,7 @@ export function App() {
             <ApiError locale={workspace.locale} onRetry={retryAll} />
           ) : (
             <WorkflowGrid
+              key={`${workspace.selectedWorkflow}:${workspace.locale}:${workspace.theme}`}
               locale={workspace.locale}
               theme={workspace.theme}
               workflow={workflow}
@@ -224,9 +233,11 @@ export function App() {
         </section>
 
         <WorkflowTreePanel
+          key={`${workspace.selectedWorkflow}:${workspace.locale}`}
           locale={workspace.locale}
           tree={treeQuery.data}
           columns={workflow?.columns || []}
+          isWorkflow={workflow?.definition_type === "workflow"}
           loading={treeQuery.isLoading || treeQuery.isFetching}
         />
       </main>

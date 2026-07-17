@@ -2,7 +2,7 @@
 
 Orbit Automation is a full-stack workflow automation and management platform built with PostgreSQL, FastAPI, React, Redux Toolkit, TypeScript, and AG Grid. Its initial workflow catalog is generated from `~/Downloads/单束系统 初版.xlsx`.
 
-The workbook's `全流程图` sheet is the 17-stage master workflow. The other 23 sheets are imported as linked subworkflows, rule catalogs, notification templates, field dictionaries, metrics, and operational ledgers. The generated catalog currently contains 24 definitions and 481 source-traced records.
+The workbook's `全流程图` sheet is the 17-stage master workflow. The other sheets are imported as linked subworkflows, rule catalogs, lookup tables, field dictionaries, metrics, and operational ledgers. Notification templates are stored in `orbit_workflow.notification_template` for component lookup rather than shown as subworkflows.
 
 ## Runtime Layout
 
@@ -59,7 +59,7 @@ Stop the dedicated database with:
 PostgreSQL is separated into four schemas:
 
 - `orbit_identity`: organizations, departments, laboratories, users, roles, permissions, memberships, and workflow access grants.
-- `orbit_workflow`: localized definitions, dynamic column schemas, graph edges, and JSONB grid records.
+- `orbit_workflow`: localized definitions, dynamic column schemas, graph edges, JSONB grid records, and reusable notification-template lookup rows.
 - `orbit_runtime`: workflow instances, tasks, and transition history.
 - `orbit_audit`: immutable record and catalog change events.
 

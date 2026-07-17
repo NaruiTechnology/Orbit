@@ -101,6 +101,146 @@ def import_catalog(
         definition_id = str(row["id"])
         definition_ids[workflow["key"]] = definition_id
 
+        if workflow["key"] == "customer-pool-rules":
+            connection.execute(
+                "DELETE FROM orbit_workflow.customer_pool_rule WHERE definition_id = %s",
+                (definition_id,),
+            )
+            connection.execute(
+                "DELETE FROM orbit_workflow.workflow_record WHERE workflow_id = %s",
+                (definition_id,),
+            )
+            connection.execute(
+                "DELETE FROM orbit_workflow.workflow_business_record WHERE workflow_id = %s",
+                (definition_id,),
+            )
+            for record in workflow["records"]:
+                values = record["values"]
+                connection.execute(
+                    """
+                    INSERT INTO orbit_workflow.customer_pool_rule (
+                        definition_id, rule_key, record_order, reclaim_trigger,
+                        decision_criteria, reclaim_period_options, alert_milestones,
+                        post_reclaim_action, reclaim_exceptions, implementation_method,
+                        values_json, source_row, source_cells
+                    )
+                    VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                    """,
+                    (
+                        definition_id,
+                        record["record_key"],
+                        record["record_order"],
+                        values.get("reclaim_trigger"),
+                        values.get("decision_criteria"),
+                        values.get("reclaim_period_options"),
+                        values.get("alert_milestones"),
+                        values.get("post_reclaim_action"),
+                        values.get("reclaim_exceptions"),
+                        values.get("implementation_method"),
+                        Jsonb(values),
+                        record["source_row"],
+                        Jsonb(record["source_cells"]),
+                    ),
+                )
+                imported_records += 1
+            continue
+
+        if workflow["key"] == "business-alert-rules":
+            connection.execute(
+                "DELETE FROM orbit_workflow.business_alert_rule WHERE definition_id = %s",
+                (definition_id,),
+            )
+            connection.execute(
+                "DELETE FROM orbit_workflow.workflow_record WHERE workflow_id = %s",
+                (definition_id,),
+            )
+            connection.execute(
+                "DELETE FROM orbit_workflow.workflow_business_record WHERE workflow_id = %s",
+                (definition_id,),
+            )
+            for record in workflow["records"]:
+                values = record["values"]
+                connection.execute(
+                    """
+                    INSERT INTO orbit_workflow.business_alert_rule (
+                        definition_id, rule_key, record_order, sequence_number,
+                        alert_name, module_name, trigger_condition, alert_level,
+                        notification_audience, notification_channel,
+                        notification_summary, resolution_action, performance_link,
+                        is_enabled, values_json, source_row, source_cells
+                    )
+                    VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s,
+                            %s, %s, %s, %s, %s)
+                    """,
+                    (
+                        definition_id,
+                        record["record_key"],
+                        record["record_order"],
+                        values.get("sequence_number"),
+                        values.get("alert_name"),
+                        values.get("module_name"),
+                        values.get("trigger_condition"),
+                        values.get("alert_level"),
+                        values.get("notification_audience"),
+                        values.get("notification_channel"),
+                        values.get("notification_summary"),
+                        values.get("resolution_action"),
+                        values.get("performance_link"),
+                        values.get("is_enabled"),
+                        Jsonb(values),
+                        record["source_row"],
+                        Jsonb(record["source_cells"]),
+                    ),
+                )
+                imported_records += 1
+            continue
+
+        if workflow["definition_type"] == "lookup_table":
+            # Lookup rows have their own stable table. Remove any legacy rows
+            # imported into the generic workflow tables, then replace the
+            # source-derived lookup rows atomically.
+            connection.execute(
+                "DELETE FROM orbit_workflow.notification_template WHERE definition_id = %s",
+                (definition_id,),
+            )
+            connection.execute(
+                "DELETE FROM orbit_workflow.workflow_record WHERE workflow_id = %s",
+                (definition_id,),
+            )
+            connection.execute(
+                "DELETE FROM orbit_workflow.workflow_business_record WHERE workflow_id = %s",
+                (definition_id,),
+            )
+            for record in workflow["records"]:
+                values = record["values"]
+                connection.execute(
+                    """
+                    INSERT INTO orbit_workflow.notification_template (
+                        definition_id, template_key, record_order,
+                        notification_scenario, notification_channel, recipient,
+                        template_title, template_body, is_customizable,
+                        values_json, source_row, source_cells
+                    )
+                    VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                    """,
+                    (
+                        definition_id,
+                        record["record_key"],
+                        record["record_order"],
+                        values.get("notification_scenario"),
+                        values.get("notification_channel"),
+                        values.get("recipient"),
+                        values.get("template_title"),
+                        values.get("template_body"),
+                        values.get("is_customizable"),
+                        Jsonb(values),
+                        record["source_row"],
+                        Jsonb(record["source_cells"]),
+                    ),
+                )
+                imported_records += 1
+            continue
+
         # Move existing positions out of the positive range before an upsert so
         # reordered source rows cannot collide with the unique order key.
         connection.execute(

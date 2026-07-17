@@ -94,6 +94,35 @@ function displayValue(value: unknown, locale: Locale): string {
   return String(value);
 }
 
+interface DeleteCellRendererProps {
+  data: WorkflowRecord | undefined;
+  canEdit: boolean;
+  locale: Locale;
+  onDelete: (record: WorkflowRecord) => Promise<void>;
+}
+
+function DeleteCellRenderer({
+  data,
+  canEdit,
+  locale,
+  onDelete,
+}: DeleteCellRendererProps) {
+  return (
+    <div className="grid-row-actions">
+      <button
+        type="button"
+        className="grid-row-action grid-row-action--delete"
+        disabled={!canEdit}
+        onClick={() => {
+          if (data) void onDelete(data);
+        }}
+      >
+        {locale === "en" ? "Delete" : "删除"}
+      </button>
+    </div>
+  );
+}
+
 export function WorkflowGrid({
   locale,
   theme,
@@ -158,20 +187,14 @@ export function WorkflowGrid({
       sortable: false,
       filter: false,
       editable: false,
-      cellRenderer: (parameters: ICellRendererParams<WorkflowRecord>) => {
-        const wrapper = document.createElement("div");
-        wrapper.className = "grid-row-actions";
-        const button = document.createElement("button");
-        button.type = "button";
-        button.className = "grid-row-action grid-row-action--delete";
-        button.textContent = locale === "en" ? "Delete" : "删除";
-        button.disabled = !workflow?.access.can_edit;
-        button.addEventListener("click", () => {
-          if (parameters.data) void onRecordDelete(parameters.data);
-        });
-        wrapper.appendChild(button);
-        return wrapper;
-      },
+      cellRenderer: (parameters: ICellRendererParams<WorkflowRecord>) => (
+        <DeleteCellRenderer
+          data={parameters.data}
+          canEdit={Boolean(workflow?.access.can_edit)}
+          locale={locale}
+          onDelete={onRecordDelete}
+        />
+      ),
     },
   ];
   const rowData = records.map((record) => ({

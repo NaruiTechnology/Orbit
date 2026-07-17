@@ -236,6 +236,90 @@ CREATE INDEX IF NOT EXISTS ix_workflow_business_record_values_gin
 CREATE INDEX IF NOT EXISTS ix_workflow_business_record_scope
     ON orbit_workflow.workflow_business_record (organization_id, department_id, laboratory_id);
 
+-- Reusable notification configuration is lookup data, not a workflow step.
+-- It is kept separate so future components can resolve templates directly
+-- without exposing this catalog as a subworkflow.
+CREATE TABLE IF NOT EXISTS orbit_workflow.notification_template (
+    id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+    definition_id uuid NOT NULL REFERENCES orbit_workflow.workflow_definition(id) ON DELETE CASCADE,
+    template_key varchar(140) NOT NULL,
+    record_order integer NOT NULL,
+    notification_scenario text,
+    notification_channel text,
+    recipient text,
+    template_title text,
+    template_body text,
+    is_customizable boolean,
+    values_json jsonb NOT NULL DEFAULT '{}'::jsonb CHECK (jsonb_typeof(values_json) = 'object'),
+    source_row integer,
+    source_cells jsonb NOT NULL DEFAULT '{}'::jsonb CHECK (jsonb_typeof(source_cells) = 'object'),
+    version integer NOT NULL DEFAULT 1,
+    is_active boolean NOT NULL DEFAULT true,
+    created_at timestamptz NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at timestamptz NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE (definition_id, template_key),
+    UNIQUE (definition_id, record_order)
+);
+
+CREATE INDEX IF NOT EXISTS ix_notification_template_lookup
+    ON orbit_workflow.notification_template (definition_id, notification_scenario, is_active);
+
+CREATE TABLE IF NOT EXISTS orbit_workflow.business_alert_rule (
+    id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+    definition_id uuid NOT NULL REFERENCES orbit_workflow.workflow_definition(id) ON DELETE CASCADE,
+    rule_key varchar(140) NOT NULL,
+    record_order integer NOT NULL,
+    sequence_number text,
+    alert_name text,
+    module_name text,
+    trigger_condition text,
+    alert_level text,
+    notification_audience text,
+    notification_channel text,
+    notification_summary text,
+    resolution_action text,
+    performance_link text,
+    is_enabled boolean,
+    values_json jsonb NOT NULL DEFAULT '{}'::jsonb CHECK (jsonb_typeof(values_json) = 'object'),
+    source_row integer,
+    source_cells jsonb NOT NULL DEFAULT '{}'::jsonb CHECK (jsonb_typeof(source_cells) = 'object'),
+    version integer NOT NULL DEFAULT 1,
+    is_active boolean NOT NULL DEFAULT true,
+    created_at timestamptz NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at timestamptz NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE (definition_id, rule_key),
+    UNIQUE (definition_id, record_order)
+);
+
+CREATE INDEX IF NOT EXISTS ix_business_alert_rule_lookup
+    ON orbit_workflow.business_alert_rule (definition_id, module_name, is_enabled);
+
+CREATE TABLE IF NOT EXISTS orbit_workflow.customer_pool_rule (
+    id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+    definition_id uuid NOT NULL REFERENCES orbit_workflow.workflow_definition(id) ON DELETE CASCADE,
+    rule_key varchar(140) NOT NULL,
+    record_order integer NOT NULL,
+    reclaim_trigger text,
+    decision_criteria text,
+    reclaim_period_options text,
+    alert_milestones text,
+    post_reclaim_action text,
+    reclaim_exceptions text,
+    implementation_method text,
+    values_json jsonb NOT NULL DEFAULT '{}'::jsonb CHECK (jsonb_typeof(values_json) = 'object'),
+    source_row integer,
+    source_cells jsonb NOT NULL DEFAULT '{}'::jsonb CHECK (jsonb_typeof(source_cells) = 'object'),
+    version integer NOT NULL DEFAULT 1,
+    is_active boolean NOT NULL DEFAULT true,
+    created_at timestamptz NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at timestamptz NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE (definition_id, rule_key),
+    UNIQUE (definition_id, record_order)
+);
+
+CREATE INDEX IF NOT EXISTS ix_customer_pool_rule_lookup
+    ON orbit_workflow.customer_pool_rule (definition_id, is_active);
+
 -- Customer orders are business entities, not workflow steps.  The Order
 -- Evaluation grid is backed by this table; the workflow_record table remains
 -- the process-definition source for the right-hand workflow tree.

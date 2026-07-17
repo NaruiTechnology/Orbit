@@ -191,14 +191,14 @@ SHEET_METADATA = {
         "Business Alert Rules",
         "預警規則總覽",
         "sales",
-        "rule_catalog",
+        "lookup_table",
     ),
     "通知模板配置": (
         "business-notification-templates",
         "Business Notification Templates",
         "通知範本設定",
         "sales",
-        "template_catalog",
+        "lookup_table",
     ),
     "异地实验室下单流程": (
         "cross-laboratory-orders",
@@ -228,7 +228,7 @@ SHEET_METADATA = {
         "sales",
         "data_dictionary",
     ),
-    "客户公海": ("customer-pool-rules", "Customer Pool Rules", "客戶公海", "sales", "rule_catalog"),
+    "客户公海": ("customer-pool-rules", "Customer Pool Rules", "客戶公海", "sales", "lookup_table"),
     "HR全流程总览": ("hr-master-workflow", "HR Full Workflow", "HR全流程總覽", "hr", "workflow"),
     "招聘全流程": ("recruitment", "Recruitment", "招聘全流程", "hr", "workflow"),
     "考勤与薪酬管理": (
@@ -259,7 +259,7 @@ SHEET_METADATA = {
         "HR Notification Templates",
         "HR通知範本設定",
         "hr",
-        "template_catalog",
+        "lookup_table",
     ),
     "技术接单评估流程": (
         "technical-intake",

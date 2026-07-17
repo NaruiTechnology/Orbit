@@ -32,3 +32,13 @@ def test_catalog_contains_language_keys() -> None:
     assert workflow["name_i18n"]["en"] == "Cross-Laboratory Orders"
     assert workflow["name_i18n"]["zh_CN"] == "异地实验室下单流程"
     assert workflow["name_i18n"]["zh_HK"] == "異地實驗室下單流程"
+
+
+def test_notification_templates_are_lookup_tables_not_workflows() -> None:
+    catalog = build_catalog(WORKBOOK)
+    definitions = {workflow["key"]: workflow for workflow in catalog["workflows"]}
+
+    assert definitions["business-notification-templates"]["definition_type"] == "lookup_table"
+    assert definitions["business-alert-rules"]["definition_type"] == "lookup_table"
+    assert definitions["customer-pool-rules"]["definition_type"] == "lookup_table"
+    assert definitions["hr-notification-templates"]["definition_type"] == "lookup_table"

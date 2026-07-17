@@ -5,6 +5,7 @@ import { AllCommunityModule, ModuleRegistry } from "ag-grid-community";
 
 import { App } from "./App";
 import { store } from "./app/store";
+import { AppErrorBoundary } from "./components/AppErrorBoundary";
 import "./styles/orbit.css";
 
 ModuleRegistry.registerModules([AllCommunityModule]);
@@ -17,7 +18,9 @@ if (!root) {
 createRoot(root).render(
   <StrictMode>
     <Provider store={store}>
-      <App />
+      <AppErrorBoundary>
+        <App />
+      </AppErrorBoundary>
     </Provider>
   </StrictMode>,
 );

@@ -1289,7 +1289,7 @@
         "zh_CN": "客户与营收",
         "zh_HK": "客戶與營收"
       },
-      "definition_type": "rule_catalog",
+      "definition_type": "lookup_table",
       "is_master": false,
       "parent_key": "master-workflow",
       "display_order": 3,
@@ -4257,7 +4257,7 @@
         "zh_CN": "客户与营收",
         "zh_HK": "客戶與營收"
       },
-      "definition_type": "template_catalog",
+      "definition_type": "lookup_table",
       "is_master": false,
       "parent_key": "master-workflow",
       "display_order": 4,
@@ -9305,7 +9305,7 @@
         "zh_CN": "客户与营收",
         "zh_HK": "客戶與營收"
       },
-      "definition_type": "rule_catalog",
+      "definition_type": "lookup_table",
       "is_master": false,
       "parent_key": "master-workflow",
       "display_order": 9,
@@ -16761,7 +16761,7 @@
         "zh_CN": "人力资源",
         "zh_HK": "人力資源"
       },
-      "definition_type": "template_catalog",
+      "definition_type": "lookup_table",
       "is_master": false,
       "parent_key": "master-workflow",
       "display_order": 17,
