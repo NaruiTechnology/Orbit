@@ -99,6 +99,16 @@ export const orbitApi = createApi({
         { type: "Record", id: argument.workflowKey },
       ],
     }),
+    createRecord: builder.mutation<WorkflowRecord, { workflowKey: string; values: Record<string, unknown>; locale: Locale }>({
+      query: ({ workflowKey, values, locale }) => ({
+        url: `/workflows/${workflowKey}/records`, method: "POST", body: { values, locale },
+      }),
+      invalidatesTags: (_result, _error, argument) => [{ type: "Record", id: argument.workflowKey }, "Workflow"],
+    }),
+    deleteRecord: builder.mutation<void, { workflowKey: string; recordId: string }>({
+      query: ({ workflowKey, recordId }) => ({ url: `/workflows/${workflowKey}/records/${recordId}`, method: "DELETE" }),
+      invalidatesTags: (_result, _error, argument) => [{ type: "Record", id: argument.workflowKey }, "Workflow"],
+    }),
   }),
 });
 
@@ -111,3 +121,5 @@ export const useGetWorkflowTreeQuery = orbitApi.endpoints.workflowTree.useQuery;
 export const useGetWorkflowsQuery = orbitApi.endpoints.workflows.useQuery;
 export const useGetRecordsQuery = orbitApi.endpoints.records.useQuery;
 export const useUpdateRecordMutation = orbitApi.endpoints.updateRecord.useMutation;
+export const useCreateRecordMutation = orbitApi.endpoints.createRecord.useMutation;
+export const useDeleteRecordMutation = orbitApi.endpoints.deleteRecord.useMutation;

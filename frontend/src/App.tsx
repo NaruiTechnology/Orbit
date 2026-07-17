@@ -8,6 +8,8 @@ import {
   useGetWorkflowTreeQuery,
   useGetWorkflowsQuery,
   useUpdateRecordMutation,
+  useCreateRecordMutation,
+  useDeleteRecordMutation,
 } from "./app/orbitApi";
 import { useAppDispatch, useAppSelector } from "./app/store";
 import { ApiError } from "./components/ApiError";
@@ -55,6 +57,8 @@ export function App() {
     cellKey: deferredSelection.cellKey,
   });
   const [updateRecord] = useUpdateRecordMutation();
+  const [createRecord] = useCreateRecordMutation();
+  const [deleteRecord] = useDeleteRecordMutation();
 
   useEffect(() => {
     document.documentElement.lang = workspace.locale;
@@ -67,9 +71,8 @@ export function App() {
   useEffect(() => {
     const workflows = workflowsQuery.data;
     if (!workflows?.length) return;
-    const selected = workflows.find((workflow) => workflow.key === workspace.selectedWorkflow);
-    if (!selected || selected.is_master) {
-      const first = workflows.find((workflow) => !workflow.is_master);
+    if (!workflows.some((workflow) => workflow.key === workspace.selectedWorkflow)) {
+      const first = workflows[0];
       if (first) {
         dispatch(selectGroup(first.group_key));
         dispatch(selectWorkflow(first.key));
@@ -79,6 +82,8 @@ export function App() {
 
   function handleGroupSelect(group: string) {
     const isPeopleOperations = group === "people-operations";
+    const selectedGroup = isPeopleOperations ? "hr" : "sales";
+    dispatch(selectGroup(selectedGroup));
     const first = workflowsQuery.data?.find(
       (workflow) =>
         !workflow.is_master &&
@@ -86,10 +91,7 @@ export function App() {
           ? workflow.group_key === "hr"
           : workflow.group_key !== "hr"),
     );
-    if (first) {
-      dispatch(selectGroup(first.group_key));
-      dispatch(selectWorkflow(first.key));
-    }
+    if (first) dispatch(selectWorkflow(first.key));
   }
 
   function handleWorkflowSelect(workflowKey: string) {
@@ -111,6 +113,21 @@ export function App() {
       locale: workspace.locale,
     }).unwrap();
   }
+
+  async function handleRecordAdd(): Promise<WorkflowRecord> {
+    const values = Object.fromEntries(
+      (workflow?.columns || [])
+        .filter((column) => column.editable)
+        .map((column) => [column.key, column.data_type === "boolean" ? false : ""]),
+    );
+    return createRecord({ workflowKey: workspace.selectedWorkflow, values, locale: workspace.locale }).unwrap();
+  }
+
+  async function handleRecordDelete(record: WorkflowRecord): Promise<void> {
+    if (!window.confirm(workspace.locale === "en" ? "Delete this row?" : "确定删除此行吗？")) return;
+    await deleteRecord({ workflowKey: workspace.selectedWorkflow, recordId: record.id }).unwrap();
+  }
+
 
   function retryAll() {
     void healthQuery.refetch();
@@ -153,8 +170,8 @@ export function App() {
                 <h1>{workflow?.name || translate(workspace.locale, "loading")}</h1>
                 <p>
                   {workflow
-                    ? `${translate(workspace.locale, "source")}: ${workflow.source_sheet} · ${workflow.definition_type}`
-                    : "Workbook catalog"}
+                    ? `${translate(workspace.locale, "source")}: database · orbit_workflow.workflow_business_record · ${workflow.definition_type}`
+                    : "Database-backed business records"}
                 </p>
               </div>
             </div>
@@ -197,6 +214,8 @@ export function App() {
                 dispatch(selectCell({ recordId, cellKey }))
               }
               onRecordUpdate={handleRecordUpdate}
+              onRecordAdd={handleRecordAdd}
+              onRecordDelete={handleRecordDelete}
               onSortChange={(sortBy, sortDirection) =>
                 dispatch(setSort({ sortBy, sortDirection }))
               }

@@ -62,6 +62,7 @@ export interface WorkflowDetail extends WorkflowSummary {
 
 export interface WorkflowRecord {
   id: string;
+  tree_record_id?: string | null;
   record_key: string;
   record_order: number;
   label: string;
@@ -80,6 +81,12 @@ export interface RecordPage {
   limit: number;
   sort_by: string;
   sort_direction: "asc" | "desc";
+}
+
+export interface RecordCreate {
+  workflowKey: string;
+  values: Record<string, unknown>;
+  locale: Locale;
 }
 
 export interface TreeNode {

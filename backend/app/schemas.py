@@ -70,6 +70,7 @@ class WorkflowDetail(WorkflowSummary):
 
 class WorkflowRecord(BaseModel):
     id: UUID
+    tree_record_id: UUID | None = None
     record_key: str
     record_order: int
     label: str
@@ -95,6 +96,15 @@ class RecordUpdateRequest(BaseModel):
 
     values: dict[str, Any] = Field(min_length=1)
     version: int = Field(ge=1)
+    locale: str = "zh-CN"
+
+
+class RecordCreateRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    values: dict[str, Any] = Field(default_factory=dict)
+    record_key: str | None = Field(default=None, min_length=1, max_length=140)
+    record_order: int | None = Field(default=None, ge=1)
     locale: str = "zh-CN"
 
 

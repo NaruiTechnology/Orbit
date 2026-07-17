@@ -29,7 +29,7 @@ def health(
                      FROM orbit_workflow.workflow_definition
                     WHERE is_active
                ) AS workflow_count,
-               (SELECT count(*) FROM orbit_workflow.workflow_record) AS record_count
+               (SELECT count(*) FROM orbit_workflow.workflow_business_record) AS record_count
           FROM pg_database
          WHERE datname = current_database()
         """

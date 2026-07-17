@@ -13,6 +13,7 @@ from app.database import get_connection
 from app.schemas import (
     InstanceStartRequest,
     InstanceTransitionRequest,
+    RecordCreateRequest,
     RecordPage,
     RecordUpdateRequest,
     SessionInfo,
@@ -23,6 +24,8 @@ from app.schemas import (
     WorkflowTree,
 )
 from app.services.workflow_repository import (
+    create_record,
+    delete_record,
     get_tree,
     get_workflow,
     list_records,
@@ -88,6 +91,26 @@ def workflow_record_update(
     connection: Connection[dict[str, Any]] = Depends(get_connection),
 ) -> WorkflowRecord:
     return update_record(connection, user, workflow_key, record_id, request)
+
+
+@router.post("/{workflow_key}/records", response_model=WorkflowRecord, status_code=201)
+def workflow_record_create(
+    workflow_key: str,
+    request: RecordCreateRequest,
+    user: SessionInfo = Depends(get_current_user),
+    connection: Connection[dict[str, Any]] = Depends(get_connection),
+) -> WorkflowRecord:
+    return create_record(connection, user, workflow_key, request)
+
+
+@router.delete("/{workflow_key}/records/{record_id}", status_code=204)
+def workflow_record_delete(
+    workflow_key: str,
+    record_id: UUID,
+    user: SessionInfo = Depends(get_current_user),
+    connection: Connection[dict[str, Any]] = Depends(get_connection),
+) -> None:
+    delete_record(connection, user, workflow_key, record_id)
 
 
 @router.get("/{workflow_key}/tree", response_model=WorkflowTree)

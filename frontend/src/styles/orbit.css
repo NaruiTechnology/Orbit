@@ -641,6 +641,41 @@ input:focus-visible {
   min-height: 0;
 }
 
+.grid-toolbar {
+  display: flex;
+  justify-content: flex-end;
+  padding: 8px 0;
+}
+
+.grid-add-button,
+.grid-row-action {
+  border: 1px solid var(--forest);
+  background: var(--forest);
+  color: var(--paper-bright);
+  cursor: pointer;
+  font: inherit;
+  padding: 6px 12px;
+}
+
+.grid-add-button:disabled,
+.grid-row-action:disabled {
+  cursor: not-allowed;
+  opacity: 0.45;
+}
+
+.grid-row-actions {
+  align-items: center;
+  display: flex;
+  height: 100%;
+}
+
+.grid-row-action--delete {
+  background: transparent;
+  border-color: #b34832;
+  color: #8f321f;
+  padding: 4px 9px;
+}
+
 .grid-frame .ag-root-wrapper {
   border: 0;
 }

@@ -111,6 +111,14 @@ def import_catalog(
             """,
             (definition_id,),
         )
+        connection.execute(
+            """
+            UPDATE orbit_workflow.workflow_business_record
+               SET record_order = -record_order
+             WHERE workflow_id = %s AND record_order > 0
+            """,
+            (definition_id,),
+        )
 
         active_record_keys: list[str] = []
         for record in workflow["records"]:
@@ -144,6 +152,25 @@ def import_catalog(
                     Jsonb(record["source_cells"]),
                 ),
             )
+            connection.execute(
+                """
+                INSERT INTO orbit_workflow.workflow_business_record (
+                    workflow_id, workflow_record_id, record_key, record_order,
+                    label_i18n, values_json, source_row, source_cells
+                )
+                SELECT workflow_id, id, record_key, record_order,
+                       label_i18n, values_json, source_row, source_cells
+                  FROM orbit_workflow.workflow_record
+                 WHERE workflow_id = %s AND record_key = %s
+                ON CONFLICT (workflow_id, record_key) DO UPDATE
+                   SET workflow_record_id = EXCLUDED.workflow_record_id,
+                       record_order = EXCLUDED.record_order,
+                       label_i18n = EXCLUDED.label_i18n,
+                       source_row = EXCLUDED.source_row,
+                       source_cells = EXCLUDED.source_cells
+                """,
+                (definition_id, record["record_key"]),
+            )
             imported_records += 1
 
         connection.execute(
@@ -154,6 +181,20 @@ def import_catalog(
             """,
             (definition_id, active_record_keys),
         )
+        connection.execute(
+            """
+            DELETE FROM orbit_workflow.workflow_business_record
+             WHERE workflow_id = %s
+               AND source_row IS NOT NULL
+               AND NOT (record_key = ANY(%s))
+            """,
+            (definition_id, active_record_keys),
+        )
+        if workflow["definition_type"] == "workflow":
+            connection.execute(
+                "DELETE FROM orbit_workflow.workflow_business_record WHERE workflow_id = %s",
+                (definition_id,),
+            )
 
     for workflow in catalog["workflows"]:
         parent_key = workflow["parent_key"]

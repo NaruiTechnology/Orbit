@@ -4,6 +4,7 @@ CREATE SCHEMA IF NOT EXISTS orbit_identity;
 CREATE SCHEMA IF NOT EXISTS orbit_workflow;
 CREATE SCHEMA IF NOT EXISTS orbit_runtime;
 CREATE SCHEMA IF NOT EXISTS orbit_audit;
+CREATE SCHEMA IF NOT EXISTS orbit_sales;
 
 DO $block$
 BEGIN
@@ -205,6 +206,72 @@ CREATE INDEX IF NOT EXISTS ix_workflow_record_values_gin
 CREATE INDEX IF NOT EXISTS ix_workflow_record_scope
     ON orbit_workflow.workflow_record (organization_id, department_id, laboratory_id);
 
+-- Runtime/business data shown in DataGrids.  This table is deliberately
+-- separate from workflow_record: the latter is the process graph source used
+-- by the tree panel, while this table is the editable business data source.
+CREATE TABLE IF NOT EXISTS orbit_workflow.workflow_business_record (
+    id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+    workflow_id uuid NOT NULL REFERENCES orbit_workflow.workflow_definition(id) ON DELETE CASCADE,
+    workflow_record_id uuid REFERENCES orbit_workflow.workflow_record(id) ON DELETE SET NULL,
+    record_key varchar(140) NOT NULL,
+    record_order integer NOT NULL,
+    label_i18n jsonb NOT NULL CHECK (jsonb_typeof(label_i18n) = 'object'),
+    values_json jsonb NOT NULL DEFAULT '{}'::jsonb CHECK (jsonb_typeof(values_json) = 'object'),
+    source_row integer,
+    source_cells jsonb NOT NULL DEFAULT '{}'::jsonb CHECK (jsonb_typeof(source_cells) = 'object'),
+    organization_id uuid REFERENCES orbit_identity.organization(id) ON DELETE RESTRICT,
+    department_id uuid REFERENCES orbit_identity.department(id) ON DELETE RESTRICT,
+    laboratory_id uuid REFERENCES orbit_identity.laboratory(id) ON DELETE RESTRICT,
+    version integer NOT NULL DEFAULT 1,
+    created_at timestamptz NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at timestamptz NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE (workflow_id, record_key),
+    UNIQUE (workflow_id, record_order)
+);
+
+CREATE INDEX IF NOT EXISTS ix_workflow_business_record_order
+    ON orbit_workflow.workflow_business_record (workflow_id, record_order);
+CREATE INDEX IF NOT EXISTS ix_workflow_business_record_values_gin
+    ON orbit_workflow.workflow_business_record USING gin (values_json);
+CREATE INDEX IF NOT EXISTS ix_workflow_business_record_scope
+    ON orbit_workflow.workflow_business_record (organization_id, department_id, laboratory_id);
+
+-- Customer orders are business entities, not workflow steps.  The Order
+-- Evaluation grid is backed by this table; the workflow_record table remains
+-- the process-definition source for the right-hand workflow tree.
+CREATE TABLE IF NOT EXISTS orbit_sales.customer_order (
+    id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+    order_number varchar(80) NOT NULL UNIQUE,
+    customer_code varchar(80),
+    customer_name varchar(200) NOT NULL,
+    customer_contact varchar(200),
+    chip_name varchar(200) NOT NULL,
+    chip_model varchar(160),
+    package_type varchar(120),
+    quantity integer NOT NULL DEFAULT 1 CHECK (quantity > 0),
+    source_laboratory varchar(160),
+    target_laboratory varchar(160),
+    requested_due_date date,
+    priority varchar(24) NOT NULL DEFAULT 'normal'
+        CHECK (priority IN ('low', 'normal', 'high', 'urgent')),
+    status varchar(32) NOT NULL DEFAULT 'draft'
+        CHECK (status IN ('draft', 'submitted', 'under_evaluation', 'approved', 'rejected', 'cancelled')),
+    evaluation_result text,
+    notes text,
+    organization_id uuid REFERENCES orbit_identity.organization(id) ON DELETE RESTRICT,
+    department_id uuid REFERENCES orbit_identity.department(id) ON DELETE RESTRICT,
+    laboratory_id uuid REFERENCES orbit_identity.laboratory(id) ON DELETE RESTRICT,
+    created_by uuid NOT NULL REFERENCES orbit_identity.app_user(id) ON DELETE RESTRICT,
+    version integer NOT NULL DEFAULT 1,
+    created_at timestamptz NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at timestamptz NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE INDEX IF NOT EXISTS ix_customer_order_scope_status
+    ON orbit_sales.customer_order (organization_id, department_id, laboratory_id, status);
+CREATE INDEX IF NOT EXISTS ix_customer_order_customer
+    ON orbit_sales.customer_order (customer_code, customer_name);
+
 CREATE TABLE IF NOT EXISTS orbit_runtime.workflow_instance (
     id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
     workflow_id uuid NOT NULL REFERENCES orbit_workflow.workflow_definition(id) ON DELETE RESTRICT,
@@ -292,6 +359,16 @@ CREATE TRIGGER trg_workflow_record_touch
 BEFORE UPDATE ON orbit_workflow.workflow_record
 FOR EACH ROW EXECUTE FUNCTION orbit_workflow.touch_versioned_row();
 
+DROP TRIGGER IF EXISTS trg_workflow_business_record_touch ON orbit_workflow.workflow_business_record;
+CREATE TRIGGER trg_workflow_business_record_touch
+BEFORE UPDATE ON orbit_workflow.workflow_business_record
+FOR EACH ROW EXECUTE FUNCTION orbit_workflow.touch_versioned_row();
+
+DROP TRIGGER IF EXISTS trg_customer_order_touch ON orbit_sales.customer_order;
+CREATE TRIGGER trg_customer_order_touch
+BEFORE UPDATE ON orbit_sales.customer_order
+FOR EACH ROW EXECUTE FUNCTION orbit_workflow.touch_versioned_row();
+
 DROP TRIGGER IF EXISTS trg_workflow_instance_touch ON orbit_runtime.workflow_instance;
 CREATE TRIGGER trg_workflow_instance_touch
 BEFORE UPDATE ON orbit_runtime.workflow_instance
@@ -300,5 +377,6 @@ FOR EACH ROW EXECUTE FUNCTION orbit_workflow.touch_versioned_row();
 COMMENT ON COLUMN orbit_workflow.workflow_definition.name_i18n IS
     'Localized master data keyed by en, zh_CN, and zh_HK.';
 COMMENT ON COLUMN orbit_workflow.workflow_record.values_json IS
-    'Mixed-language UTF-8 row values keyed by stable English identifiers.';
-
+    'Workflow graph-node metadata; not the DataGrid business data source.';
+COMMENT ON COLUMN orbit_workflow.workflow_business_record.values_json IS
+    'Editable mixed-language UTF-8 business values keyed by stable English identifiers.';

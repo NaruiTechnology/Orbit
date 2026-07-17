@@ -3,6 +3,7 @@ import {
   type CellFocusedEvent,
   type CellValueChangedEvent,
   type ColDef,
+  type ICellRendererParams,
   type SortChangedEvent,
 } from "ag-grid-community";
 import { AgGridReact } from "ag-grid-react";
@@ -16,7 +17,8 @@ import type {
 } from "../types";
 import { translate } from "../i18n/translations";
 
-const orbitGridLightTheme = themeQuartz.withParams({
+
+const orbitGridTheme = themeQuartz.withParams({
   accentColor: "#e4572e",
   backgroundColor: "#fbfaf5",
   foregroundColor: "#172421",
@@ -62,6 +64,8 @@ interface WorkflowGridProps {
     key: string,
     value: unknown,
   ) => Promise<WorkflowRecord>;
+  onRecordAdd: () => Promise<WorkflowRecord>;
+  onRecordDelete: (record: WorkflowRecord) => Promise<void>;
   onSortChange: (sortBy: string, direction: "asc" | "desc") => void;
 }
 
@@ -98,9 +102,10 @@ export function WorkflowGrid({
   loading,
   onCellSelect,
   onRecordUpdate,
+  onRecordAdd,
+  onRecordDelete,
   onSortChange,
 }: WorkflowGridProps) {
-  const orbitGridTheme = theme === "dark" ? orbitGridDarkTheme : orbitGridLightTheme;
   const collator = new Intl.Collator(locale, {
     numeric: true,
     sensitivity: "base",
@@ -131,7 +136,43 @@ export function WorkflowGrid({
     }),
   );
   const columnDefinitions: ColDef<WorkflowRecord>[] = [
+    {
+      colId: "record_order",
+      field: "record_order",
+      headerName: "#",
+      pinned: "left",
+      lockPinned: true,
+      width: 64,
+      minWidth: 64,
+      maxWidth: 64,
+      editable: false,
+      cellClass: "grid-cell--sequence",
+    },
     ...dynamicColumns,
+    {
+      colId: "actions",
+      headerName: locale === "en" ? "Actions" : "操作",
+      pinned: "right",
+      width: 132,
+      minWidth: 132,
+      sortable: false,
+      filter: false,
+      editable: false,
+      cellRenderer: (parameters: ICellRendererParams<WorkflowRecord>) => {
+        const wrapper = document.createElement("div");
+        wrapper.className = "grid-row-actions";
+        const button = document.createElement("button");
+        button.type = "button";
+        button.className = "grid-row-action grid-row-action--delete";
+        button.textContent = locale === "en" ? "Delete" : "删除";
+        button.disabled = !workflow?.access.can_edit;
+        button.addEventListener("click", () => {
+          if (parameters.data) void onRecordDelete(parameters.data);
+        });
+        wrapper.appendChild(button);
+        return wrapper;
+      },
+    },
   ];
   const rowData = records.map((record) => ({
     ...record,
@@ -145,13 +186,13 @@ export function WorkflowGrid({
       typeof event.column === "string"
         ? event.column
         : event.column?.getColId() || null;
-    if (row) onCellSelect(row.id, cellKey);
+    if (row) onCellSelect(row.tree_record_id || row.id, cellKey);
   }
 
   async function handleCellChanged(event: CellValueChangedEvent<WorkflowRecord>) {
     const record = event.data;
     const key = event.colDef.colId;
-    if (!record || !key || key === "record_order" || event.newValue === event.oldValue) {
+    if (!record || !key || key === "record_order" || key === "actions" || event.newValue === event.oldValue) {
       return;
     }
     try {
@@ -175,8 +216,19 @@ export function WorkflowGrid({
 
   return (
     <div className="grid-frame">
+      <div className="grid-toolbar">
+        <button
+          className="grid-add-button"
+          type="button"
+          disabled={!workflow?.access.can_edit || loading}
+          onClick={() => void onRecordAdd()}
+        >
+          + {locale === "en" ? "Add row" : "新增行"}
+        </button>
+      </div>
       <AgGridReact<WorkflowRecord>
-        theme={orbitGridTheme}
+        key={`${workflow?.key || "grid"}-${locale}-${theme}`}
+        theme={theme === "dark" ? orbitGridDarkTheme : orbitGridTheme}
         rowData={rowData}
         columnDefs={columnDefinitions}
         defaultColDef={{
