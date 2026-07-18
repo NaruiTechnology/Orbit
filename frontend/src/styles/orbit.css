@@ -862,6 +862,39 @@ input:focus-visible {
   letter-spacing: 0.04em;
 }
 
+.grid-frame .ag-header-group-cell,
+.grid-frame .ag-header-group-cell-label {
+  color: var(--control-active-fg);
+  background: linear-gradient(135deg, var(--forest), var(--blueprint)) !important;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.grid-frame .ag-floating-filter,
+.grid-frame .ag-floating-filter-body,
+.grid-frame .ag-floating-filter-button {
+  background: var(--gradient-card) !important;
+}
+
+.grid-frame .ag-floating-filter-input,
+.grid-frame .ag-floating-filter-body input {
+  color: var(--ink);
+  background: color-mix(in srgb, var(--surface) 84%, transparent) !important;
+  border-color: var(--line);
+}
+
+.grid-frame .ag-floating-filter-input:focus,
+.grid-frame .ag-floating-filter-body input:focus,
+.grid-frame .ag-floating-filter-input:focus-visible,
+.grid-frame .ag-floating-filter-body input:focus-visible {
+  border: 0.5px solid color-mix(in srgb, var(--signal) 80%, transparent) !important;
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--signal) 18%, transparent);
+  outline: none;
+  opacity: 0.8;
+}
+
 .grid-frame .ag-cell {
   display: flex;
   align-items: center;

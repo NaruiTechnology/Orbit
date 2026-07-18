@@ -4,6 +4,7 @@ import {
   type CellFocusedEvent,
   type CellValueChangedEvent,
   type ColDef,
+  type ColGroupDef,
   type GridApi,
   type GridReadyEvent,
   type ICellRendererParams,
@@ -98,6 +99,16 @@ function displayValue(value: unknown, locale: Locale): string {
     return "";
   }
   return String(value);
+}
+
+function columnGroupKey(key: string): "workflow" | "business" | "context" {
+  if (/(stage|step|sequence|status|state|phase|role|owner|time_limit)/i.test(key)) {
+    return "workflow";
+  }
+  if (/(customer|order|business|laboratory|department|organization|employee|equipment|product)/i.test(key)) {
+    return "business";
+  }
+  return "context";
 }
 
 interface RowActionRendererProps {
@@ -213,7 +224,19 @@ export function WorkflowGrid({
       },
     }),
   );
-  const columnDefinitions: ColDef<WorkflowRecord>[] = [
+  const groupedColumns = new Map<ReturnType<typeof columnGroupKey>, ColDef<WorkflowRecord>[]>();
+  for (const column of dynamicColumns) {
+    const group = columnGroupKey(String(column.colId || ""));
+    const columns = groupedColumns.get(group) || [];
+    columns.push(column);
+    groupedColumns.set(group, columns);
+  }
+  const groupLabels = {
+    workflow: locale === "en" ? "Workflow" : "工作流",
+    business: locale === "en" ? "Business data" : "业务数据",
+    context: locale === "en" ? "Context and details" : "上下文与详细信息",
+  };
+  const columnDefinitions: (ColDef<WorkflowRecord> | ColGroupDef<WorkflowRecord>)[] = [
     {
       colId: "record_order",
       field: "record_order",
@@ -226,7 +249,14 @@ export function WorkflowGrid({
       editable: false,
       cellClass: "grid-cell--sequence",
     },
-    ...dynamicColumns,
+    ...(["business", "workflow", "context"] as const)
+      .filter((group) => groupedColumns.has(group))
+      .map((group) => ({
+        groupId: "orbit-" + group,
+        headerName: groupLabels[group],
+        marryChildren: true,
+        children: groupedColumns.get(group) || [],
+      })),
     {
       colId: "actions",
       headerName: locale === "en" ? "Actions" : "操作",
@@ -344,6 +374,7 @@ export function WorkflowGrid({
         defaultColDef={{
           sortable: true,
           filter: true,
+          floatingFilter: true,
           resizable: true,
           suppressHeaderMenuButton: false,
         }}
@@ -361,6 +392,7 @@ export function WorkflowGrid({
         loading={loading}
         rowHeight={44}
         headerHeight={46}
+        floatingFiltersHeight={34}
         animateRows
         enableBrowserTooltips
         ensureDomOrder
