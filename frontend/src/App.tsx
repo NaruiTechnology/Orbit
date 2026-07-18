@@ -281,6 +281,13 @@ export function App() {
               onRecordUpdate={handleRecordUpdate}
               onRecordAdd={handleRecordAdd}
               onRecordDelete={handleRecordDelete}
+              onRecordFinishEdit={(recordId) => {
+                setDirtyRecordIds((current) => {
+                  const next = new Set(current);
+                  next.delete(recordId);
+                  return next;
+                });
+              }}
               onSortChange={(sortBy, sortDirection) =>
                 dispatch(setSort({ sortBy, sortDirection }))
               }

@@ -4,10 +4,13 @@ import {
   type CellFocusedEvent,
   type CellValueChangedEvent,
   type ColDef,
+  type GridApi,
+  type GridReadyEvent,
   type ICellRendererParams,
   type SortChangedEvent,
 } from "ag-grid-community";
 import { AgGridReact } from "ag-grid-react";
+import { useEffect, useRef, useState } from "react";
 
 import type {
   ColumnDefinition,
@@ -20,15 +23,15 @@ import { translate } from "../i18n/translations";
 
 
 const orbitGridTheme = themeQuartz.withParams({
-  accentColor: "#e4572e",
-  backgroundColor: "#fbfaf5",
-  foregroundColor: "#172421",
-  borderColor: "#c8c1b0",
-  headerBackgroundColor: "#203a35",
-  headerTextColor: "#fffaf0",
-  oddRowBackgroundColor: "#f3f0e7",
-  rowHoverColor: "#f8e1d5",
-  selectedRowBackgroundColor: "#f4cfc0",
+  accentColor: "#1f6fc2",
+  backgroundColor: "#ffffff",
+  foregroundColor: "#1a2233",
+  borderColor: "#cdd5e0",
+  headerBackgroundColor: "#1f5fa0",
+  headerTextColor: "#ffffff",
+  oddRowBackgroundColor: "#f4f7fb",
+  rowHoverColor: "#e2eaf3",
+  selectedRowBackgroundColor: "#dbeafe",
   fontFamily: "IBM Plex Sans, Noto Sans SC, Noto Sans TC, sans-serif",
   fontSize: 13,
   spacing: 6,
@@ -68,6 +71,7 @@ interface WorkflowGridProps {
   ) => Promise<WorkflowRecord>;
   onRecordAdd: () => Promise<WorkflowRecord>;
   onRecordDelete: (record: WorkflowRecord) => Promise<void>;
+  onRecordFinishEdit: (recordId: string) => void;
   onSortChange: (sortBy: string, direction: "asc" | "desc") => void;
 }
 
@@ -96,21 +100,46 @@ function displayValue(value: unknown, locale: Locale): string {
   return String(value);
 }
 
-interface DeleteCellRendererProps {
+interface RowActionRendererProps {
   data: WorkflowRecord | undefined;
   canEdit: boolean;
   locale: Locale;
+  editing: boolean;
+  onEdit: (record: WorkflowRecord) => void;
+  onFinishEdit: () => void;
   onDelete: (record: WorkflowRecord) => Promise<void>;
 }
 
-function DeleteCellRenderer({
+function RowActionRenderer({
   data,
   canEdit,
   locale,
+  editing,
+  onEdit,
+  onFinishEdit,
   onDelete,
-}: DeleteCellRendererProps) {
+}: RowActionRendererProps) {
   return (
     <div className="grid-row-actions">
+      <button
+        type="button"
+        className={`grid-row-action ${editing ? "grid-row-action--update" : "grid-row-action--edit"}`}
+        aria-label={editing ? "Save row" : "Edit row"}
+        title={editing ? "Save row" : "Edit row"}
+        disabled={!canEdit}
+        onMouseDown={(event) => event.stopPropagation()}
+        onClick={(event) => {
+          event.stopPropagation();
+          if (data) {
+            if (editing) onFinishEdit();
+            else onEdit(data);
+          }
+        }}
+      >
+        <svg aria-hidden="true" viewBox="0 0 24 24" focusable="false">
+          {editing ? <path d="M5 4h12l2 2v14H5zM8 4v6h8V4M8 20v-6h8v6" /> : <path d="m4 16-.8 4.8L8 20l10.8-10.8-4-4L4 16Zm9.4-9.4 4 4" />}
+        </svg>
+      </button>
       <button
         type="button"
         className="grid-row-action grid-row-action--delete"
@@ -142,8 +171,15 @@ export function WorkflowGrid({
   onRecordUpdate,
   onRecordAdd,
   onRecordDelete,
+  onRecordFinishEdit,
   onSortChange,
 }: WorkflowGridProps) {
+  const [editingRowId, setEditingRowId] = useState<string | null>(null);
+  const gridApi = useRef<GridApi<WorkflowRecord> | null>(null);
+
+  useEffect(() => {
+    gridApi.current?.refreshCells({ columns: ["actions"], force: true });
+  }, [editingRowId]);
   const collator = new Intl.Collator(locale, {
     numeric: true,
     sensitivity: "base",
@@ -155,7 +191,11 @@ export function WorkflowGrid({
       headerName: column.label,
       width: widthFor(column),
       minWidth: 90,
-      editable: Boolean(workflow?.access.can_edit && column.editable),
+      editable: (parameters) => Boolean(
+        workflow?.access.can_edit &&
+        column.editable &&
+        parameters.data?.id === editingRowId,
+      ),
       valueGetter: (parameters) => parameters.data?.values[column.key] ?? null,
       valueSetter: (parameters) => {
         if (!parameters.data) return false;
@@ -197,10 +237,31 @@ export function WorkflowGrid({
       filter: false,
       editable: false,
       cellRenderer: (parameters: ICellRendererParams<WorkflowRecord>) => (
-        <DeleteCellRenderer
+        <RowActionRenderer
           data={parameters.data}
           canEdit={Boolean(workflow?.access.can_edit)}
           locale={locale}
+          editing={Boolean(
+            parameters.data &&
+            (parameters.data.id === editingRowId || dirtyRecordIds.includes(parameters.data.id)),
+          )}
+          onEdit={(record) => {
+            setEditingRowId(record.id);
+            const firstEditable = workflow?.columns.find((column) => column.editable);
+            if (firstEditable) {
+              window.setTimeout(() => {
+                gridApi.current?.startEditingCell({
+                  rowIndex: record.record_order - 1,
+                  colKey: firstEditable.key,
+                });
+              }, 0);
+            }
+          }}
+          onFinishEdit={() => {
+            gridApi.current?.stopEditing();
+            setEditingRowId(null);
+            if (parameters.data) onRecordFinishEdit(parameters.data.id);
+          }}
           onDelete={onRecordDelete}
         />
       ),
@@ -225,7 +286,9 @@ export function WorkflowGrid({
   function handleCellClicked(event: CellClickedEvent<WorkflowRecord>) {
     if (event.colDef.colId !== "actions" || !event.data) return;
     const target = event.event?.target;
-    if (target instanceof HTMLElement && target.closest("button")) return;
+    if (!(target instanceof HTMLElement)) return;
+    if (target.closest(".grid-row-action--edit")) return;
+    if (!target.closest(".grid-row-action--delete")) return;
     event.event?.stopPropagation();
     void onRecordDelete(event.data);
   }
@@ -236,6 +299,7 @@ export function WorkflowGrid({
     if (!record || !key || key === "record_order" || key === "actions" || event.newValue === event.oldValue) {
       return;
     }
+    setEditingRowId(record.id);
     try {
       const updated = await onRecordUpdate(record, key, event.newValue);
       event.node.setData({ ...updated, values: { ...updated.values } });
@@ -293,6 +357,7 @@ export function WorkflowGrid({
           checkboxes: false,
           enableClickSelection: true,
         }}
+        editType="fullRow"
         loading={loading}
         rowHeight={44}
         headerHeight={46}
@@ -301,6 +366,9 @@ export function WorkflowGrid({
         ensureDomOrder
         onCellFocused={handleCellFocused}
         onCellClicked={handleCellClicked}
+        onGridReady={(event: GridReadyEvent<WorkflowRecord>) => {
+          gridApi.current = event.api;
+        }}
         onCellValueChanged={handleCellChanged}
         onSortChanged={handleSortChanged}
         overlayNoRowsTemplate={`<span class="grid-empty">${translate(locale, "noData")}</span>`}

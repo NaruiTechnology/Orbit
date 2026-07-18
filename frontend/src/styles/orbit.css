@@ -1,25 +1,25 @@
 :root {
-  --paper: #f2efe6;
-  --paper-bright: #fbfaf5;
-  --paper-deep: #ded8c9;
-  --surface: #fbfaf5;
-  --surface-raised: #f2efe6;
-  --surface-muted: #ded8c9;
-  --ink: #172421;
-  --ink-soft: #53605c;
-  --forest: #203a35;
-  --forest-deep: #132824;
-  --signal: #e4572e;
-  --signal-soft: #f4cfc0;
-  --blueprint: #1c5d76;
-  --acid: #d4df86;
-  --line: #c8c1b0;
-  --line-strong: #928b7c;
-  --control-bg: #ded8c9;
-  --control-fg: #53605c;
-  --control-active-bg: #203a35;
-  --control-active-fg: #fbfaf5;
-  --shadow: 0 12px 30px rgba(28, 40, 36, 0.12);
+  --paper: #f6f7fa;
+  --paper-bright: #ffffff;
+  --paper-deep: #dfeaf8;
+  --surface: #ffffff;
+  --surface-raised: #eef2f7;
+  --surface-muted: #e2e7ee;
+  --ink: #1a2233;
+  --ink-soft: #5d6b82;
+  --forest: #1f5fa0;
+  --forest-deep: #0e1620;
+  --signal: #1f6fc2;
+  --signal-soft: #dbeafe;
+  --blueprint: #1f6fc2;
+  --acid: #facc15;
+  --line: #cdd5e0;
+  --line-strong: #9daabe;
+  --control-bg: #eef2f7;
+  --control-fg: #5d6b82;
+  --control-active-bg: #1f5fa0;
+  --control-active-fg: #ffffff;
+  --shadow: 0 1px 3px rgba(15, 32, 60, 0.08), 0 4px 12px rgba(15, 32, 60, 0.04);
   --font-ui: "IBM Plex Sans", "Noto Sans SC", "Noto Sans TC", "Microsoft YaHei", sans-serif;
   --font-display: "IBM Plex Serif", "Noto Serif SC", "Noto Serif TC", "Songti SC", serif;
 }
@@ -79,16 +79,7 @@ body {
   overflow: hidden;
   color: var(--ink);
   font-family: var(--font-ui);
-  background:
-    radial-gradient(circle at 12% 18%, rgba(228, 87, 46, 0.13), transparent 23rem),
-    radial-gradient(circle at 88% 88%, rgba(28, 93, 118, 0.13), transparent 30rem),
-    repeating-linear-gradient(
-      90deg,
-      transparent 0,
-      transparent 79px,
-      rgba(23, 36, 33, 0.035) 80px
-    ),
-    var(--paper);
+  background: linear-gradient(135deg, #f6f7fa 0%, #eef5ff 48%, #dfeaf8 100%);
   -webkit-font-smoothing: antialiased;
 }
 
@@ -685,12 +676,23 @@ input:focus-visible {
 .grid-row-actions {
   align-items: center;
   display: flex;
+  gap: 4px;
   height: 100%;
 }
 
 .grid-row-action--delete {
   background: transparent;
   color: #8f321f;
+}
+
+.grid-row-action--edit {
+  color: var(--ink-soft);
+  background: transparent;
+}
+
+.grid-row-action--update {
+  color: var(--control-active-fg);
+  background: var(--signal);
 }
 
 .grid-frame .ag-root-wrapper {
@@ -738,6 +740,11 @@ input:focus-visible {
 .grid-frame .ag-row.grid-row--dirty {
   background: color-mix(in srgb, var(--acid) 22%, var(--surface) 78%);
   box-shadow: inset 4px 0 0 var(--signal);
+}
+
+.grid-frame .ag-row.ag-row-selected {
+  border: 0.5px solid color-mix(in srgb, var(--signal) 60%, transparent);
+  opacity: 0.8;
 }
 
 .dialog-backdrop {
@@ -859,8 +866,8 @@ input:focus-visible {
 .context-card {
   margin: 12px 13px 4px;
   padding: 11px 12px;
-  color: var(--ink);
-  background: color-mix(in srgb, var(--acid) 88%, var(--surface) 12%);
+  color: var(--control-active-fg);
+  background: var(--control-active-bg);
   border-left: 4px solid var(--signal);
   box-shadow: 4px 4px 0 rgba(0, 0, 0, 0.22);
 }
