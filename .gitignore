@@ -8,6 +8,11 @@ htmlcov/
 frontend/node_modules/
 frontend/dist/
 frontend/.vite/
+build/orbit-dist/
+build/orbit-dist.zip
+DeployWorkSpace/Development/DistributionDeploy/dist_app/
+DeployWorkSpace/Development/DistributionDeploy/dist_app*.zip
+DeployWorkspace_*.zip
 .env
 *.log
 *.pid
