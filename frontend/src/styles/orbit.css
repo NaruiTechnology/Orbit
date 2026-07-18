@@ -29,7 +29,7 @@
   --font-display: "IBM Plex Serif", "Noto Serif SC", "Noto Serif TC", "Songti SC", serif;
 }
 
-:root[data-theme="dark"] {
+:root[data-theme="green"] {
   color-scheme: dark;
   --paper: #0f1613;
   --paper-bright: #eef5f0;
@@ -59,7 +59,7 @@
   --shadow: 0 16px 32px rgba(0, 0, 0, 0.34);
 }
 
-:root[data-theme="dark"] body {
+:root[data-theme="green"] body {
   background:
     radial-gradient(circle at 12% 18%, rgba(240, 106, 59, 0.16), transparent 23rem),
     radial-gradient(circle at 88% 88%, rgba(121, 169, 184, 0.14), transparent 30rem),
@@ -69,6 +69,43 @@
       transparent 79px,
       rgba(238, 245, 240, 0.04) 80px
     ),
+  var(--paper);
+}
+
+:root[data-theme="black"] {
+  color-scheme: dark;
+  --paper: #050608;
+  --paper-bright: #f5f5f5;
+  --paper-deep: #17191e;
+  --surface: #0b0c0f;
+  --surface-raised: #15171c;
+  --surface-muted: #22252c;
+  --ink: #f1f2f4;
+  --ink-soft: #a7abb4;
+  --forest: #20242b;
+  --forest-deep: #07080a;
+  --signal: #ff7043;
+  --signal-soft: #3d241d;
+  --blueprint: #737b88;
+  --acid: #d7e36d;
+  --line: #363a44;
+  --line-strong: #555b68;
+  --control-bg: #1b1e24;
+  --control-fg: #d5d8de;
+  --control-active-bg: #383e49;
+  --control-active-fg: #ffffff;
+  --gradient-shell: linear-gradient(135deg, #050608 0%, #111318 48%, #252a33 100%);
+  --gradient-surface: linear-gradient(145deg, rgba(11, 12, 15, 0.99), rgba(29, 32, 39, 0.97));
+  --gradient-panel: linear-gradient(155deg, rgba(9, 10, 13, 0.99), rgba(25, 28, 34, 0.98));
+  --gradient-card: linear-gradient(135deg, rgba(27, 30, 37, 0.99), rgba(53, 58, 68, 0.95));
+  --gradient-grid: linear-gradient(180deg, rgba(14, 16, 20, 0.99), rgba(31, 34, 41, 0.98));
+  --shadow: 0 16px 32px rgba(0, 0, 0, 0.55);
+}
+
+:root[data-theme="black"] body {
+  background:
+    radial-gradient(circle at 12% 18%, rgba(255, 112, 67, 0.12), transparent 23rem),
+    radial-gradient(circle at 88% 88%, rgba(115, 123, 136, 0.12), transparent 30rem),
     var(--paper);
 }
 
@@ -428,6 +465,29 @@ input:focus-visible {
   padding: 3px;
   background: var(--control-bg);
   border: 1px solid var(--line);
+}
+
+.theme-switch {
+  display: flex;
+  min-width: 92px;
+}
+
+.theme-switch select {
+  width: 100%;
+  height: 29px;
+  padding: 0 24px 0 9px;
+  color: var(--control-fg);
+  font: inherit;
+  font-size: 11px;
+  font-weight: 800;
+  background: var(--control-bg);
+  border: 0;
+  cursor: pointer;
+}
+
+.theme-switch select:focus-visible {
+  outline: 1px solid var(--signal);
+  outline-offset: -2px;
 }
 
 .locale-switch button {

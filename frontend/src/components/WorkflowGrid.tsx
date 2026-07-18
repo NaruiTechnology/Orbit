@@ -42,7 +42,7 @@ const orbitGridTheme = themeQuartz.withParams({
   wrapperBorderRadius: 0,
 });
 
-const orbitGridDarkTheme = themeQuartz.withParams({
+const orbitGridGreenTheme = themeQuartz.withParams({
   accentColor: "#f06a3b",
   backgroundColor: "#101814",
   foregroundColor: "#ecf4ef",
@@ -52,6 +52,23 @@ const orbitGridDarkTheme = themeQuartz.withParams({
   oddRowBackgroundColor: "#13211c",
   rowHoverColor: "#21332c",
   selectedRowBackgroundColor: "#244137",
+  fontFamily: "IBM Plex Sans, Noto Sans SC, Noto Sans TC, sans-serif",
+  fontSize: 13,
+  spacing: 6,
+  borderRadius: 0,
+  wrapperBorderRadius: 0,
+});
+
+const orbitGridBlackTheme = themeQuartz.withParams({
+  accentColor: "#ff7043",
+  backgroundColor: "#0b0c0f",
+  foregroundColor: "#f1f2f4",
+  borderColor: "#363a44",
+  headerBackgroundColor: "#20242b",
+  headerTextColor: "#ffffff",
+  oddRowBackgroundColor: "#15171c",
+  rowHoverColor: "#252a33",
+  selectedRowBackgroundColor: "#303640",
   fontFamily: "IBM Plex Sans, Noto Sans SC, Noto Sans TC, sans-serif",
   fontSize: 13,
   spacing: 6,
@@ -403,7 +420,7 @@ export function WorkflowGrid({
       <AgGridReact<WorkflowRecord>
         key={`${workflow?.key || "grid"}-${locale}-${theme}`}
         containerStyle={{ width: "100%", height: "100%" }}
-        theme={theme === "dark" ? orbitGridDarkTheme : orbitGridTheme}
+        theme={theme === "light" ? orbitGridTheme : theme === "black" ? orbitGridBlackTheme : orbitGridGreenTheme}
         rowModelType="infinite"
         datasource={datasource}
         cacheBlockSize={100}

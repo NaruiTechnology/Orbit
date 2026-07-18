@@ -93,18 +93,16 @@ export function OrbitHeader({
           ))}
         </div>
 
-        <div className="theme-switch" aria-label="Theme">
-          {(["light", "dark"] as ThemeMode[]).map((item) => (
-            <button
-              className={item === theme ? "is-active" : ""}
-              key={item}
-              onClick={() => onThemeChange(item)}
-              type="button"
-              aria-pressed={item === theme}
-            >
-              {item === "light" ? "Light" : "Dark"}
-            </button>
-          ))}
+        <div className="theme-switch">
+          <select
+            aria-label="Theme"
+            value={theme}
+            onChange={(event) => onThemeChange(event.target.value as ThemeMode)}
+          >
+            <option value="light">Light</option>
+            <option value="green">Green</option>
+            <option value="black">Dark</option>
+          </select>
         </div>
       </div>
     </header>

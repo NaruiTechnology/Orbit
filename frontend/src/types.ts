@@ -1,5 +1,5 @@
 export type Locale = "en" | "zh-CN" | "zh-HK";
-export type ThemeMode = "light" | "dark";
+export type ThemeMode = "light" | "green" | "black";
 
 export interface ScopeInfo {
   organization_id: string;
