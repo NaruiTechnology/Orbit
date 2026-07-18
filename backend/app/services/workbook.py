@@ -328,6 +328,15 @@ RECORD_LABEL_ENGLISH = {
     "社保公积金处理": "Social Security and Housing Fund Processing",
     "档案转出": "Transfer Personnel File",
     "离职后跟进": "Post-Departure Follow-up",
+    "技术填写设备故障表": "Technical team completes the equipment fault form",
+    "设备部接收故障工单": "Equipment department receives the fault work order",
+    "各实验室设备员维修": "Laboratory equipment technician performs the repair",
+    "升级至设备经理": "Escalate to the equipment manager",
+    "维修受阻统计": "Track blocked repairs",
+    "维修完成验收": "Accept the completed repair",
+    "设备空时率统计": "Track equipment idle time",
+    "维修时长统计": "Track repair duration",
+    "设备状态更新": "Update equipment status",
 }
 
 SIMPLIFIED_TO_TRADITIONAL = str.maketrans(

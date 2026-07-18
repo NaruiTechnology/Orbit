@@ -20317,7 +20317,7 @@
           "record_order": 1,
           "source_row": 3,
           "label_i18n": {
-            "en": "技术填写设备故障表",
+            "en": "Technical team completes the equipment fault form",
             "zh_CN": "技术填写设备故障表",
             "zh_HK": "技術填寫設備故障表"
           },
@@ -20349,7 +20349,7 @@
           "record_order": 2,
           "source_row": 4,
           "label_i18n": {
-            "en": "设备部接收故障工单",
+            "en": "Equipment department receives the fault work order",
             "zh_CN": "设备部接收故障工单",
             "zh_HK": "設備部接收故障工單"
           },
@@ -20381,7 +20381,7 @@
           "record_order": 3,
           "source_row": 5,
           "label_i18n": {
-            "en": "各实验室设备员维修",
+            "en": "Laboratory equipment technician performs the repair",
             "zh_CN": "各实验室设备员维修",
             "zh_HK": "各實驗室設備员維修"
           },
@@ -20413,7 +20413,7 @@
           "record_order": 4,
           "source_row": 6,
           "label_i18n": {
-            "en": "升级至设备经理",
+            "en": "Escalate to the equipment manager",
             "zh_CN": "升级至设备经理",
             "zh_HK": "升级至設備经理"
           },
@@ -20445,7 +20445,7 @@
           "record_order": 5,
           "source_row": 7,
           "label_i18n": {
-            "en": "维修受阻统计",
+            "en": "Track blocked repairs",
             "zh_CN": "维修受阻统计",
             "zh_HK": "維修受阻統計"
           },
@@ -20477,7 +20477,7 @@
           "record_order": 6,
           "source_row": 8,
           "label_i18n": {
-            "en": "维修完成验收",
+            "en": "Accept the completed repair",
             "zh_CN": "维修完成验收",
             "zh_HK": "維修完成驗收"
           },
@@ -20509,7 +20509,7 @@
           "record_order": 7,
           "source_row": 9,
           "label_i18n": {
-            "en": "设备空时率统计",
+            "en": "Track equipment idle time",
             "zh_CN": "设备空时率统计",
             "zh_HK": "設備空時率統計"
           },
@@ -20541,7 +20541,7 @@
           "record_order": 8,
           "source_row": 10,
           "label_i18n": {
-            "en": "维修时长统计",
+            "en": "Track repair duration",
             "zh_CN": "维修时长统计",
             "zh_HK": "維修時长統計"
           },
@@ -20573,7 +20573,7 @@
           "record_order": 9,
           "source_row": 11,
           "label_i18n": {
-            "en": "设备状态更新",
+            "en": "Update equipment status",
             "zh_CN": "设备状态更新",
             "zh_HK": "設備状态更新"
           },
