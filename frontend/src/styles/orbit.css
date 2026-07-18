@@ -428,11 +428,45 @@ input:focus-visible {
 
 .orbit-workspace {
   display: grid;
-  grid-template-columns: minmax(0, 2.85fr) minmax(310px, 1fr);
+  grid-template-columns: minmax(0, calc(var(--split-percent, 70%) - 6px)) 12px minmax(280px, 1fr);
   min-height: 0;
   gap: 10px;
   padding: 10px;
   overflow: hidden;
+}
+
+.workspace-splitter {
+  position: relative;
+  z-index: 2;
+  display: grid;
+  width: 12px;
+  min-height: 0;
+  cursor: col-resize;
+  place-items: center;
+}
+
+.workspace-splitter::before {
+  position: absolute;
+  inset: 0 5px;
+  content: "";
+  background: linear-gradient(180deg, transparent, var(--signal), transparent);
+  opacity: 0.42;
+  transition: opacity 140ms ease;
+}
+
+.workspace-splitter span {
+  z-index: 1;
+  width: 6px;
+  height: 48px;
+  background: var(--gradient-card);
+  border: 1px solid var(--line-strong);
+  border-radius: 999px;
+  box-shadow: 0 2px 8px rgba(15, 32, 60, 0.18);
+}
+
+.workspace-splitter:hover::before,
+.workspace-splitter:active::before {
+  opacity: 1;
 }
 
 .data-panel,
@@ -1273,7 +1307,7 @@ input:focus-visible {
 
 @media (max-width: 1180px) {
   .orbit-workspace {
-    grid-template-columns: minmax(0, 2.35fr) minmax(290px, 1fr);
+    grid-template-columns: minmax(0, calc(var(--split-percent, 70%) - 6px)) 12px minmax(260px, 1fr);
   }
 
   .cascade {
@@ -1308,6 +1342,10 @@ input:focus-visible {
     grid-template-columns: 1fr;
     grid-template-rows: minmax(680px, 72dvh) minmax(420px, 55dvh);
     overflow: visible;
+  }
+
+  .workspace-splitter {
+    display: none;
   }
 
   .cascade {

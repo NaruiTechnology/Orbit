@@ -1,4 +1,11 @@
-import { useDeferredValue, useEffect, useState } from "react";
+import {
+  useDeferredValue,
+  useEffect,
+  useRef,
+  useState,
+  type CSSProperties,
+  type PointerEvent as ReactPointerEvent,
+} from "react";
 
 import {
   useGetHealthQuery,
@@ -43,6 +50,9 @@ export function App() {
   const dispatch = useAppDispatch();
   const workspace = useAppSelector((state) => state.workspace);
   const [authToken, setAuthToken] = useState(() => localStorage.getItem("orbit:auth-token"));
+  const [splitPercent, setSplitPercent] = useState(70);
+  const workspaceRef = useRef<HTMLElement | null>(null);
+  const resizingRef = useRef(false);
   const deferredSearch = useDeferredValue(workspace.search);
   const deferredSelection = useDeferredValue(workspace.selection);
 
@@ -81,6 +91,34 @@ export function App() {
   useEffect(() => {
     document.documentElement.dataset.theme = workspace.theme;
   }, [workspace.theme]);
+
+  useEffect(() => {
+    const move = (event: PointerEvent) => {
+      if (!resizingRef.current || !workspaceRef.current) return;
+      const bounds = workspaceRef.current.getBoundingClientRect();
+      const next = ((event.clientX - bounds.left) / bounds.width) * 100;
+      setSplitPercent(Math.max(52, Math.min(78, next)));
+    };
+    const stop = () => {
+      resizingRef.current = false;
+      document.body.style.cursor = "";
+      document.body.style.userSelect = "";
+    };
+    window.addEventListener("pointermove", move);
+    window.addEventListener("pointerup", stop);
+    return () => {
+      window.removeEventListener("pointermove", move);
+      window.removeEventListener("pointerup", stop);
+    };
+  }, []);
+
+  function beginSplitResize(event: ReactPointerEvent<HTMLDivElement>) {
+    event.preventDefault();
+    resizingRef.current = true;
+    event.currentTarget.setPointerCapture?.(event.pointerId);
+    document.body.style.cursor = "col-resize";
+    document.body.style.userSelect = "none";
+  }
 
   useEffect(() => {
     const errors = [workflowsQuery.error, workflowQuery.error, recordsQuery.error, treeQuery.error];
@@ -250,7 +288,11 @@ export function App() {
         }}
       />
 
-      <main className="orbit-workspace">
+      <main
+        className="orbit-workspace"
+        ref={workspaceRef}
+        style={{ "--split-percent": splitPercent + "%" } as CSSProperties}
+      >
         <section className="data-panel">
           <WorkflowCascade
             locale={workspace.locale}
@@ -328,6 +370,18 @@ export function App() {
             />
           )}
         </section>
+
+        <div
+          className="workspace-splitter"
+          role="separator"
+          aria-label="Resize workflow tree panel"
+          aria-valuemin={52}
+          aria-valuemax={78}
+          aria-valuenow={Math.round(splitPercent)}
+          onPointerDown={beginSplitResize}
+        >
+          <span />
+        </div>
 
         <WorkflowTreePanel
           key={`${workspace.selectedWorkflow}:${workspace.locale}`}
