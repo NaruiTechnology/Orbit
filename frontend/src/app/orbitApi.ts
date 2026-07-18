@@ -39,7 +39,8 @@ export const orbitApi = createApi({
   baseQuery: fetchBaseQuery({
     baseUrl: "/api/v1",
     prepareHeaders: (headers) => {
-      headers.set("X-Orbit-User", "orbit.admin");
+      const token = localStorage.getItem("orbit:auth-token");
+      if (token) headers.set("X-Orbit-Auth", token);
       return headers;
     },
   }),

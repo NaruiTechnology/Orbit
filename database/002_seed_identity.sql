@@ -81,17 +81,28 @@ SET can_view = EXCLUDED.can_view,
     can_execute = EXCLUDED.can_execute;
 
 INSERT INTO orbit_identity.app_user (
-    id, login_name, display_name_i18n, email, preferred_locale
+    id, login_name, display_name_i18n, first_name, last_name, email,
+    phone_number, company_name, site, preferred_locale
 )
 VALUES (
     '60000000-0000-0000-0000-000000000001',
     'orbit.admin',
     '{"en":"Orbit Administrator","zh_CN":"Orbit 系统管理员","zh_HK":"Orbit 系統管理員"}',
+    'Orbit',
+    'Administrator',
     'orbit.admin@localhost',
+    '15038079055',
+    'Ionbeamtech',
+    'Beijing(北京)',
     'zh-CN'
 )
 ON CONFLICT (login_name) DO UPDATE
 SET display_name_i18n = EXCLUDED.display_name_i18n,
+    first_name = EXCLUDED.first_name,
+    last_name = EXCLUDED.last_name,
+    phone_number = EXCLUDED.phone_number,
+    company_name = EXCLUDED.company_name,
+    site = EXCLUDED.site,
     preferred_locale = EXCLUDED.preferred_locale,
     is_active = true;
 
@@ -122,4 +133,3 @@ ON CONFLICT (user_id, role_id) DO UPDATE
 SET organization_id = EXCLUDED.organization_id,
     department_id = EXCLUDED.department_id,
     laboratory_id = EXCLUDED.laboratory_id;
-

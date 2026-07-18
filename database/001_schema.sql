@@ -464,3 +464,50 @@ COMMENT ON COLUMN orbit_workflow.workflow_record.values_json IS
     'Workflow graph-node metadata; not the DataGrid business data source.';
 COMMENT ON COLUMN orbit_workflow.workflow_business_record.values_json IS
     'Editable mixed-language UTF-8 business values keyed by stable English identifiers.';
+
+-- Imported Iobeam admin identity compatibility. Orbit keeps its normalized
+-- identity model, while retaining the profile/session fields required by the
+-- foreign login, sign-up, SMS verification, and audit implementation.
+ALTER TABLE orbit_identity.app_user
+    ADD COLUMN IF NOT EXISTS first_name varchar(100) NOT NULL DEFAULT '',
+    ADD COLUMN IF NOT EXISTS last_name varchar(100) NOT NULL DEFAULT '',
+    ADD COLUMN IF NOT EXISTS phone_number varchar(40) NOT NULL DEFAULT '',
+    ADD COLUMN IF NOT EXISTS company_name varchar(160) NOT NULL DEFAULT '',
+    ADD COLUMN IF NOT EXISTS site varchar(160) NOT NULL DEFAULT 'Beijing(北京)',
+    ADD COLUMN IF NOT EXISTS session_lifetime_limit_days integer NOT NULL DEFAULT 1;
+
+CREATE TABLE IF NOT EXISTS orbit_identity.auth_session (
+    id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_id uuid NOT NULL REFERENCES orbit_identity.app_user(id) ON DELETE CASCADE,
+    login_name varchar(120) NOT NULL,
+    client_machine_name varchar(160) NOT NULL DEFAULT '',
+    site varchar(160) NOT NULL DEFAULT 'Beijing(北京)',
+    login_time timestamptz NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    is_authorized boolean NOT NULL DEFAULT true,
+    expires_at timestamptz NOT NULL
+);
+
+CREATE INDEX IF NOT EXISTS ix_auth_session_user_login_time
+    ON orbit_identity.auth_session (user_id, login_time DESC);
+
+CREATE INDEX IF NOT EXISTS ix_auth_session_expiry
+    ON orbit_identity.auth_session (expires_at);
+
+CREATE TABLE IF NOT EXISTS orbit_identity.role_definition (
+    role_id integer PRIMARY KEY,
+    role_name varchar(32) NOT NULL UNIQUE,
+    display_name_i18n jsonb NOT NULL CHECK (jsonb_typeof(display_name_i18n) = 'object'),
+    is_active boolean NOT NULL DEFAULT true
+);
+
+INSERT INTO orbit_identity.role_definition (role_id, role_name, display_name_i18n)
+VALUES
+    (0, 'USER', '{"en":"User","zh_CN":"用户","zh_HK":"使用者"}'::jsonb),
+    (1, 'SUPER_USER', '{"en":"SuperUser","zh_CN":"超级用户","zh_HK":"超級使用者"}'::jsonb),
+    (2, 'DEVELOPER', '{"en":"Developer","zh_CN":"开发者","zh_HK":"開發者"}'::jsonb),
+    (3, 'ADMIN', '{"en":"Admin","zh_CN":"管理员","zh_HK":"管理員"}'::jsonb),
+    (4, 'AUDIT', '{"en":"Auditor","zh_CN":"审计员","zh_HK":"稽核員"}'::jsonb)
+ON CONFLICT (role_id) DO UPDATE
+SET role_name = EXCLUDED.role_name,
+    display_name_i18n = EXCLUDED.display_name_i18n,
+    is_active = true;

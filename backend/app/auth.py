@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from datetime import datetime, timedelta, timezone
+import secrets
 from typing import Any, Literal
 
 from fastapi import Depends, Header, HTTPException, status
@@ -14,13 +16,46 @@ from app.services.localization import localized_value
 
 AccessAction = Literal["view", "edit", "execute"]
 
+AUTH_TOKEN_TTL = timedelta(days=1)
+_auth_tokens: dict[str, tuple[str, datetime]] = {}
+
+
+def issue_auth_token(login_name: str) -> str:
+    token = secrets.token_urlsafe(32)
+    _auth_tokens[token] = (login_name, datetime.now(timezone.utc) + AUTH_TOKEN_TTL)
+    return token
+
+
+def login_from_token(token: str | None) -> str | None:
+    if not token:
+        return None
+    session = _auth_tokens.get(token)
+    if session is None:
+        return None
+    login_name, expires_at = session
+    if datetime.now(timezone.utc) >= expires_at:
+        _auth_tokens.pop(token, None)
+        return None
+    return login_name
+
+
+def revoke_auth_token(token: str | None) -> None:
+    if token:
+        _auth_tokens.pop(token, None)
+
 
 def get_current_user(
     locale: str | None = None,
     x_orbit_user: str | None = Header(default=None, alias="X-Orbit-User"),
+    x_orbit_auth: str | None = Header(default=None, alias="X-Orbit-Auth"),
     connection: Connection[dict[str, Any]] = Depends(get_connection),
 ) -> SessionInfo:
-    login_name = x_orbit_user or get_settings().default_user_login
+    login_name = login_from_token(x_orbit_auth) or x_orbit_user
+    if not login_name:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="SMS-verified Orbit session is required",
+        )
     row = connection.execute(
         """
         SELECT u.id,

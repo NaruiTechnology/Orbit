@@ -18,6 +18,7 @@ import { OrbitHeader } from "./components/OrbitHeader";
 import { WorkflowCascade } from "./components/WorkflowCascade";
 import { WorkflowGrid } from "./components/WorkflowGrid";
 import { WorkflowTreePanel } from "./components/WorkflowTreePanel";
+import { AuthDialog } from "./components/AuthDialog";
 import {
   selectCell,
   selectGroup,
@@ -41,35 +42,37 @@ interface PendingConfirmation {
 export function App() {
   const dispatch = useAppDispatch();
   const workspace = useAppSelector((state) => state.workspace);
+  const [authToken, setAuthToken] = useState(() => localStorage.getItem("orbit:auth-token"));
   const deferredSearch = useDeferredValue(workspace.search);
   const deferredSelection = useDeferredValue(workspace.selection);
 
   const healthQuery = useGetHealthQuery();
   const sessionQuery = useGetSessionQuery(workspace.locale);
-  const workflowsQuery = useGetWorkflowsQuery(workspace.locale);
+  const workflowsQuery = useGetWorkflowsQuery(workspace.locale, { skip: !authToken });
   const workflowQuery = useGetWorkflowQuery({
     workflowKey: workspace.selectedWorkflow,
     locale: workspace.locale,
-  }, { refetchOnMountOrArgChange: true });
+  }, { refetchOnMountOrArgChange: true, skip: !authToken });
   const recordsQuery = useGetRecordsQuery({
     workflowKey: workspace.selectedWorkflow,
     locale: workspace.locale,
     search: deferredSearch,
     sortBy: workspace.sortBy,
     sortDirection: workspace.sortDirection,
-  }, { refetchOnMountOrArgChange: true });
+  }, { refetchOnMountOrArgChange: true, skip: !authToken });
   const treeQuery = useGetWorkflowTreeQuery({
     workflowKey: workspace.selectedWorkflow,
     locale: workspace.locale,
     recordId: deferredSelection.recordId,
     cellKey: deferredSelection.cellKey,
-  }, { refetchOnMountOrArgChange: true });
+  }, { refetchOnMountOrArgChange: true, skip: !authToken });
   const [updateRecord] = useUpdateRecordMutation();
   const [createRecord] = useCreateRecordMutation();
   const [deleteRecord] = useDeleteRecordMutation();
   const [dirtyRecordIds, setDirtyRecordIds] = useState<Set<string>>(new Set());
   const [pendingConfirmation, setPendingConfirmation] = useState<PendingConfirmation | null>(null);
   const [confirmationBusy, setConfirmationBusy] = useState(false);
+  const [authOpen, setAuthOpen] = useState(() => !localStorage.getItem("orbit:auth-token"));
 
   useEffect(() => {
     document.documentElement.lang = workspace.locale;
@@ -78,6 +81,15 @@ export function App() {
   useEffect(() => {
     document.documentElement.dataset.theme = workspace.theme;
   }, [workspace.theme]);
+
+  useEffect(() => {
+    const errors = [workflowsQuery.error, workflowQuery.error, recordsQuery.error, treeQuery.error];
+    if (authToken && errors.some((error) => isUnauthorized(error))) {
+      localStorage.removeItem("orbit:auth-token");
+      setAuthToken(null);
+      setAuthOpen(true);
+    }
+  }, [authToken, recordsQuery.error, treeQuery.error, workflowQuery.error, workflowsQuery.error]);
 
   useEffect(() => {
     const workflows = workflowsQuery.data;
@@ -214,6 +226,28 @@ export function App() {
         onLocaleChange={(locale) => dispatch(setLocale(locale))}
         theme={workspace.theme}
         onThemeChange={(theme) => dispatch(setTheme(theme))}
+        onOpenAuth={() => setAuthOpen(true)}
+        onSignOut={() => {
+          localStorage.removeItem("orbit:auth-token");
+          setAuthToken(null);
+          setAuthOpen(true);
+          void sessionQuery.refetch();
+        }}
+      />
+
+      <AuthDialog
+        open={authOpen}
+        locale={workspace.locale}
+        onClose={() => setAuthOpen(false)}
+        onSignedIn={(_user, token) => {
+          setAuthToken(token);
+          setAuthOpen(false);
+          void sessionQuery.refetch();
+          void workflowsQuery.refetch();
+          void workflowQuery.refetch();
+          void recordsQuery.refetch();
+          void treeQuery.refetch();
+        }}
       />
 
       <main className="orbit-workspace">
@@ -319,4 +353,8 @@ export function App() {
       ) : null}
     </div>
   );
+}
+
+function isUnauthorized(error: unknown): boolean {
+  return Boolean(error && typeof error === "object" && "status" in error && error.status === 401);
 }

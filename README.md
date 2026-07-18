@@ -90,6 +90,28 @@ ORBIT_DB_ADMIN_USER
 ORBIT_DB_ADMIN_PASSWORD
 ```
 
+## SMS Verification Configuration
+
+Orbit's current SMS implementation is development-only. `POST /api/v1/auth/send-sms`
+generates a mock code and returns it as `dev_code`; no SMS vendor is called. The
+implementation is in `backend/app/api/routes/auth.py`.
+
+There is no SMS-vendor JSON configuration in Orbit. The JSON files under `config/`
+contain application and database settings only.
+
+The imported Iobeam reference project contains the planned Twilio environment
+variables in `~/Project/IobeamTech/Development/ionbeam-web/backend/.env` (use
+`.env.example` as the template):
+
+```text
+TWILIO_ACCOUNT_SID=
+TWILIO_AUTH_TOKEN=
+TWILIO_FROM_NUMBER=
+```
+
+Those variables are not consumed by Orbit until a Twilio provider adapter is
+implemented and enabled. Do not commit real Twilio credentials.
+
 ## Workbook Sync
 
 The source workbook is not copied into the repository. The checked-in `data/workflow_catalog.json` includes a SHA-256 source hash and the original sheet, row, header, and cell references.

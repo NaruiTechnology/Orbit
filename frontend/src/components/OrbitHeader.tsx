@@ -8,6 +8,8 @@ interface OrbitHeaderProps {
   onLocaleChange: (locale: Locale) => void;
   theme: ThemeMode;
   onThemeChange: (theme: ThemeMode) => void;
+  onOpenAuth: () => void;
+  onSignOut: () => void;
 }
 
 const localeLabels: Record<Locale, string> = {
@@ -23,6 +25,8 @@ export function OrbitHeader({
   onLocaleChange,
   theme,
   onThemeChange,
+  onOpenAuth,
+  onSignOut,
 }: OrbitHeaderProps) {
   return (
     <header className="orbit-header">
@@ -54,7 +58,7 @@ export function OrbitHeader({
         </div>
 
         {session ? (
-          <div className="identity-chip">
+          <button className="identity-chip identity-chip--button" type="button" onClick={onSignOut} title="Sign out">
             <span className="identity-chip__monogram">
               {session.display_name.slice(0, 1).toUpperCase()}
             </span>
@@ -67,8 +71,13 @@ export function OrbitHeader({
                   : ""}
               </small>
             </div>
-          </div>
-        ) : null}
+          </button>
+        ) : (
+          <button className="identity-chip identity-chip--button" type="button" onClick={onOpenAuth}>
+            <span className="identity-chip__monogram">?</span>
+            <div><b>Sign in</b><small>SMS security validation</small></div>
+          </button>
+        )}
 
         <div className="locale-switch" aria-label="Language">
           {(Object.keys(localeLabels) as Locale[]).map((item) => (

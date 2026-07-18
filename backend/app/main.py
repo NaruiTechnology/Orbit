@@ -35,7 +35,7 @@ def create_app() -> FastAPI:
         allow_origins=list(settings.allowed_origins),
         allow_credentials=True,
         allow_methods=["GET", "POST", "PATCH", "OPTIONS"],
-        allow_headers=["Content-Type", "X-Orbit-User"],
+        allow_headers=["Content-Type", "X-Orbit-User", "X-Orbit-Auth"],
     )
     application.include_router(api_router)
 
