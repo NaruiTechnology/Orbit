@@ -385,7 +385,7 @@ export function WorkflowGrid({
   }
 
   return (
-    <div className="grid-frame">
+    <div className="grid-frame" aria-busy={loading}>
       <div className="grid-toolbar">
         <button
           className="grid-add-button"
@@ -428,11 +428,11 @@ export function WorkflowGrid({
           enableClickSelection: true,
         }}
         editType="fullRow"
-        loading={loading}
         rowHeight={44}
         headerHeight={46}
         floatingFiltersHeight={34}
-        animateRows
+        suppressAnimationFrame
+        suppressRowTransform
         enableBrowserTooltips
         ensureDomOrder
         onCellFocused={handleCellFocused}
@@ -444,6 +444,11 @@ export function WorkflowGrid({
         onSortChanged={handleSortChanged}
         overlayNoRowsTemplate={`<span class="grid-empty">${translate(locale, "noData")}</span>`}
       />
+      {loading ? (
+        <div className="grid-loading" role="status" aria-label="Loading data">
+          <span className="grid-loading__spinner" aria-hidden="true" />
+        </div>
+      ) : null}
     </div>
   );
 }

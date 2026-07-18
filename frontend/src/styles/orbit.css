@@ -309,6 +309,9 @@ input:focus-visible {
   margin-top: 2px;
   color: var(--ink-soft);
   font-size: 9px;
+  overflow-wrap: anywhere;
+  text-overflow: clip;
+  white-space: normal;
 }
 
 .runtime-chip__dot {
@@ -790,11 +793,42 @@ input:focus-visible {
 }
 
 .grid-frame {
+  position: relative;
   display: flex;
   flex-direction: column;
   height: 100%;
   min-width: 0;
   min-height: 0;
+}
+
+.grid-loading {
+  position: absolute;
+  z-index: 4;
+  inset: 0;
+  display: grid;
+  background: transparent;
+  pointer-events: none;
+  place-items: center;
+}
+
+.grid-loading__spinner {
+  width: 28px;
+  height: 28px;
+  border: 3px solid color-mix(in srgb, var(--signal) 24%, transparent);
+  border-top-color: var(--signal);
+  border-radius: 50%;
+  animation: grid-spin 760ms linear infinite;
+}
+
+.grid-frame,
+.grid-frame .ag-root,
+.grid-frame .ag-root-wrapper-body {
+  animation: none !important;
+  transition: none !important;
+}
+
+@keyframes grid-spin {
+  to { transform: rotate(360deg); }
 }
 
 .grid-toolbar {
@@ -983,6 +1017,15 @@ input:focus-visible {
 
 .grid-frame .ag-row.grid-row--dirty {
   background: linear-gradient(90deg, color-mix(in srgb, var(--acid) 28%, var(--surface) 72%), color-mix(in srgb, var(--signal-soft) 38%, var(--surface) 62%)) !important;
+}
+
+.grid-frame .ag-row,
+.grid-frame .ag-cell,
+.grid-frame .ag-overlay,
+.grid-frame .ag-overlay-wrapper,
+.grid-frame .ag-overlay-loading-wrapper {
+  animation: none !important;
+  transition: none !important;
 }
 
 .dialog-backdrop {
@@ -1310,7 +1353,6 @@ input:focus-visible {
 
 .api-error {
   display: flex;
-  align-items: center;
   justify-content: center;
   gap: 18px;
   margin: 18px;
@@ -1553,7 +1595,7 @@ input:focus-visible {
 .cascade {
   display: grid;
   grid-template-columns: minmax(0, 1fr);
-  grid-template-rows: 30px minmax(0, 1fr);
+  grid-template-rows: minmax(30px, auto) minmax(0, 1fr);
   gap: 8px 14px;
   padding: 10px 12px;
 }
@@ -1561,7 +1603,8 @@ input:focus-visible {
 .cascade__tabs {
   grid-column: 1;
   grid-row: 1;
-  display: flex;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   min-width: 0;
   padding: 4px;
   gap: 7px;
@@ -1574,16 +1617,24 @@ input:focus-visible {
 
 .cascade__tabs button {
   display: flex;
-  min-width: 180px;
+  width: 100%;
+  min-width: 0;
   align-items: center;
-  justify-content: space-between;
+  justify-content: center;
   gap: 10px;
   padding: 7px 10px;
   color: var(--control-fg);
-  text-align: left;
+  text-align: center;
   background: var(--gradient-card);
   border: 1px solid var(--line);
   cursor: pointer;
+}
+
+.cascade__tabs button b {
+  min-width: 0;
+  overflow-wrap: anywhere;
+  white-space: normal;
+  text-align: center;
 }
 
 .cascade__tabs button:hover,
@@ -1599,6 +1650,7 @@ input:focus-visible {
 }
 
 .cascade__tabs button small {
+  display: none;
   color: var(--signal);
   font-size: 10px;
   font-weight: 800;
@@ -1608,18 +1660,40 @@ input:focus-visible {
   grid-column: 1;
   grid-row: 2;
   display: grid;
-  grid-template-rows: 15px minmax(0, 1fr);
+  grid-template-rows: minmax(0, 1fr);
   padding: 0;
 }
 
+.cascade__label {
+  display: none;
+}
+
 .cascade__lane--workflows .cascade__scroll {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(0, 1fr));
   gap: 6px;
+  overflow-x: hidden;
 }
 
 .cascade__lane--workflows button {
-  min-width: 148px;
+  width: 100%;
+  min-width: 0;
   height: 58px;
+  align-items: center;
+  justify-content: center;
   padding: 8px;
+  text-align: center;
+  background: var(--gradient-card);
+}
+
+.cascade__lane--workflows button b {
+  padding-bottom: 10px;
+  text-align: center;
+}
+
+.cascade__lane--workflows button.is-active,
+.cascade__lane--workflows button[aria-selected="true"] {
+  background: linear-gradient(135deg, var(--control-active-bg), var(--forest));
 }
 
 @media (max-width: 900px) {
@@ -1662,7 +1736,7 @@ input:focus-visible {
   }
 
   .cascade__tabs button {
-    min-width: 145px;
+    min-width: 0;
   }
 }
 

@@ -48,10 +48,10 @@ export function OrbitHeader({
         <div className="runtime-chip" data-online={Boolean(health)}>
           <span className="runtime-chip__dot" />
           <div>
-            <b>{health ? translate(locale, "encoding") : "API offline"}</b>
+            {!health ? <b>API offline</b> : null}
             <small>
               {health
-                ? `${health.database} · ${health.timezone}`
+                ? `${health.database}·${health.timezone}`
                 : "127.0.0.1:8120"}
             </small>
           </div>
