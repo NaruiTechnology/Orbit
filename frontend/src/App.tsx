@@ -391,6 +391,10 @@ export function App() {
           loading={treeQuery.isLoading || treeQuery.isFetching}
         />
       </main>
+      <footer className="orbit-footer">
+        <span>© 2026 Ionbeam Technology · Orbit Automation</span>
+        <span>All rights reserved.</span>
+      </footer>
       {pendingConfirmation ? (
         <ConfirmDialog
           title={pendingConfirmation.title}
