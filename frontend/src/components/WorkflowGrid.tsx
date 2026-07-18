@@ -112,12 +112,16 @@ function DeleteCellRenderer({
       <button
         type="button"
         className="grid-row-action grid-row-action--delete"
+        aria-label={locale === "en" ? "Delete row" : "删除行"}
+        title={locale === "en" ? "Delete row" : "删除行"}
         disabled={!canEdit}
         onClick={() => {
           if (data) void onDelete(data);
         }}
       >
-        {locale === "en" ? "Delete" : "删除"}
+        <svg aria-hidden="true" viewBox="0 0 24 24" focusable="false">
+          <path d="M5 7h14M10 11v6m4-6v6M9 7V4h6v3m-9 0 1 13h8l1-13" />
+        </svg>
       </button>
     </div>
   );
@@ -243,14 +247,19 @@ export function WorkflowGrid({
         <button
           className="grid-add-button"
           type="button"
+          aria-label={locale === "en" ? "Add row" : "新增行"}
+          title={locale === "en" ? "Add row" : "新增行"}
           disabled={!workflow?.access.can_edit || loading}
           onClick={() => void onRecordAdd()}
         >
-          + {locale === "en" ? "Add row" : "新增行"}
+          <svg aria-hidden="true" viewBox="0 0 24 24" focusable="false">
+            <path d="M12 5v14M5 12h14" />
+          </svg>
         </button>
       </div>
       <AgGridReact<WorkflowRecord>
         key={`${workflow?.key || "grid"}-${locale}-${theme}`}
+        containerStyle={{ width: "100%", height: "100%" }}
         theme={theme === "dark" ? orbitGridDarkTheme : orbitGridTheme}
         rowData={rowData}
         columnDefs={columnDefinitions}

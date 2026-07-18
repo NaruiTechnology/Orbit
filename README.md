@@ -100,6 +100,9 @@ Regenerate and import it with:
 .venv/bin/python scripts/generate_catalog.py \
   --source "$HOME/Downloads/单束系统 初版.xlsx"
 .venv/bin/python scripts/import_catalog.py
+
+# Optional: populate repeatable development fixtures for business entities.
+.venv/bin/python scripts/seed_mock_data.py
 ```
 
 The workbook remains the catalog source of truth. A catalog import updates source-derived configuration rows and writes an audit event.

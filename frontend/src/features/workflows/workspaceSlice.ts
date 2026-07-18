@@ -27,7 +27,7 @@ const initialState: WorkspaceState = {
     : "zh-CN",
   theme: savedTheme === "dark" ? "dark" : "light",
   selectedGroup: "sales",
-  selectedWorkflow: "customer-fields",
+  selectedWorkflow: "order-evaluation",
   selection: { recordId: null, cellKey: null },
   search: "",
   sortBy: "record_order",

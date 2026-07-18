@@ -466,7 +466,8 @@ input:focus-visible {
   transform: translateY(-1px);
 }
 
-.cascade__lane button.is-active {
+.cascade__lane button.is-active,
+.cascade__lane button[aria-selected="true"] {
   color: var(--control-active-fg);
   background: var(--control-active-bg);
   border-color: var(--forest);
@@ -637,6 +638,9 @@ input:focus-visible {
 }
 
 .grid-frame {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
   min-width: 0;
   min-height: 0;
 }
@@ -649,12 +653,27 @@ input:focus-visible {
 
 .grid-add-button,
 .grid-row-action {
-  border: 1px solid var(--forest);
+  display: inline-grid;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  place-items: center;
+  border: 0;
   background: var(--forest);
   color: var(--paper-bright);
   cursor: pointer;
   font: inherit;
-  padding: 6px 12px;
+}
+
+.grid-add-button svg,
+.grid-row-action svg {
+  width: 16px;
+  height: 16px;
+  fill: none;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 2;
 }
 
 .grid-add-button:disabled,
@@ -671,12 +690,11 @@ input:focus-visible {
 
 .grid-row-action--delete {
   background: transparent;
-  border-color: #b34832;
   color: #8f321f;
-  padding: 4px 9px;
 }
 
 .grid-frame .ag-root-wrapper {
+  height: 100%;
   border: 0;
 }
 
@@ -1222,6 +1240,11 @@ input:focus-visible {
   border-color: var(--forest);
 }
 
+.cascade__tabs button.is-active,
+.cascade__tabs button[aria-selected="true"] {
+  box-shadow: inset 4px 0 0 var(--signal);
+}
+
 .cascade__tabs button small {
   color: var(--signal);
   font-size: 10px;
@@ -1276,6 +1299,7 @@ input:focus-visible {
   .cascade__lane--workflows {
     grid-row: 3;
   }
+
 }
 
 @media (max-width: 620px) {

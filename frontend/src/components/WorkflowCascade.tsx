@@ -17,22 +17,8 @@ interface GroupItem {
 }
 
 const PEOPLE_GROUP = "hr";
-const LOOKUP_ONLY_KEYS = new Set([
-  "business-alert-rules",
-  "business-notification-templates",
-  "customer-pool-rules",
-  "hr-notification-templates",
-]);
-
 function isProcessWorkflow(workflow: WorkflowSummary): boolean {
   return workflow.definition_type === "workflow";
-}
-
-function isNavigableBackgroundComponent(workflow: WorkflowSummary): boolean {
-  return !workflow.is_master &&
-    !isProcessWorkflow(workflow) &&
-    workflow.definition_type !== "lookup_table" &&
-    !LOOKUP_ONLY_KEYS.has(workflow.key);
 }
 
 export function WorkflowCascade({
@@ -76,12 +62,6 @@ export function WorkflowCascade({
         ? workflow.group_key === PEOPLE_GROUP
         : workflow.group_key !== PEOPLE_GROUP),
   );
-  const backgroundComponents = workflows.filter(
-    (workflow) =>
-      isNavigableBackgroundComponent(workflow) &&
-      workflow.group_key !== PEOPLE_GROUP,
-  );
-
   return (
     <section className="cascade" aria-label={translate(locale, "navigator")}>
       <div className="cascade__tabs" role="tablist" aria-label={translate(locale, "businessArea")}>
@@ -123,30 +103,6 @@ export function WorkflowCascade({
         </div>
       </div>
 
-      {activeTabKey === "customer-relations" && backgroundComponents.length > 0 ? (
-        <div className="cascade__lane cascade__lane--background" role="tabpanel">
-          <span className="cascade__label">{translate(locale, "backgroundLogic")}</span>
-          <div
-            className="cascade__scroll"
-            role="tablist"
-            aria-label={translate(locale, "backgroundLogic")}
-          >
-            {backgroundComponents.map((component) => (
-              <button
-                aria-selected={selectedWorkflow === component.key}
-                className={selectedWorkflow === component.key ? "is-active" : ""}
-                key={component.key}
-                onClick={() => onWorkflowSelect(component.key)}
-                role="tab"
-                type="button"
-              >
-                <b>{component.name}</b>
-                <small>{component.record_count}</small>
-              </button>
-            ))}
-          </div>
-        </div>
-      ) : null}
     </section>
   );
 }
