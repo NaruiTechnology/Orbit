@@ -784,18 +784,19 @@ def create_record(
                     priority, status, evaluation_result, notes,
                     organization_id, department_id, laboratory_id, created_by
                 )
-                VALUES (%s, %s, %s, %s, %s, %s, COALESCE(%s, 'unspecified'),
+                VALUES (%s, %s, %s, %s, %s, %s, COALESCE(NULLIF(%s, ''), ' '),
                         COALESCE(%s, 1), %s, %s, NULLIF(%s, '')::date,
-                        COALESCE(%s, 'normal'), COALESCE(%s, 'draft'), %s, %s,
+                        COALESCE(NULLIF(%s, ''), 'normal'),
+                        COALESCE(NULLIF(%s, ''), 'draft'), %s, %s,
                         %s, %s, %s, %s)
                 RETURNING id
                 """,
                 (
                     order_number,
                     values.get("customer_code"),
-                    values.get("customer_name") or "New customer",
+                    values.get("customer_name") or " ",
                     values.get("customer_contact"),
-                    values.get("chip_name") or "New chip",
+                    values.get("chip_name") or " ",
                     values.get("chip_model"),
                     values.get("package_type"),
                     values.get("quantity") or 1,

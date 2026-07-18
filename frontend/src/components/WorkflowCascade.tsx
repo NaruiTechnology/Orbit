@@ -97,7 +97,6 @@ export function WorkflowCascade({
               type="button"
             >
               <b>{workflow.name}</b>
-              <small>{workflow.record_count}</small>
             </button>
           ))}
         </div>

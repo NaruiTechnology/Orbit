@@ -735,6 +735,75 @@ input:focus-visible {
   background: color-mix(in srgb, var(--signal-soft) 72%, var(--surface) 28%);
 }
 
+.grid-frame .ag-row.grid-row--dirty {
+  background: color-mix(in srgb, var(--acid) 22%, var(--surface) 78%);
+  box-shadow: inset 4px 0 0 var(--signal);
+}
+
+.dialog-backdrop {
+  position: fixed;
+  z-index: 20;
+  inset: 0;
+  display: grid;
+  padding: 20px;
+  background: rgba(8, 17, 14, 0.62);
+  place-items: center;
+}
+
+.confirm-dialog {
+  width: min(420px, 100%);
+  padding: 24px;
+  color: var(--ink);
+  background: var(--surface);
+  border: 1px solid var(--line-strong);
+  border-top: 4px solid var(--signal);
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+}
+
+.confirm-dialog__eyebrow {
+  color: var(--signal);
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: 0.16em;
+}
+
+.confirm-dialog h2 {
+  margin: 8px 0 6px;
+  font-family: var(--font-display);
+  font-size: 25px;
+}
+
+.confirm-dialog p {
+  margin: 0;
+  color: var(--ink-soft);
+  line-height: 1.5;
+}
+
+.confirm-dialog__actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 22px;
+}
+
+.confirm-dialog__actions button {
+  min-width: 88px;
+  padding: 8px 12px;
+  border: 1px solid var(--line-strong);
+  cursor: pointer;
+}
+
+.confirm-dialog__cancel {
+  color: var(--ink);
+  background: transparent;
+}
+
+.confirm-dialog__confirm {
+  color: var(--paper-bright);
+  background: var(--signal);
+  border-color: var(--signal) !important;
+}
+
 .grid-empty {
   color: var(--ink-soft);
   font-size: 12px;

@@ -1,5 +1,6 @@
 import {
   themeQuartz,
+  type CellClickedEvent,
   type CellFocusedEvent,
   type CellValueChangedEvent,
   type ColDef,
@@ -57,6 +58,7 @@ interface WorkflowGridProps {
   theme: ThemeMode;
   workflow: WorkflowDetail | undefined;
   records: WorkflowRecord[];
+  dirtyRecordIds: string[];
   loading: boolean;
   onCellSelect: (recordId: string, cellKey: string | null) => void;
   onRecordUpdate: (
@@ -115,7 +117,9 @@ function DeleteCellRenderer({
         aria-label={locale === "en" ? "Delete row" : "删除行"}
         title={locale === "en" ? "Delete row" : "删除行"}
         disabled={!canEdit}
-        onClick={() => {
+        onMouseDown={(event) => event.stopPropagation()}
+        onClick={(event) => {
+          event.stopPropagation();
           if (data) void onDelete(data);
         }}
       >
@@ -132,6 +136,7 @@ export function WorkflowGrid({
   theme,
   workflow,
   records,
+  dirtyRecordIds,
   loading,
   onCellSelect,
   onRecordUpdate,
@@ -213,7 +218,16 @@ export function WorkflowGrid({
       typeof event.column === "string"
         ? event.column
         : event.column?.getColId() || null;
+    if (cellKey === "actions") return;
     if (row) onCellSelect(row.tree_record_id || row.id, cellKey);
+  }
+
+  function handleCellClicked(event: CellClickedEvent<WorkflowRecord>) {
+    if (event.colDef.colId !== "actions" || !event.data) return;
+    const target = event.event?.target;
+    if (target instanceof HTMLElement && target.closest("button")) return;
+    event.event?.stopPropagation();
+    void onRecordDelete(event.data);
   }
 
   async function handleCellChanged(event: CellValueChangedEvent<WorkflowRecord>) {
@@ -270,6 +284,10 @@ export function WorkflowGrid({
           suppressHeaderMenuButton: false,
         }}
         getRowId={(parameters) => parameters.data.id}
+        rowClassRules={{
+          "grid-row--dirty": (parameters) =>
+            Boolean(parameters.data && dirtyRecordIds.includes(parameters.data.id)),
+        }}
         rowSelection={{
           mode: "singleRow",
           checkboxes: false,
@@ -282,6 +300,7 @@ export function WorkflowGrid({
         enableBrowserTooltips
         ensureDomOrder
         onCellFocused={handleCellFocused}
+        onCellClicked={handleCellClicked}
         onCellValueChanged={handleCellChanged}
         onSortChanged={handleSortChanged}
         overlayNoRowsTemplate={`<span class="grid-empty">${translate(locale, "noData")}</span>`}
