@@ -76,6 +76,26 @@
   box-sizing: border-box;
 }
 
+.orbit-header,
+.data-panel,
+.tree-panel,
+.auth-dialog,
+.confirm-dialog,
+.context-card,
+.grid-frame,
+.grid-frame .ag-root-wrapper,
+.grid-frame .ag-header,
+.cascade__tabs,
+.cascade__tabs button,
+.workflow-node__body,
+.search-box,
+.access-badge,
+.locale-switch,
+.theme-switch,
+.api-error {
+  border-radius: 6px;
+}
+
 html,
 body,
 #root {
@@ -406,7 +426,7 @@ input:focus-visible {
 .locale-switch button.is-active {
   color: var(--control-active-fg);
   background: var(--control-active-bg);
-  box-shadow: 2px 2px 0 var(--signal);
+  box-shadow: 0.5px 0.5px 0 color-mix(in srgb, var(--signal) 50%, transparent);
 }
 
 .theme-switch button {
@@ -423,7 +443,7 @@ input:focus-visible {
 .theme-switch button.is-active {
   color: var(--control-active-fg);
   background: var(--control-active-bg);
-  box-shadow: 2px 2px 0 var(--signal);
+  box-shadow: 0.5px 0.5px 0 color-mix(in srgb, var(--signal) 50%, transparent);
 }
 
 .orbit-workspace {
@@ -764,8 +784,10 @@ input:focus-visible {
 
 .grid-toolbar {
   display: flex;
+  align-self: flex-end;
+  width: max-content;
   justify-content: flex-end;
-  padding: 8px 0;
+  padding: 0;
 }
 
 .grid-add-button,
@@ -1336,6 +1358,35 @@ input:focus-visible {
   to {
     background-position: -200% 0;
   }
+}
+
+.orbit-header,
+.orbit-header button,
+.data-panel,
+.tree-panel,
+.auth-dialog,
+.confirm-dialog,
+.context-card,
+.grid-frame,
+.grid-frame .ag-root-wrapper,
+.grid-frame .ag-header,
+.grid-frame button,
+.cascade,
+.cascade__tabs,
+.cascade__tabs button,
+.cascade__lane button,
+.workflow-node__body,
+.search-box,
+.auth-field input,
+.auth-field select,
+.access-badge,
+.locale-switch,
+.theme-switch,
+.record-stat,
+.runtime-chip,
+.identity-chip,
+.api-error {
+  border-radius: 6px;
 }
 
 @media (max-width: 1180px) {

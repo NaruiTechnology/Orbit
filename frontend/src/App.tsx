@@ -253,7 +253,6 @@ export function App() {
   const hasBlockingError =
     workflowsQuery.isError || workflowQuery.isError || recordsQuery.isError;
   const workflow = workflowQuery.data;
-  const records = recordsQuery.data?.items || [];
 
   return (
     <div className="orbit-shell">
@@ -348,9 +347,9 @@ export function App() {
               locale={workspace.locale}
               theme={workspace.theme}
               workflow={workflow}
-              records={records}
               dirtyRecordIds={[...dirtyRecordIds]}
               loading={recordsQuery.isLoading || workflowQuery.isLoading}
+              search={deferredSearch}
               onCellSelect={(recordId, cellKey) =>
                 dispatch(selectCell({ recordId, cellKey }))
               }

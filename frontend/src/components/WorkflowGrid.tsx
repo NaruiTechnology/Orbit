@@ -7,11 +7,13 @@ import {
   type ColGroupDef,
   type GridApi,
   type GridReadyEvent,
+  type IDatasource,
+  type IGetRowsParams,
   type ICellRendererParams,
   type SortChangedEvent,
 } from "ag-grid-community";
 import { AgGridReact } from "ag-grid-react";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 
 import type {
   ColumnDefinition,
@@ -61,9 +63,9 @@ interface WorkflowGridProps {
   locale: Locale;
   theme: ThemeMode;
   workflow: WorkflowDetail | undefined;
-  records: WorkflowRecord[];
   dirtyRecordIds: string[];
   loading: boolean;
+  search: string;
   onCellSelect: (recordId: string, cellKey: string | null) => void;
   onRecordUpdate: (
     record: WorkflowRecord,
@@ -175,9 +177,9 @@ export function WorkflowGrid({
   locale,
   theme,
   workflow,
-  records,
   dirtyRecordIds,
   loading,
+  search,
   onCellSelect,
   onRecordUpdate,
   onRecordAdd,
@@ -261,8 +263,9 @@ export function WorkflowGrid({
       colId: "actions",
       headerName: locale === "en" ? "Actions" : "操作",
       pinned: "right",
-      width: 132,
-      minWidth: 132,
+      width: 76,
+      minWidth: 76,
+      maxWidth: 76,
       sortable: false,
       filter: false,
       editable: false,
@@ -297,10 +300,42 @@ export function WorkflowGrid({
       ),
     },
   ];
-  const rowData = records.map((record) => ({
-    ...record,
-    values: { ...record.values },
-  }));
+  const datasource = useMemo<IDatasource>(() => ({
+    getRows: (parameters: IGetRowsParams<WorkflowRecord>) => {
+      if (!workflow?.key) {
+        parameters.successCallback([], 0);
+        return;
+      }
+      const sort = parameters.sortModel?.[0];
+      const filterTerms = Object.values(parameters.filterModel || {})
+        .map((filter) => {
+          if (!filter || typeof filter !== "object") return "";
+          const value = "filter" in filter ? filter.filter : "";
+          return typeof value === "string" ? value : "";
+        })
+        .filter(Boolean);
+      const query = new URLSearchParams({
+        locale,
+        offset: String(parameters.startRow),
+        limit: String(parameters.endRow - parameters.startRow),
+        sort_by: sort?.colId || "record_order",
+        sort_direction: sort?.sort === "desc" ? "desc" : "asc",
+      });
+      const combinedSearch = [search, ...filterTerms].filter(Boolean).join(" ");
+      if (combinedSearch) query.set("search", combinedSearch);
+      const token = localStorage.getItem("orbit:auth-token");
+      const requestInit: RequestInit = token
+        ? { headers: { "X-Orbit-Auth": token } }
+        : {};
+      void fetch("/api/v1/workflows/" + encodeURIComponent(workflow.key) + "/records?" + query, requestInit)
+        .then(async (response) => {
+          if (!response.ok) throw new Error("HTTP " + response.status);
+          return response.json() as Promise<{ items: WorkflowRecord[]; total: number }>;
+        })
+        .then((page) => parameters.successCallback(page.items, page.total))
+        .catch(() => parameters.failCallback());
+    },
+  }), [locale, search, workflow?.key]);
 
   function handleCellFocused(event: CellFocusedEvent<WorkflowRecord>) {
     if (event.rowIndex === null) return;
@@ -369,7 +404,11 @@ export function WorkflowGrid({
         key={`${workflow?.key || "grid"}-${locale}-${theme}`}
         containerStyle={{ width: "100%", height: "100%" }}
         theme={theme === "dark" ? orbitGridDarkTheme : orbitGridTheme}
-        rowData={rowData}
+        rowModelType="infinite"
+        datasource={datasource}
+        cacheBlockSize={100}
+        maxBlocksInCache={8}
+        infiniteInitialRowCount={100}
         columnDefs={columnDefinitions}
         defaultColDef={{
           sortable: true,
