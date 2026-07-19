@@ -381,6 +381,7 @@ export function App() {
                   return next;
                 });
               }}
+              profileKey={authToken ? sessionQuery.data?.user_id || null : null}
               onSortChange={(sortBy, sortDirection) =>
                 dispatch(setSort({ sortBy, sortDirection }))
               }

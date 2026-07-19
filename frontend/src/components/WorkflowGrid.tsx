@@ -1,10 +1,10 @@
 import {
   themeQuartz,
+  type ColumnState,
   type CellClickedEvent,
   type CellFocusedEvent,
   type CellValueChangedEvent,
   type ColDef,
-  type ColGroupDef,
   type GridApi,
   type GridReadyEvent,
   type IDatasource,
@@ -13,6 +13,7 @@ import {
   type SortChangedEvent,
 } from "ag-grid-community";
 import { AgGridReact } from "ag-grid-react";
+import "ag-grid-enterprise";
 import { useEffect, useMemo, useRef, useState } from "react";
 
 import type {
@@ -93,6 +94,7 @@ interface WorkflowGridProps {
   onRecordDelete: (record: WorkflowRecord) => Promise<void>;
   onRecordFinishEdit: (recordId: string) => void;
   onSortChange: (sortBy: string, direction: "asc" | "desc") => void;
+  profileKey: string | null;
 }
 
 function widthFor(column: ColumnDefinition): number {
@@ -120,23 +122,14 @@ function displayValue(value: unknown, locale: Locale): string {
   return String(value);
 }
 
-function columnGroupKey(key: string): "workflow" | "business" | "context" {
-  if (/(stage|step|sequence|status|state|phase|role|owner|time_limit)/i.test(key)) {
-    return "workflow";
-  }
-  if (/(customer|order|business|laboratory|department|organization|employee|equipment|product)/i.test(key)) {
-    return "business";
-  }
-  return "context";
-}
-
 interface RowActionRendererProps {
   data: WorkflowRecord | undefined;
   canEdit: boolean;
   locale: Locale;
   editing: boolean;
   onEdit: (record: WorkflowRecord) => void;
-  onFinishEdit: () => void;
+  onFinishEdit: () => Promise<void>;
+  onCancelEdit: () => void;
   onDelete: (record: WorkflowRecord) => Promise<void>;
 }
 
@@ -147,6 +140,7 @@ function RowActionRenderer({
   editing,
   onEdit,
   onFinishEdit,
+  onCancelEdit,
   onDelete,
 }: RowActionRendererProps) {
   return (
@@ -170,6 +164,24 @@ function RowActionRenderer({
           {editing ? <path d="M5 4h12l2 2v14H5zM8 4v6h8V4M8 20v-6h8v6" /> : <path d="m4 16-.8 4.8L8 20l10.8-10.8-4-4L4 16Zm9.4-9.4 4 4" />}
         </svg>
       </button>
+      {editing ? (
+        <button
+          type="button"
+          className="grid-row-action grid-row-action--cancel"
+          aria-label={locale === "en" ? "Cancel edit" : "取消编辑"}
+          title={locale === "en" ? "Cancel edit" : "取消编辑"}
+          disabled={!canEdit}
+          onMouseDown={(event) => event.stopPropagation()}
+          onClick={(event) => {
+            event.stopPropagation();
+            onCancelEdit();
+          }}
+        >
+          <svg aria-hidden="true" viewBox="0 0 24 24" focusable="false">
+            <path d="M6 6l12 12M18 6 6 18" />
+          </svg>
+        </button>
+      ) : null}
       <button
         type="button"
         className="grid-row-action grid-row-action--delete"
@@ -203,13 +215,65 @@ export function WorkflowGrid({
   onRecordDelete,
   onRecordFinishEdit,
   onSortChange,
+  profileKey,
 }: WorkflowGridProps) {
   const [editingRowId, setEditingRowId] = useState<string | null>(null);
   const gridApi = useRef<GridApi<WorkflowRecord> | null>(null);
+  const originalValues = useRef<Map<string, Record<string, unknown>>>(new Map());
+  const pendingValues = useRef<Map<string, Record<string, unknown>>>(new Map());
 
   useEffect(() => {
     gridApi.current?.refreshCells({ columns: ["actions"], force: true });
   }, [editingRowId]);
+
+  function cloneValues(values: Record<string, unknown>): Record<string, unknown> {
+    return { ...values };
+  }
+
+  function beginEditing(record: WorkflowRecord) {
+    originalValues.current.set(record.id, cloneValues(record.values));
+    pendingValues.current.set(record.id, {});
+    setEditingRowId(record.id);
+    const firstEditable = workflow?.columns.find((column) => column.editable);
+    if (firstEditable) {
+      window.setTimeout(() => {
+        gridApi.current?.startEditingCell({
+          rowIndex: record.record_order - 1,
+          colKey: firstEditable.key,
+        });
+      }, 0);
+    }
+  }
+
+  async function finishEditing(record: WorkflowRecord): Promise<void> {
+    const changes = pendingValues.current.get(record.id) || {};
+    let updated = record;
+    try {
+      for (const [key, value] of Object.entries(changes)) {
+        updated = await onRecordUpdate(updated, key, value);
+      }
+    } catch {
+      return;
+    }
+    gridApi.current?.stopEditing();
+    gridApi.current?.getRowNode(record.id)?.setData({ ...updated, values: { ...updated.values } });
+    originalValues.current.delete(record.id);
+    pendingValues.current.delete(record.id);
+    setEditingRowId(null);
+    onRecordFinishEdit(record.id);
+  }
+
+  function cancelEditing(record: WorkflowRecord) {
+    gridApi.current?.stopEditing(true);
+    const values = originalValues.current.get(record.id);
+    if (values) {
+      gridApi.current?.getRowNode(record.id)?.setData({ ...record, values: cloneValues(values) });
+    }
+    originalValues.current.delete(record.id);
+    pendingValues.current.delete(record.id);
+    setEditingRowId(null);
+    onRecordFinishEdit(record.id);
+  }
   const collator = new Intl.Collator(locale, {
     numeric: true,
     sensitivity: "base",
@@ -219,6 +283,7 @@ export function WorkflowGrid({
     (column) => ({
       colId: column.key,
       headerName: column.label,
+      enableRowGroup: true,
       width: widthFor(column),
       minWidth: 90,
       editable: (parameters) => Boolean(
@@ -243,19 +308,7 @@ export function WorkflowGrid({
       },
     }),
   );
-  const groupedColumns = new Map<ReturnType<typeof columnGroupKey>, ColDef<WorkflowRecord>[]>();
-  for (const column of dynamicColumns) {
-    const group = columnGroupKey(String(column.colId || ""));
-    const columns = groupedColumns.get(group) || [];
-    columns.push(column);
-    groupedColumns.set(group, columns);
-  }
-  const groupLabels = {
-    workflow: locale === "en" ? "Workflow" : "工作流",
-    business: locale === "en" ? "Business data" : "业务数据",
-    context: locale === "en" ? "Context and details" : "上下文与详细信息",
-  };
-  const columnDefinitions: (ColDef<WorkflowRecord> | ColGroupDef<WorkflowRecord>)[] = [
+  const columnDefinitions: ColDef<WorkflowRecord>[] = [
     {
       colId: "record_order",
       field: "record_order",
@@ -268,21 +321,14 @@ export function WorkflowGrid({
       editable: false,
       cellClass: "grid-cell--sequence",
     },
-    ...(["business", "workflow", "context"] as const)
-      .filter((group) => groupedColumns.has(group))
-      .map((group) => ({
-        groupId: "orbit-" + group,
-        headerName: groupLabels[group],
-        marryChildren: true,
-        children: groupedColumns.get(group) || [],
-      })),
+    ...dynamicColumns,
     {
       colId: "actions",
       headerName: locale === "en" ? "Actions" : "操作",
       pinned: "right",
-      width: 76,
-      minWidth: 76,
-      maxWidth: 76,
+      width: 108,
+      minWidth: 108,
+      maxWidth: 108,
       sortable: false,
       filter: false,
       editable: false,
@@ -295,28 +341,44 @@ export function WorkflowGrid({
             parameters.data &&
             (parameters.data.id === editingRowId || dirtyRecordIds.includes(parameters.data.id)),
           )}
-          onEdit={(record) => {
-            setEditingRowId(record.id);
-            const firstEditable = workflow?.columns.find((column) => column.editable);
-            if (firstEditable) {
-              window.setTimeout(() => {
-                gridApi.current?.startEditingCell({
-                  rowIndex: record.record_order - 1,
-                  colKey: firstEditable.key,
-                });
-              }, 0);
-            }
-          }}
-          onFinishEdit={() => {
-            gridApi.current?.stopEditing();
-            setEditingRowId(null);
-            if (parameters.data) onRecordFinishEdit(parameters.data.id);
+          onEdit={beginEditing}
+          onFinishEdit={() => parameters.data ? finishEditing(parameters.data) : Promise.resolve()}
+          onCancelEdit={() => {
+            if (parameters.data) cancelEditing(parameters.data);
           }}
           onDelete={onRecordDelete}
         />
       ),
     },
   ];
+  const profileStorageKey = profileKey && workflow?.key
+    ? `orbit:grid-profile:${profileKey}:${workflow.key}`
+    : null;
+
+  function saveColumnProfile(api: GridApi<WorkflowRecord>) {
+    if (!profileStorageKey) return;
+    window.localStorage.setItem(profileStorageKey, JSON.stringify(api.getColumnState()));
+  }
+
+  function restoreColumnProfile(api: GridApi<WorkflowRecord>) {
+    if (!profileStorageKey) return;
+    const raw = window.localStorage.getItem(profileStorageKey);
+    if (!raw) return;
+    try {
+      api.applyColumnState({ state: JSON.parse(raw) as ColumnState[], applyOrder: true });
+    } catch {
+      window.localStorage.removeItem(profileStorageKey);
+    }
+  }
+
+  function resetColumnProfile() {
+    gridApi.current?.resetColumnState();
+    if (profileStorageKey) window.localStorage.removeItem(profileStorageKey);
+  }
+
+  useEffect(() => {
+    if (gridApi.current) restoreColumnProfile(gridApi.current);
+  }, [profileStorageKey]);
   const datasource = useMemo<IDatasource>(() => ({
     getRows: (parameters: IGetRowsParams<WorkflowRecord>) => {
       if (!workflow?.key) {
@@ -375,22 +437,15 @@ export function WorkflowGrid({
     void onRecordDelete(event.data);
   }
 
-  async function handleCellChanged(event: CellValueChangedEvent<WorkflowRecord>) {
+  function handleCellChanged(event: CellValueChangedEvent<WorkflowRecord>) {
     const record = event.data;
     const key = event.colDef.colId;
     if (!record || !key || key === "record_order" || key === "actions" || event.newValue === event.oldValue) {
       return;
     }
-    setEditingRowId(record.id);
-    try {
-      const updated = await onRecordUpdate(record, key, event.newValue);
-      event.node.setData({ ...updated, values: { ...updated.values } });
-    } catch {
-      event.node.setData({
-        ...record,
-        values: { ...record.values, [key]: event.oldValue },
-      });
-    }
+    const changes = pendingValues.current.get(record.id) || {};
+    changes[key] = event.newValue;
+    pendingValues.current.set(record.id, changes);
   }
 
   function handleSortChanged(event: SortChangedEvent<WorkflowRecord>) {
@@ -415,6 +470,15 @@ export function WorkflowGrid({
           <svg aria-hidden="true" viewBox="0 0 24 24" focusable="false">
             <path d="M12 5v14M5 12h14" />
           </svg>
+        </button>
+        <button
+          className="grid-layout-reset-button"
+          type="button"
+          aria-label={locale === "en" ? "Reset grid layout" : "重置表格布局"}
+          title={locale === "en" ? "Reset grid layout" : "重置表格布局"}
+          onClick={resetColumnProfile}
+        >
+          {locale === "en" ? "Reset layout" : "重置布局"}
         </button>
       </div>
       <AgGridReact<WorkflowRecord>
@@ -448,6 +512,27 @@ export function WorkflowGrid({
         rowHeight={44}
         headerHeight={46}
         floatingFiltersHeight={34}
+        sideBar={{
+          toolPanels: [
+            {
+              id: "columns",
+              labelDefault: "Columns",
+              labelKey: "columns",
+              iconKey: "columns",
+              toolPanel: "agColumnsToolPanel",
+              toolPanelParams: {
+                suppressRowGroups: false,
+                suppressValues: true,
+                suppressPivots: true,
+                suppressPivotMode: true,
+              },
+            },
+          ],
+          defaultToolPanel: "columns",
+        }}
+        rowGroupPanelShow="always"
+        suppressHorizontalScroll={false}
+        alwaysShowHorizontalScroll
         suppressAnimationFrame
         suppressRowTransform
         enableBrowserTooltips
@@ -456,7 +541,15 @@ export function WorkflowGrid({
         onCellClicked={handleCellClicked}
         onGridReady={(event: GridReadyEvent<WorkflowRecord>) => {
           gridApi.current = event.api;
+          restoreColumnProfile(event.api);
         }}
+        onColumnMoved={(event) => saveColumnProfile(event.api)}
+        onColumnVisible={(event) => saveColumnProfile(event.api)}
+        onColumnPinned={(event) => saveColumnProfile(event.api)}
+        onColumnResized={(event) => {
+          if (event.finished) saveColumnProfile(event.api);
+        }}
+        onColumnRowGroupChanged={(event) => saveColumnProfile(event.api)}
         onCellValueChanged={handleCellChanged}
         onSortChanged={handleSortChanged}
         overlayNoRowsTemplate={`<span class="grid-empty">${translate(locale, "noData")}</span>`}

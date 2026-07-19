@@ -913,6 +913,25 @@ input:focus-visible {
   font: inherit;
 }
 
+.grid-layout-reset-button {
+  min-height: 32px;
+  padding: 0 10px;
+  border: 1px solid var(--line);
+  background: var(--surface);
+  color: var(--ink-soft);
+  cursor: pointer;
+  font: inherit;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.grid-layout-reset-button:hover {
+  border-color: var(--signal);
+  color: var(--ink);
+}
+
 .grid-add-button svg,
 .grid-row-action svg {
   width: 16px;
@@ -952,10 +971,25 @@ input:focus-visible {
   background: var(--signal);
 }
 
+.grid-row-action--cancel {
+  color: var(--ink-soft);
+  background: transparent;
+}
+
 .grid-frame .ag-root-wrapper {
+  flex: 1 1 0;
+  min-width: 0;
+  min-height: 0;
   height: 100%;
   border: 0;
   background: var(--gradient-grid);
+}
+
+.grid-frame .ag-body-horizontal-scroll,
+.grid-frame .ag-body-horizontal-scroll-viewport,
+.grid-frame .ag-center-cols-viewport {
+  min-height: 12px;
+  overflow-x: auto !important;
 }
 
 .grid-frame .ag-header,
