@@ -305,6 +305,28 @@ input:focus-visible {
   border-radius: 50%;
 }
 
+/* Keep the Navy banner mark aligned with the Green theme's accent treatment. */
+:root[data-theme="navy"] .orbit-mark {
+  border-color: #1f3a32;
+}
+
+:root[data-theme="navy"] .orbit-mark::before {
+  border-color: #f06a3b;
+}
+
+:root[data-theme="navy"] .orbit-mark::after {
+  border-color: #79a9b8;
+}
+
+:root[data-theme="navy"] .orbit-mark span {
+  background: #f06a3b;
+  box-shadow: 0 0 0 4px #121916;
+}
+
+:root[data-theme="navy"] .orbit-mark i {
+  background: #1f3a32;
+}
+
 .orbit-brand__copy {
   min-width: 0;
 }
