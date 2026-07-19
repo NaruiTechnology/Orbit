@@ -1917,6 +1917,34 @@ input:focus-visible {
   background: #f06a3b;
 }
 
+@keyframes workflow-current-node-blink {
+  0%,
+  10%,
+  100% {
+    opacity: 0.62;
+    box-shadow: 0 0 0 transparent;
+  }
+
+  25%,
+  90% {
+    opacity: 1;
+    box-shadow: 0 0 8px rgba(240, 106, 59, 0.9);
+  }
+}
+
+.workflow-node--current .workflow-node__rail > span {
+  animation: workflow-current-node-blink 2s ease-in-out infinite;
+  will-change: opacity, box-shadow;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .workflow-node--current .workflow-node__rail > span {
+    animation: none;
+    opacity: 1;
+    box-shadow: none;
+  }
+}
+
 .workflow-node:first-child .workflow-node__rail::before {
   top: 20px;
 }
@@ -2432,5 +2460,15 @@ input:focus-visible {
     animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
+  }
+}
+
+/* The workflow current-step indicator is an explicit user-requested status cue. */
+@media (prefers-reduced-motion: reduce) {
+  .workflow-node--current .workflow-node__rail > span {
+    animation: workflow-current-node-blink 2s ease-in-out infinite !important;
+    animation-duration: 2s !important;
+    animation-iteration-count: infinite !important;
+    opacity: 1;
   }
 }
