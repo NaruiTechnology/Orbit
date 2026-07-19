@@ -115,6 +115,26 @@ export function App() {
   }, [workspace.locale]);
 
   useEffect(() => {
+    const url = new URL(window.location.href);
+    url.searchParams.set("workflow", workspace.selectedWorkflow);
+    if (workspace.selection.recordId) {
+      url.searchParams.set("record", workspace.selection.recordId);
+    } else {
+      url.searchParams.delete("record");
+    }
+    if (workspace.selection.cellKey) {
+      url.searchParams.set("cell", workspace.selection.cellKey);
+    } else {
+      url.searchParams.delete("cell");
+    }
+    window.history.replaceState(
+      window.history.state,
+      "",
+      `${url.pathname}${url.search}${url.hash}`,
+    );
+  }, [workspace.selectedWorkflow, workspace.selection]);
+
+  useEffect(() => {
     document.documentElement.dataset.theme = workspace.theme;
   }, [workspace.theme]);
 
@@ -158,12 +178,13 @@ export function App() {
   useEffect(() => {
     const workflows = workflowsQuery.data;
     if (!workflows?.length) return;
-    if (!workflows.some(
-      (workflow) =>
-        workflow.key === workspace.selectedWorkflow &&
-        !workflow.is_master &&
-        workflow.definition_type === "workflow",
-    )) {
+    const selected = workflows.find(
+      (workflow) => workflow.key === workspace.selectedWorkflow,
+    );
+    if (selected && selected.group_key !== workspace.selectedGroup) {
+      dispatch(selectGroup(selected.group_key));
+    }
+    if (!selected || selected.is_master || selected.definition_type !== "workflow") {
       const first = workflows.find(
         (workflow) => !workflow.is_master && workflow.definition_type === "workflow",
       );
@@ -172,7 +193,7 @@ export function App() {
         dispatch(selectWorkflow(first.key));
       }
     }
-  }, [dispatch, workspace.selectedWorkflow, workflowsQuery.data]);
+  }, [dispatch, workspace.selectedGroup, workspace.selectedWorkflow, workflowsQuery.data]);
 
   function handleGroupSelect(group: string) {
     const isPeopleOperations = group === "people-operations";

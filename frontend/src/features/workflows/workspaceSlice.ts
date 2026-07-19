@@ -20,6 +20,10 @@ interface WorkspaceState {
 
 const savedLocale = window.localStorage.getItem("orbit:locale") as Locale | null;
 const savedTheme = window.localStorage.getItem("orbit:theme") as ThemeMode | null;
+const initialUrl = new URL(window.location.href);
+const initialWorkflow = initialUrl.searchParams.get("workflow");
+const initialRecordId = initialUrl.searchParams.get("record");
+const initialCellKey = initialUrl.searchParams.get("cell");
 
 const initialState: WorkspaceState = {
   locale: savedLocale && ["en", "zh-CN", "zh-HK"].includes(savedLocale)
@@ -29,8 +33,11 @@ const initialState: WorkspaceState = {
     ? savedTheme
     : "navy",
   selectedGroup: "sales",
-  selectedWorkflow: "order-evaluation",
-  selection: { recordId: null, cellKey: null },
+  selectedWorkflow: initialWorkflow || "order-evaluation",
+  selection: {
+    recordId: initialRecordId,
+    cellKey: initialRecordId ? initialCellKey : null,
+  },
   search: "",
   sortBy: "record_order",
   sortDirection: "asc",
