@@ -45,18 +45,6 @@ export function OrbitHeader({
       </div>
 
       <div className="orbit-header__meta">
-        <div className="runtime-chip" data-online={Boolean(health)}>
-          <span className="runtime-chip__dot" />
-          <div>
-            {!health ? <b>API offline</b> : null}
-            <small>
-              {health
-                ? `${health.database}·${health.timezone}`
-                : "127.0.0.1:8120"}
-            </small>
-          </div>
-        </div>
-
         {session ? (
           <button className="identity-chip identity-chip--button" type="button" onClick={onSignOut} title="Sign out">
             <span className="identity-chip__monogram">
@@ -64,18 +52,26 @@ export function OrbitHeader({
             </span>
             <div>
               <b>{session.display_name}</b>
-              <small>
+              <small className="identity-chip__context">
                 {session.scope.department_name || session.scope.organization_name}
                 {session.scope.laboratory_name
                   ? ` · ${session.scope.laboratory_name}`
                   : ""}
+              </small>
+              <small className="identity-chip__environment">
+                {health ? `${health.database} · ${health.timezone}` : "API offline"}
               </small>
             </div>
           </button>
         ) : (
           <button className="identity-chip identity-chip--button" type="button" onClick={onOpenAuth}>
             <span className="identity-chip__monogram">?</span>
-            <div><b>Sign in</b><small>SMS security validation</small></div>
+            <div>
+              <b>Sign in</b>
+              <small className="identity-chip__environment">
+                {health ? `${health.database} · ${health.timezone}` : "API offline"}
+              </small>
+            </div>
           </button>
         )}
 
