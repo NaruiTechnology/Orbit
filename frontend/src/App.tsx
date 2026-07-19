@@ -394,6 +394,7 @@ export function App() {
               dirtyRecordIds={[...dirtyRecordIds]}
               loading={recordsQuery.isLoading || workflowQuery.isLoading}
               search={deferredSearch}
+              selectedRecordId={workspace.selection.recordId}
               onCellSelect={(recordId, cellKey) =>
                 dispatch(selectCell({ recordId, cellKey }))
               }

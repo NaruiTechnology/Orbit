@@ -100,6 +100,7 @@ interface WorkflowGridProps {
   dirtyRecordIds: string[];
   loading: boolean;
   search: string;
+  selectedRecordId: string | null;
   onCellSelect: (recordId: string, cellKey: string | null) => void;
   onRecordUpdate: (
     record: WorkflowRecord,
@@ -232,6 +233,7 @@ export function WorkflowGrid({
   dirtyRecordIds,
   loading,
   search,
+  selectedRecordId,
   onCellSelect,
   onRecordUpdate,
   onRecordCreate,
@@ -249,6 +251,16 @@ export function WorkflowGrid({
   const [editValidationErrors, setEditValidationErrors] = useState<Record<string, string>>({});
   const [newRecordId, setNewRecordId] = useState<string | null>(null);
   const gridApi = useRef<GridApi<WorkflowRecord> | null>(null);
+
+  function applySelectedRow(api: GridApi<WorkflowRecord>) {
+    api.forEachNode((node) => {
+      node.setSelected(Boolean(selectedRecordId && node.data?.id === selectedRecordId));
+    });
+  }
+
+  useEffect(() => {
+    if (gridApi.current) applySelectedRow(gridApi.current);
+  }, [selectedRecordId, existingRecords]);
 
   function openEditDialog(record: WorkflowRecord) {
     setEditingRecord(record);
@@ -505,7 +517,12 @@ export function WorkflowGrid({
           if (!response.ok) throw new Error("HTTP " + response.status);
           return response.json() as Promise<{ items: WorkflowRecord[]; total: number }>;
         })
-        .then((page) => parameters.successCallback(page.items, page.total))
+        .then((page) => {
+          parameters.successCallback(page.items, page.total);
+          window.requestAnimationFrame(() => {
+            if (gridApi.current) applySelectedRow(gridApi.current);
+          });
+        })
         .catch(() => parameters.failCallback());
     },
   }), [locale, search, workflow?.key]);
