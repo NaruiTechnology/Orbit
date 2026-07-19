@@ -3,7 +3,6 @@ import {
   type ColumnState,
   type CellClickedEvent,
   type CellFocusedEvent,
-  type CellValueChangedEvent,
   type ColDef,
   type GridApi,
   type GridReadyEvent,
@@ -90,7 +89,8 @@ interface WorkflowGridProps {
     key: string,
     value: unknown,
   ) => Promise<WorkflowRecord>;
-  onRecordAdd: () => Promise<WorkflowRecord>;
+  onRecordCreate: (values: Record<string, unknown>) => Promise<WorkflowRecord>;
+  onNewRecordSaved?: (record: WorkflowRecord) => void | Promise<void>;
   onRecordDelete: (record: WorkflowRecord) => Promise<void>;
   onRecordFinishEdit: (recordId: string) => void;
   onSortChange: (sortBy: string, direction: "asc" | "desc") => void;
@@ -122,14 +122,23 @@ function displayValue(value: unknown, locale: Locale): string {
   return String(value);
 }
 
+const OPTIONAL_ORDER_FIELDS = new Set([
+  "evaluation_result",
+  "status",
+  "package_type",
+  "target_laboratory",
+  "notes",
+]);
+
+function isRequiredOrderField(workflowKey: string | undefined, column: ColumnDefinition): boolean {
+  return workflowKey === "order-evaluation" && column.editable && !OPTIONAL_ORDER_FIELDS.has(column.key);
+}
+
 interface RowActionRendererProps {
   data: WorkflowRecord | undefined;
   canEdit: boolean;
   locale: Locale;
-  editing: boolean;
   onEdit: (record: WorkflowRecord) => void;
-  onFinishEdit: () => Promise<void>;
-  onCancelEdit: () => void;
   onDelete: (record: WorkflowRecord) => Promise<void>;
 }
 
@@ -137,51 +146,29 @@ function RowActionRenderer({
   data,
   canEdit,
   locale,
-  editing,
   onEdit,
-  onFinishEdit,
-  onCancelEdit,
   onDelete,
 }: RowActionRendererProps) {
   return (
     <div className="grid-row-actions">
       <button
         type="button"
-        className={`grid-row-action ${editing ? "grid-row-action--update" : "grid-row-action--edit"}`}
-        aria-label={editing ? "Save row" : "Edit row"}
-        title={editing ? "Save row" : "Edit row"}
+        className="grid-row-action grid-row-action--edit"
+        aria-label="Edit row"
+        title="Edit row"
         disabled={!canEdit}
         onMouseDown={(event) => event.stopPropagation()}
         onClick={(event) => {
           event.stopPropagation();
           if (data) {
-            if (editing) onFinishEdit();
-            else onEdit(data);
+            onEdit(data);
           }
         }}
       >
         <svg aria-hidden="true" viewBox="0 0 24 24" focusable="false">
-          {editing ? <path d="M5 4h12l2 2v14H5zM8 4v6h8V4M8 20v-6h8v6" /> : <path d="m4 16-.8 4.8L8 20l10.8-10.8-4-4L4 16Zm9.4-9.4 4 4" />}
+          <path d="m4 16-.8 4.8L8 20l10.8-10.8-4-4L4 16Zm9.4-9.4 4 4" />
         </svg>
       </button>
-      {editing ? (
-        <button
-          type="button"
-          className="grid-row-action grid-row-action--cancel"
-          aria-label={locale === "en" ? "Cancel edit" : "取消编辑"}
-          title={locale === "en" ? "Cancel edit" : "取消编辑"}
-          disabled={!canEdit}
-          onMouseDown={(event) => event.stopPropagation()}
-          onClick={(event) => {
-            event.stopPropagation();
-            onCancelEdit();
-          }}
-        >
-          <svg aria-hidden="true" viewBox="0 0 24 24" focusable="false">
-            <path d="M6 6l12 12M18 6 6 18" />
-          </svg>
-        </button>
-      ) : null}
       <button
         type="button"
         className="grid-row-action grid-row-action--delete"
@@ -211,68 +198,83 @@ export function WorkflowGrid({
   search,
   onCellSelect,
   onRecordUpdate,
-  onRecordAdd,
+  onRecordCreate,
+  onNewRecordSaved,
   onRecordDelete,
   onRecordFinishEdit,
   onSortChange,
   profileKey,
 }: WorkflowGridProps) {
-  const [editingRowId, setEditingRowId] = useState<string | null>(null);
+  const [editingRecord, setEditingRecord] = useState<WorkflowRecord | null>(null);
+  const [editValues, setEditValues] = useState<Record<string, unknown>>({});
+  const [editBusy, setEditBusy] = useState(false);
+  const [editError, setEditError] = useState("");
+  const [editValidationErrors, setEditValidationErrors] = useState<Record<string, string>>({});
+  const [newRecordId, setNewRecordId] = useState<string | null>(null);
   const gridApi = useRef<GridApi<WorkflowRecord> | null>(null);
-  const originalValues = useRef<Map<string, Record<string, unknown>>>(new Map());
-  const pendingValues = useRef<Map<string, Record<string, unknown>>>(new Map());
 
-  useEffect(() => {
-    gridApi.current?.refreshCells({ columns: ["actions"], force: true });
-  }, [editingRowId]);
-
-  function cloneValues(values: Record<string, unknown>): Record<string, unknown> {
-    return { ...values };
+  function openEditDialog(record: WorkflowRecord) {
+    setEditingRecord(record);
+    setEditValues({ ...record.values });
+    setEditError("");
+    setEditValidationErrors({});
   }
 
-  function beginEditing(record: WorkflowRecord) {
-    originalValues.current.set(record.id, cloneValues(record.values));
-    pendingValues.current.set(record.id, {});
-    setEditingRowId(record.id);
-    const firstEditable = workflow?.columns.find((column) => column.editable);
-    if (firstEditable) {
-      window.setTimeout(() => {
-        gridApi.current?.startEditingCell({
-          rowIndex: record.record_order - 1,
-          colKey: firstEditable.key,
-        });
-      }, 0);
-    }
+  function closeEditDialog() {
+    if (editBusy) return;
+    setEditingRecord(null);
+    setEditError("");
+    setEditValidationErrors({});
   }
 
-  async function finishEditing(record: WorkflowRecord): Promise<void> {
-    const changes = pendingValues.current.get(record.id) || {};
-    let updated = record;
-    try {
-      for (const [key, value] of Object.entries(changes)) {
-        updated = await onRecordUpdate(updated, key, value);
+  async function saveEditDialog() {
+    if (!editingRecord) return;
+    const validationErrors: Record<string, string> = {};
+    if (workflow?.key === "order-evaluation") {
+      for (const column of workflow.columns) {
+        if (!isRequiredOrderField(workflow.key, column)) continue;
+        const value = editValues[column.key];
+        const empty = value === null || value === undefined || String(value).trim() === "";
+        if (empty) {
+          validationErrors[column.key] = locale === "en" ? "This field is required" : "此字段为必填项";
+        } else if (column.data_type === "integer" && (!Number.isInteger(Number(value)) || Number(value) < 1)) {
+          validationErrors[column.key] = locale === "en" ? "Enter a positive whole number" : "请输入正整数";
+        }
       }
-    } catch {
+    }
+    if (Object.keys(validationErrors).length > 0) {
+      setEditValidationErrors(validationErrors);
+      setEditError(locale === "en" ? "Please complete the required fields before saving." : "保存前请填写所有必填字段。");
       return;
     }
-    gridApi.current?.stopEditing();
-    gridApi.current?.getRowNode(record.id)?.setData({ ...updated, values: { ...updated.values } });
-    originalValues.current.delete(record.id);
-    pendingValues.current.delete(record.id);
-    setEditingRowId(null);
-    onRecordFinishEdit(record.id);
-  }
-
-  function cancelEditing(record: WorkflowRecord) {
-    gridApi.current?.stopEditing(true);
-    const values = originalValues.current.get(record.id);
-    if (values) {
-      gridApi.current?.getRowNode(record.id)?.setData({ ...record, values: cloneValues(values) });
+    setEditValidationErrors({});
+    setEditBusy(true);
+    setEditError("");
+    const isNewRecord = newRecordId === editingRecord.id;
+    let updated = editingRecord;
+    try {
+      if (isNewRecord) {
+        updated = await onRecordCreate(editValues);
+      } else {
+        for (const column of workflow?.columns || []) {
+          if (!column.editable || editValues[column.key] === editingRecord.values[column.key]) continue;
+          updated = await onRecordUpdate(updated, column.key, editValues[column.key]);
+        }
+      }
+      if (!isNewRecord) {
+        gridApi.current?.getRowNode(updated.id)?.setData({ ...updated, values: { ...updated.values } });
+        onRecordFinishEdit(updated.id);
+      }
+      if (isNewRecord) {
+        setNewRecordId(null);
+        onNewRecordSaved?.(updated);
+      }
+      setEditingRecord(null);
+    } catch (reason) {
+      setEditError(reason instanceof Error ? reason.message : String(reason));
+    } finally {
+      setEditBusy(false);
     }
-    originalValues.current.delete(record.id);
-    pendingValues.current.delete(record.id);
-    setEditingRowId(null);
-    onRecordFinishEdit(record.id);
   }
   const collator = new Intl.Collator(locale, {
     numeric: true,
@@ -286,11 +288,7 @@ export function WorkflowGrid({
       enableRowGroup: true,
       width: widthFor(column),
       minWidth: 90,
-      editable: (parameters) => Boolean(
-        workflow?.access.can_edit &&
-        column.editable &&
-        parameters.data?.id === editingRowId,
-      ),
+      editable: false,
       valueGetter: (parameters) => parameters.data?.values[column.key] ?? null,
       valueSetter: (parameters) => {
         if (!parameters.data) return false;
@@ -337,15 +335,7 @@ export function WorkflowGrid({
           data={parameters.data}
           canEdit={Boolean(workflow?.access.can_edit)}
           locale={locale}
-          editing={Boolean(
-            parameters.data &&
-            (parameters.data.id === editingRowId || dirtyRecordIds.includes(parameters.data.id)),
-          )}
-          onEdit={beginEditing}
-          onFinishEdit={() => parameters.data ? finishEditing(parameters.data) : Promise.resolve()}
-          onCancelEdit={() => {
-            if (parameters.data) cancelEditing(parameters.data);
-          }}
+          onEdit={openEditDialog}
           onDelete={onRecordDelete}
         />
       ),
@@ -374,6 +364,30 @@ export function WorkflowGrid({
   function resetColumnProfile() {
     gridApi.current?.resetColumnState();
     if (profileStorageKey) window.localStorage.removeItem(profileStorageKey);
+  }
+
+  function openNewRecordDialog() {
+    const draftId = `draft-${crypto.randomUUID()}`;
+    const values = Object.fromEntries(
+      (workflow?.columns || [])
+        .filter((column) => column.editable)
+        .map((column) => [column.key, ""]),
+    );
+    const draft: WorkflowRecord = {
+      id: draftId,
+      tree_record_id: null,
+      record_key: draftId,
+      record_order: 0,
+      label: locale === "en" ? "New record" : "新记录",
+      label_i18n: { en: "New record", zh_CN: "新记录", zh_HK: "新記錄" },
+      values,
+      source_row: null,
+      source_cells: {},
+      version: 1,
+      updated_at: new Date().toISOString(),
+    };
+    setNewRecordId(draftId);
+    openEditDialog(draft);
   }
 
   useEffect(() => {
@@ -437,17 +451,6 @@ export function WorkflowGrid({
     void onRecordDelete(event.data);
   }
 
-  function handleCellChanged(event: CellValueChangedEvent<WorkflowRecord>) {
-    const record = event.data;
-    const key = event.colDef.colId;
-    if (!record || !key || key === "record_order" || key === "actions" || event.newValue === event.oldValue) {
-      return;
-    }
-    const changes = pendingValues.current.get(record.id) || {};
-    changes[key] = event.newValue;
-    pendingValues.current.set(record.id, changes);
-  }
-
   function handleSortChanged(event: SortChangedEvent<WorkflowRecord>) {
     const sorted = event.api.getColumnState().find((column) => column.sort);
     onSortChange(
@@ -465,7 +468,7 @@ export function WorkflowGrid({
           aria-label={locale === "en" ? "Add row" : "新增行"}
           title={locale === "en" ? "Add row" : "新增行"}
           disabled={!workflow?.access.can_edit || loading}
-          onClick={() => void onRecordAdd()}
+          onClick={openNewRecordDialog}
         >
           <svg aria-hidden="true" viewBox="0 0 24 24" focusable="false">
             <path d="M12 5v14M5 12h14" />
@@ -508,7 +511,6 @@ export function WorkflowGrid({
           checkboxes: false,
           enableClickSelection: true,
         }}
-        editType="fullRow"
         rowHeight={44}
         headerHeight={46}
         floatingFiltersHeight={34}
@@ -550,13 +552,107 @@ export function WorkflowGrid({
           if (event.finished) saveColumnProfile(event.api);
         }}
         onColumnRowGroupChanged={(event) => saveColumnProfile(event.api)}
-        onCellValueChanged={handleCellChanged}
         onSortChanged={handleSortChanged}
         overlayNoRowsTemplate={`<span class="grid-empty">${translate(locale, "noData")}</span>`}
       />
       {loading ? (
         <div className="grid-loading" role="status" aria-label="Loading data">
           <span className="grid-loading__spinner" aria-hidden="true" />
+        </div>
+      ) : null}
+      {editingRecord && workflow ? (
+        <div className="dialog-backdrop grid-edit-backdrop" role="presentation">
+          <section
+            className="dialog-surface grid-edit-dialog"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="grid-edit-title"
+          >
+            <header className="grid-edit-dialog__header">
+              <div>
+                <span className="confirm-dialog__eyebrow">
+                  {locale === "en" ? "FULL RECORD EDIT" : "完整记录编辑"}
+                </span>
+                <h2 id="grid-edit-title">
+                  {editingRecord.label || editingRecord.record_key}
+                </h2>
+              </div>
+              <button
+                type="button"
+                className="grid-edit-dialog__close"
+                aria-label={locale === "en" ? "Close" : "关闭"}
+                onClick={closeEditDialog}
+                disabled={editBusy}
+              >
+                ×
+              </button>
+            </header>
+            <div className="grid-edit-dialog__body">
+              {workflow.columns.map((column) => {
+                const value = editValues[column.key];
+                const longText = ["notes", "system_action", "exception_branch", "guidance"].includes(column.key);
+                const required = isRequiredOrderField(workflow.key, column);
+                return (
+                  <label className={`grid-edit-field ${longText ? "grid-edit-field--wide" : ""}`} key={column.key}>
+                    <span>
+                      {column.label}
+                      {required ? <b className="grid-edit-field__required" aria-label={locale === "en" ? "required" : "必填"}>*</b> : null}
+                      {!column.editable ? <small>{locale === "en" ? "Read-only" : "只读"}</small> : null}
+                    </span>
+                    {column.editable && column.data_type === "boolean" ? (
+                      <input
+                        type="checkbox"
+                        checked={Boolean(value)}
+                        onChange={(event) => setEditValues((current) => ({ ...current, [column.key]: event.target.checked }))}
+                        disabled={editBusy}
+                      />
+                    ) : column.editable && longText ? (
+                      <textarea
+                        value={displayValue(value, locale)}
+                        onChange={(event) => setEditValues((current) => ({ ...current, [column.key]: event.target.value }))}
+                        disabled={editBusy}
+                        rows={4}
+                      />
+                    ) : column.editable ? (
+                      <input
+                        type={column.data_type === "date" ? "date" : column.data_type === "integer" || column.data_type === "decimal" ? "number" : "text"}
+                        step={column.data_type === "decimal" ? "any" : undefined}
+                        value={displayValue(value, locale)}
+                        onChange={(event) => {
+                          const raw = event.target.value;
+                          const next = column.data_type === "integer" || column.data_type === "decimal"
+                            ? raw === "" ? "" : Number(raw)
+                            : raw;
+                          setEditValues((current) => ({ ...current, [column.key]: next }));
+                        }}
+                        disabled={editBusy}
+                      />
+                    ) : (
+                      <output>{displayValue(value, locale) || "—"}</output>
+                    )}
+                    {editValidationErrors[column.key] ? (
+                      <small className="grid-edit-field__error">{editValidationErrors[column.key]}</small>
+                    ) : null}
+                  </label>
+                );
+              })}
+            </div>
+            {editError ? <p className="grid-edit-dialog__error" role="alert">{editError}</p> : null}
+            <footer className="dialog-actions grid-edit-dialog__actions">
+              <button type="button" className="confirm-dialog__cancel" onClick={closeEditDialog} disabled={editBusy}>
+                <svg className="grid-edit-action__icon" aria-hidden="true" viewBox="0 0 24 24" focusable="false">
+                  <path d="M6 6l12 12M18 6 6 18" />
+                </svg>
+                {locale === "en" ? "Cancel" : "取消"}
+              </button>
+              <button type="button" className="confirm-dialog__confirm" onClick={() => void saveEditDialog()} disabled={editBusy || !workflow.access.can_edit}>
+                <svg className="grid-edit-action__icon" aria-hidden="true" viewBox="0 0 24 24" focusable="false">
+                  <path d="M5 4h12l2 2v14H5zM8 4v6h8V4M8 20v-6h8v6" />
+                </svg>
+                {editBusy ? (locale === "en" ? "Saving…" : "保存中…") : locale === "en" ? "Save changes" : "保存更改"}
+              </button>
+            </footer>
+          </section>
         </div>
       ) : null}
     </div>

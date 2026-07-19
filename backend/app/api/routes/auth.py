@@ -5,6 +5,7 @@ from __future__ import annotations
 from datetime import datetime, timedelta, timezone
 import logging
 import secrets
+from threading import Lock
 from typing import Any
 from uuid import UUID
 
@@ -21,6 +22,8 @@ logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/auth", tags=["auth"])
 SMS_TTL = timedelta(minutes=5)
 _challenges: dict[str, dict[str, Any]] = {}
+_active_challenge_by_user: dict[str, str] = {}
+_challenge_lock = Lock()
 
 
 class RegisterRequest(BaseModel):
@@ -155,9 +158,23 @@ def send_sms(request: SmsRequest, connection: Connection[dict[str, Any]] = Depen
         raise HTTPException(status_code=404, detail="account not found")
     if not row.get("phone_number", "").strip():
         raise HTTPException(status_code=400, detail="account has no phone number")
-    challenge_id = secrets.token_urlsafe(24)
-    code = f"{secrets.randbelow(900000) + 100000:06d}"
-    _challenges[challenge_id] = {"code": code, "user": row, "expires_at": datetime.now(timezone.utc) + SMS_TTL}
+    user_key = str(row["id"])
+    with _challenge_lock:
+        existing_id = _active_challenge_by_user.get(user_key)
+        existing = _challenges.get(existing_id) if existing_id else None
+        now = datetime.now(timezone.utc)
+        if existing is not None and now <= existing["expires_at"]:
+            # A duplicate request must not replace the code already sent to
+            # the user. This also protects against concurrent browser retries.
+            challenge_id = existing_id
+            code = existing["code"]
+        else:
+            if existing_id:
+                _challenges.pop(existing_id, None)
+            challenge_id = secrets.token_urlsafe(24)
+            code = f"{secrets.randbelow(900000) + 100000:06d}"
+            _challenges[challenge_id] = {"code": code, "user": row, "expires_at": now + SMS_TTL}
+            _active_challenge_by_user[user_key] = challenge_id
     logger.info("Orbit mock SMS verification code for %s: %s", row["phone_number"], code)
     return {"ok": True, "challenge_id": challenge_id, "phone_number": _mask_phone(row["phone_number"]), "mock": True, "dev_code": code}
 
@@ -172,6 +189,7 @@ def verify_sms(
         raise HTTPException(status_code=400, detail="verification challenge not found")
     if datetime.now(timezone.utc) > challenge["expires_at"]:
         _challenges.pop(request.challenge_id, None)
+        _active_challenge_by_user.pop(str(challenge["user"]["id"]), None)
         raise HTTPException(status_code=410, detail="verification code expired")
     if request.code.strip() != challenge["code"]:
         raise HTTPException(status_code=401, detail="verification code is invalid")
@@ -185,6 +203,7 @@ def verify_sms(
     )
     _audit(connection, row["id"], "login_sms_verified", {"site": request.site.strip()})
     _challenges.pop(request.challenge_id, None)
+    _active_challenge_by_user.pop(str(row["id"]), None)
     return {"ok": True, "session_token": token, "user": _public_user(row)}
 
 

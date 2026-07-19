@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 interface AuthUser {
   id: string;
@@ -33,6 +33,10 @@ export function AuthDialog({ open, locale, onClose, onSignedIn }: AuthDialogProp
   const [code, setCode] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
+  // State updates are asynchronous. Keep a synchronous guard as well so a
+  // double click or duplicate browser event cannot request two SMS codes.
+  const smsRequestInFlight = useRef(false);
+  const verificationInFlight = useRef(false);
   const [registration, setRegistration] = useState<Registration>({
     login_name: "",
     first_name: "",
@@ -82,6 +86,8 @@ export function AuthDialog({ open, locale, onClose, onSignedIn }: AuthDialogProp
   }
 
   async function sendSms() {
+    if (smsRequestInFlight.current) return;
+    smsRequestInFlight.current = true;
     setBusy(true);
     setError("");
     try {
@@ -98,6 +104,7 @@ export function AuthDialog({ open, locale, onClose, onSignedIn }: AuthDialogProp
     } catch (reason) {
       setError(reason instanceof Error ? reason.message : String(reason));
     } finally {
+      smsRequestInFlight.current = false;
       setBusy(false);
     }
   }
@@ -125,18 +132,26 @@ export function AuthDialog({ open, locale, onClose, onSignedIn }: AuthDialogProp
   }
 
   async function sendSmsFor(nextLogin: string) {
-    const response = await fetch("/api/v1/auth/send-sms", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ login: nextLogin }),
-    });
-    const data = await readJson(response);
-    setChallengeId(data.challenge_id);
-    setPhone(data.phone_number || "");
-    setDevCode(data.dev_code || "");
+    if (smsRequestInFlight.current) return;
+    smsRequestInFlight.current = true;
+    try {
+      const response = await fetch("/api/v1/auth/send-sms", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ login: nextLogin }),
+      });
+      const data = await readJson(response);
+      setChallengeId(data.challenge_id);
+      setPhone(data.phone_number || "");
+      setDevCode(data.dev_code || "");
+    } finally {
+      smsRequestInFlight.current = false;
+    }
   }
 
   async function verify() {
+    if (verificationInFlight.current || !challengeId) return;
+    verificationInFlight.current = true;
     setBusy(true);
     setError("");
     try {
@@ -152,6 +167,7 @@ export function AuthDialog({ open, locale, onClose, onSignedIn }: AuthDialogProp
     } catch (reason) {
       setError(reason instanceof Error ? reason.message : String(reason));
     } finally {
+      verificationInFlight.current = false;
       setBusy(false);
     }
   }

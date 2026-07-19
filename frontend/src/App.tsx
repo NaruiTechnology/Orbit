@@ -92,6 +92,7 @@ export function App() {
   const [dirtyRecordIds, setDirtyRecordIds] = useState<Set<string>>(new Set());
   const [pendingConfirmation, setPendingConfirmation] = useState<PendingConfirmation | null>(null);
   const [confirmationBusy, setConfirmationBusy] = useState(false);
+  const [recordsRevision, setRecordsRevision] = useState(0);
   const [authOpen, setAuthOpen] = useState(() => !localStorage.getItem("orbit:auth-token"));
 
   async function handleWorkflowCommand(command: WorkflowCommandInput) {
@@ -100,6 +101,13 @@ export function App() {
     const projection = await sendWorkflowCommand({ instanceId, ...command }).unwrap();
     await runtimeQuery.refetch();
     await treeQuery.refetch();
+  }
+
+  function handleNewRecordSaved(record: WorkflowRecord): void {
+    dispatch(selectCell({ recordId: record.id, cellKey: null }));
+    setRecordsRevision((current) => current + 1);
+    void recordsQuery.refetch();
+    void workflowQuery.refetch();
   }
 
   useEffect(() => {
@@ -221,12 +229,7 @@ export function App() {
     return updated;
   }
 
-  async function handleRecordAdd(): Promise<WorkflowRecord> {
-    const values = Object.fromEntries(
-      (workflow?.columns || [])
-        .filter((column) => column.editable)
-        .map((column) => [column.key, ""]),
-    );
+  async function handleRecordCreate(values: Record<string, unknown>): Promise<WorkflowRecord> {
     return createRecord({ workflowKey: workspace.selectedWorkflow, values, locale: workspace.locale }).unwrap();
   }
 
@@ -244,6 +247,8 @@ export function App() {
           next.delete(record.id);
           return next;
         });
+        dispatch(selectCell({ recordId: null, cellKey: null }));
+        setRecordsRevision((current) => current + 1);
       },
     });
   }
@@ -361,7 +366,7 @@ export function App() {
             <ApiError locale={workspace.locale} onRetry={retryAll} />
           ) : (
             <WorkflowGrid
-              key={`${workspace.selectedWorkflow}:${workspace.locale}:${workspace.theme}`}
+              key={`${workspace.selectedWorkflow}:${workspace.locale}:${workspace.theme}:${recordsRevision}`}
               locale={workspace.locale}
               theme={workspace.theme}
               workflow={workflow}
@@ -372,7 +377,8 @@ export function App() {
                 dispatch(selectCell({ recordId, cellKey }))
               }
               onRecordUpdate={handleRecordUpdate}
-              onRecordAdd={handleRecordAdd}
+              onRecordCreate={handleRecordCreate}
+              onNewRecordSaved={(record) => void handleNewRecordSaved(record)}
               onRecordDelete={handleRecordDelete}
               onRecordFinishEdit={(recordId) => {
                 setDirtyRecordIds((current) => {

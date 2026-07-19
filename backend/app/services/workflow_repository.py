@@ -814,6 +814,39 @@ def create_record(
                     status_code=409, detail="Order number already exists"
                 ) from error
             raise
+        # Creating an order completes the first intake step. Keep this
+        # transition in the same database transaction as the order insert so
+        # the workflow cannot remain on step 01 when the order is saved.
+        workflow = connection.execute(
+            """
+            SELECT id, catalog_version
+              FROM orbit_workflow.workflow_definition
+             WHERE workflow_key = %s AND is_active
+            """,
+            (workflow_key,),
+        ).fetchone()
+        if workflow is not None:
+            runtime = WorkflowRuntimeService(connection)
+            instance = runtime.start(
+                workflow_id=workflow["id"],
+                workflow_key=workflow_key,
+                business_key=order_number,
+                context={"order_id": str(created["id"]), "order_number": order_number},
+                organization_id=user.scope.organization_id,
+                department_id=user.scope.department_id,
+                laboratory_id=user.scope.laboratory_id,
+                started_by=user.user_id,
+                catalog_version=workflow["catalog_version"],
+            )
+            runtime.transition(
+                instance_id=instance["id"],
+                expected_version=instance["version"],
+                target_record_key=None,
+                outcome="submit",
+                payload={"source": "order.create"},
+                actor_user_id=user.user_id,
+                workflow_key=workflow_key,
+            )
         return _customer_order_record(connection, created["id"], request.locale)
     if _is_runtime_workflow(definition):
         values = _editable_values(definition, request.values)

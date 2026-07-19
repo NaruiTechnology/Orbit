@@ -20,7 +20,7 @@ export function ConfirmDialog({
   return (
     <div className="dialog-backdrop" role="presentation" onMouseDown={onCancel}>
       <section
-        className="confirm-dialog"
+        className="dialog-surface confirm-dialog"
         role="dialog"
         aria-modal="true"
         aria-labelledby="confirm-dialog-title"
@@ -29,7 +29,7 @@ export function ConfirmDialog({
         <span className="confirm-dialog__eyebrow">CONFIRM ACTION</span>
         <h2 id="confirm-dialog-title">{title}</h2>
         <p>{message}</p>
-        <div className="confirm-dialog__actions">
+        <div className="dialog-actions confirm-dialog__actions">
           <button type="button" className="confirm-dialog__cancel" disabled={busy} onClick={onCancel}>
             {cancelLabel}
           </button>
