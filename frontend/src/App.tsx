@@ -13,6 +13,8 @@ import {
   useGetSessionQuery,
   useGetWorkflowQuery,
   useGetWorkflowTreeQuery,
+  useGetWorkflowRuntimeQuery,
+  useWorkflowCommandMutation,
   useGetWorkflowsQuery,
   useUpdateRecordMutation,
   useCreateRecordMutation,
@@ -36,7 +38,7 @@ import {
   setTheme,
 } from "./features/workflows/workspaceSlice";
 import { translate } from "./i18n/translations";
-import type { WorkflowRecord } from "./types";
+import type { WorkflowCommandInput, WorkflowRecord } from "./types";
 
 interface PendingConfirmation {
   title: string;
@@ -76,13 +78,29 @@ export function App() {
     recordId: deferredSelection.recordId,
     cellKey: deferredSelection.cellKey,
   }, { refetchOnMountOrArgChange: true, skip: !authToken });
+  const runtimeQuery = useGetWorkflowRuntimeQuery({
+    instanceId: deferredSelection.recordId || "",
+    workflowKey: workspace.selectedWorkflow,
+  }, {
+    refetchOnMountOrArgChange: true,
+    skip: !authToken || workflowQuery.data?.definition_type !== "workflow" || !deferredSelection.recordId,
+  });
   const [updateRecord] = useUpdateRecordMutation();
   const [createRecord] = useCreateRecordMutation();
   const [deleteRecord] = useDeleteRecordMutation();
+  const [sendWorkflowCommand, workflowCommandState] = useWorkflowCommandMutation();
   const [dirtyRecordIds, setDirtyRecordIds] = useState<Set<string>>(new Set());
   const [pendingConfirmation, setPendingConfirmation] = useState<PendingConfirmation | null>(null);
   const [confirmationBusy, setConfirmationBusy] = useState(false);
   const [authOpen, setAuthOpen] = useState(() => !localStorage.getItem("orbit:auth-token"));
+
+  async function handleWorkflowCommand(command: WorkflowCommandInput) {
+    const instanceId = runtimeQuery.data?.instance.id || deferredSelection.recordId;
+    if (!instanceId) return;
+    const projection = await sendWorkflowCommand({ instanceId, ...command }).unwrap();
+    await runtimeQuery.refetch();
+    await treeQuery.refetch();
+  }
 
   useEffect(() => {
     document.documentElement.lang = workspace.locale;
@@ -386,9 +404,11 @@ export function App() {
           key={`${workspace.selectedWorkflow}:${workspace.locale}`}
           locale={workspace.locale}
           tree={treeQuery.data}
-          columns={workflow?.columns || []}
           isWorkflow={workflow?.definition_type === "workflow"}
           loading={treeQuery.isLoading || treeQuery.isFetching}
+          runtime={runtimeQuery.data}
+          commandBusy={workflowCommandState.isLoading}
+          onCommand={handleWorkflowCommand}
         />
       </main>
       <footer className="orbit-footer">

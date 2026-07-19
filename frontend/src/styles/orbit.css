@@ -1034,7 +1034,7 @@ input:focus-visible {
 }
 
 .grid-frame .ag-cell-focus {
-  box-shadow: inset 0 0 0 2px var(--signal);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--signal) 72%, transparent);
 }
 
 .grid-frame .grid-cell--sequence {
@@ -1069,6 +1069,13 @@ input:focus-visible {
 
 .grid-frame .grid-cell--sequence {
   background: linear-gradient(135deg, var(--surface-raised), color-mix(in srgb, var(--signal-soft) 46%, var(--surface-raised) 54%)) !important;
+}
+
+.grid-frame .grid-cell--sequence.ag-cell-focus {
+  color: var(--ink-soft);
+  font-weight: 400;
+  background: linear-gradient(135deg, color-mix(in srgb, var(--surface) 92%, transparent), color-mix(in srgb, var(--paper-deep) 36%, transparent)) !important;
+  box-shadow: inset 0 0 0 0.5px color-mix(in srgb, var(--signal) 64%, transparent);
 }
 
 .grid-frame .grid-cell--alert {
@@ -1236,6 +1243,80 @@ input:focus-visible {
   white-space: pre-wrap;
 }
 
+.workflow-actions {
+  display: grid;
+  gap: 9px;
+  width: 100%;
+  box-sizing: border-box;
+  margin: 12px 0 2px;
+  padding: 11px;
+  color: var(--ink);
+  background: color-mix(in srgb, var(--surface-raised) 92%, white 8%);
+  border: 1px solid color-mix(in srgb, var(--signal) 48%, var(--ink) 18%);
+  border-radius: 4px;
+  box-shadow: 1px 1px 0 rgba(228, 87, 46, 0.32);
+}
+
+.workflow-actions button,
+.workflow-actions input {
+  box-sizing: border-box;
+  min-height: 32px;
+  padding: 7px 9px;
+  color: var(--ink);
+  background: color-mix(in srgb, var(--surface) 88%, white 12%);
+  border: 1px solid color-mix(in srgb, var(--ink) 28%, transparent);
+  border-radius: 3px;
+}
+
+.workflow-actions button {
+  cursor: pointer;
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+.workflow-actions button:not(:disabled):hover {
+  background: color-mix(in srgb, var(--signal-soft) 72%, white 28%);
+  border-color: var(--signal);
+}
+.workflow-actions button:disabled { cursor: not-allowed; opacity: 0.45; }
+.workflow-action-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  background: transparent;
+  border: 0;
+  box-shadow: none;
+}
+.workflow-email-row { display: flex; align-items: center; justify-content: flex-end; gap: 7px; }
+.workflow-email-row input { min-width: 0; width: 100%; }
+.workflow-email-button { width: 34px; padding: 5px !important; font-size: 16px !important; line-height: 1; }
+.workflow-email-button,
+.workflow-email-button:not(:disabled):hover {
+  background: transparent !important;
+  border-color: transparent !important;
+  box-shadow: none;
+}
+.workflow-email-button img { display: block; width: 19px; height: 19px; margin: auto; }
+.workflow-check { display: flex; align-items: center; gap: 7px; flex: 1; font-size: 9px; font-weight: 800; }
+.workflow-check input { width: 16px; min-height: 16px; accent-color: var(--signal); }
+.runtime-status { font-size: 9px; font-weight: 800; text-transform: uppercase; opacity: 0.72; }
+.workflow-actions input::placeholder { color: color-mix(in srgb, var(--ink) 58%, transparent); }
+.workflow-error { display: grid; gap: 3px; padding: 7px; color: #8d2014; background: #ffe1d8; border-left: 3px solid var(--signal); font-size: 9px; }
+.workflow-error b { font-size: 8px; letter-spacing: 0.08em; text-transform: uppercase; }
+.workflow-abort { color: #8d2014 !important; border-color: color-mix(in srgb, #8d2014 42%, transparent) !important; }
+:root[data-theme="green"] .workflow-abort {
+  color: #d4df86 !important;
+  background: #24352e !important;
+  border-color: #5f766a !important;
+}
+:root[data-theme="green"] .workflow-abort:not(:disabled):hover {
+  color: #eef5f0 !important;
+  background: #31483e !important;
+  border-color: #8fae9c !important;
+}
+
 .context-card p {
   font-size: 10px;
   line-height: 1.4;
@@ -1308,16 +1389,17 @@ input:focus-visible {
   position: relative;
   z-index: 1;
   display: grid;
-  width: 27px;
-  height: 27px;
+  width: 22px;
+  height: 22px;
   margin-top: 7px;
-  color: color-mix(in srgb, var(--paper-bright) 56%, transparent);
+  color: color-mix(in srgb, var(--paper-bright) 38%, transparent);
   font-family: var(--font-display);
-  font-size: 9px;
-  background: linear-gradient(145deg, var(--forest-deep), var(--forest));
-  border: 1px solid color-mix(in srgb, var(--paper-bright) 26%, transparent);
+  font-size: 8px;
+  background: transparent;
+  border: 1px solid color-mix(in srgb, var(--paper-bright) 16%, transparent);
   border-radius: 50%;
   place-items: center;
+  opacity: 0.62;
 }
 
 .workflow-node__body {
@@ -1361,9 +1443,10 @@ input:focus-visible {
 }
 
 .workflow-node--complete .workflow-node__rail > span {
-  color: var(--forest-deep);
-  background: color-mix(in srgb, var(--acid) 54%, #789169 46%);
-  border-color: color-mix(in srgb, var(--acid) 54%, #789169 46%);
+  color: color-mix(in srgb, var(--acid) 62%, var(--paper-bright) 38%);
+  background: transparent;
+  border-color: color-mix(in srgb, var(--acid) 36%, transparent);
+  opacity: 0.72;
 }
 
 .workflow-node--complete .workflow-node__body {
@@ -1371,17 +1454,18 @@ input:focus-visible {
 }
 
 .workflow-node--current .workflow-node__rail > span {
-  color: var(--paper-bright);
-  background: var(--signal);
-  border-color: var(--signal);
-  box-shadow: 0 0 0 5px rgba(228, 87, 46, 0.2);
+  color: color-mix(in srgb, var(--paper-bright) 74%, transparent);
+  background: transparent;
+  border-color: color-mix(in srgb, var(--signal) 62%, transparent);
+  box-shadow: none;
+  opacity: 0.82;
 }
 
 .workflow-node--current .workflow-node__body {
   color: var(--ink);
   background: linear-gradient(135deg, var(--surface-raised), color-mix(in srgb, var(--signal-soft) 72%, var(--surface-raised) 28%));
   border-color: var(--signal);
-  box-shadow: 4px 4px 0 var(--signal);
+  box-shadow: 1px 1px 0 rgba(228, 87, 46, 0.8);
 }
 
 .workflow-node--current .workflow-node__body small {

@@ -1,57 +1,86 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 
-import type { ColumnDefinition, Locale, WorkflowTree } from "../types";
+import mailIcon from "../assets/mail-icon.svg";
+import type {
+  Locale,
+  WorkflowCommandInput,
+  WorkflowRuntimeProjection,
+  WorkflowTree,
+} from "../types";
 import { translate } from "../i18n/translations";
 
 interface WorkflowTreePanelProps {
   locale: Locale;
   tree: WorkflowTree | undefined;
-  columns: ColumnDefinition[];
   isWorkflow: boolean;
   loading: boolean;
+  runtime?: WorkflowRuntimeProjection | undefined;
+  commandBusy?: boolean;
+  onCommand?: (command: WorkflowCommandInput) => Promise<void>;
 }
 
-function formatContext(value: unknown): string {
-  if (value === null || value === undefined || value === "") return "—";
-  if (typeof value === "object") return JSON.stringify(value, null, 2);
-  return String(value);
+function formatCommandError(error: unknown): string {
+  if (error && typeof error === "object" && "data" in error) {
+    const data = error.data;
+    if (typeof data === "string") return data;
+    if (data && typeof data === "object" && "detail" in data) return String(data.detail);
+  }
+  return "Workflow command failed";
 }
 
 export function WorkflowTreePanel({
   locale,
   tree,
-  columns,
   isWorkflow,
   loading,
+  runtime,
+  commandBusy = false,
+  onCommand,
 }: WorkflowTreePanelProps) {
   const selectedRef = useRef<HTMLLIElement | null>(null);
-  const selectedColumn = columns.find((column) => column.key === tree?.selected_cell_key);
+  const [commandError, setCommandError] = useState<string | null>(null);
+  const currentNode = runtime?.nodes.find(
+    (node) => node.record_key === runtime.instance.current_record_key,
+  );
+  const runtimeByKey = new Map((runtime?.nodes || []).map((node) => [node.record_key, node]));
+
+  async function send(command: string, payload?: Record<string, unknown>) {
+    if (!runtime || !onCommand || !currentNode) return;
+    const commandInput: WorkflowCommandInput = {
+      command,
+      nodeKey: currentNode.record_key,
+      version: runtime.instance.version,
+    };
+    if (payload) commandInput.payload = payload;
+    if (command === "abort") {
+      const abortReason = window.prompt(translate(locale, "reason"));
+      if (!abortReason?.trim()) return;
+      commandInput.reason = abortReason.trim();
+    }
+    try {
+      setCommandError(null);
+      await onCommand(commandInput);
+    } catch (error) {
+      setCommandError(formatCommandError(error));
+    }
+  }
 
   useEffect(() => {
     selectedRef.current?.scrollIntoView({ block: "center", behavior: "smooth" });
   }, [tree?.selected_record_id]);
 
+  useEffect(() => {
+    setCommandError(null);
+  }, [runtime?.instance.id, runtime?.instance.current_record_key]);
+
   return (
     <aside className="tree-panel">
       <div className="tree-panel__header">
         <div>
-          <span className="eyebrow">LIVE CONTEXT</span>
           <h2>{translate(locale, isWorkflow ? "workflowTree" : "backgroundLogic")}</h2>
         </div>
         <span className="tree-panel__count">{tree?.nodes.length || 0}</span>
       </div>
-
-      <section className="context-card">
-        <span>{translate(locale, "selectedContext")}</span>
-        {tree?.selected_record_id ? (
-          <>
-            <b>{selectedColumn?.label || translate(locale, "cell")}</b>
-            <pre>{formatContext(tree.selected_cell_value)}</pre>
-          </>
-        ) : (
-          <p>{translate(locale, "selectPrompt")}</p>
-        )}
-      </section>
 
       <div className="tree-scroll" aria-busy={loading}>
         {loading ? (
@@ -63,11 +92,18 @@ export function WorkflowTreePanel({
         ) : (
           <ol className="workflow-tree">
             {(tree?.nodes || []).map((node) => {
-              const state = node.is_selected
-                ? "current"
-                : node.is_before_selected
+              const runtimeNode = runtimeByKey.get(node.record_key);
+              const state = runtime
+                ? runtimeNode?.status === "completed"
                   ? "complete"
-                  : "upcoming";
+                  : runtimeNode?.record_key === runtime.instance.current_record_key
+                    ? "current"
+                    : "upcoming"
+                : node.is_selected
+                  ? "current"
+                  : node.is_before_selected
+                    ? "complete"
+                    : "upcoming";
               return (
                 <li
                   className={`workflow-node workflow-node--${state}`}
@@ -90,6 +126,53 @@ export function WorkflowTreePanel({
                       <span>
                         {[node.owner_role, node.time_limit].filter(Boolean).join(" · ")}
                       </span>
+                    ) : null}
+                    {isWorkflow && runtime && runtimeNode?.record_key === runtime.instance.current_record_key ? (
+                      <div className="workflow-actions" aria-label={translate(locale, "nodeStatus")}>
+                        {commandError || runtimeNode.error_message ? (
+                          <div className="workflow-error" role="alert">
+                            <b>{translate(locale, "error")}</b>
+                            <span>{commandError || runtimeNode.error_message}</span>
+                          </div>
+                        ) : null}
+                        <div className="workflow-action-row">
+                          <label className="workflow-check">
+                            <input
+                              type="checkbox"
+                              checked={runtimeNode.status === "completed"}
+                              disabled={commandBusy || runtimeNode.status === "completed"}
+                              onChange={() => void send("submit")}
+                            />
+                            <span>{translate(locale, "submit")}</span>
+                          </label>
+                          <button
+                            type="button"
+                            className="workflow-email-button"
+                            aria-label={translate(locale, "email")}
+                            title={translate(locale, "email")}
+                            disabled={commandBusy}
+                            onClick={() => {
+                              const recipient = window.prompt(translate(locale, "emailAddress"));
+                              if (recipient?.trim()) void send("email", { recipient_email: recipient.trim() });
+                            }}
+                          >
+                            <img src={mailIcon} alt="" aria-hidden="true" />
+                          </button>
+                          <button
+                            type="button"
+                            className="workflow-abort"
+                            disabled={commandBusy}
+                            onClick={() => void send("abort")}
+                          >
+                            {translate(locale, "abort")}
+                          </button>
+                        </div>
+                        {(runtimeNode.status === "failed" || runtimeNode.status === "blocked") ? (
+                          <button type="button" disabled={commandBusy} onClick={() => void send("resubmit")}>
+                            {translate(locale, "resubmit")}
+                          </button>
+                        ) : null}
+                      </div>
                     ) : null}
                   </div>
                 </li>

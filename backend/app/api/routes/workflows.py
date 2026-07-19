@@ -17,15 +17,19 @@ from app.schemas import (
     RecordPage,
     RecordUpdateRequest,
     SessionInfo,
+    WorkflowCommandRequest,
     WorkflowDetail,
     WorkflowInstance,
     WorkflowRecord,
+    WorkflowRuntimeProjection,
     WorkflowSummary,
     WorkflowTree,
 )
 from app.services.workflow_repository import (
+    command_instance,
     create_record,
     delete_record,
+    get_runtime_projection,
     get_tree,
     get_workflow,
     list_records,
@@ -157,3 +161,29 @@ def workflow_instance_transition(
     connection: Connection[dict[str, Any]] = Depends(get_connection),
 ) -> WorkflowInstance:
     return transition_instance(connection, user, instance_id, request)
+
+
+@router.get(
+    "/instances/{instance_id}/runtime",
+    response_model=WorkflowRuntimeProjection,
+)
+def workflow_instance_runtime(
+    instance_id: UUID,
+    workflow_key: str | None = Query(default=None),
+    user: SessionInfo = Depends(get_current_user),
+    connection: Connection[dict[str, Any]] = Depends(get_connection),
+) -> WorkflowRuntimeProjection:
+    return get_runtime_projection(connection, user, instance_id, workflow_key)
+
+
+@router.post(
+    "/instances/{instance_id}/commands",
+    response_model=WorkflowRuntimeProjection,
+)
+def workflow_instance_command(
+    instance_id: UUID,
+    request: WorkflowCommandRequest,
+    user: SessionInfo = Depends(get_current_user),
+    connection: Connection[dict[str, Any]] = Depends(get_connection),
+) -> WorkflowRuntimeProjection:
+    return command_instance(connection, user, instance_id, request)

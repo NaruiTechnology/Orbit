@@ -117,6 +117,52 @@ export interface WorkflowTree {
   edges: TreeEdge[];
 }
 
+export type WorkflowNodeStatus =
+  | "pending" | "active" | "waiting" | "completed"
+  | "failed" | "blocked" | "cancelled" | "skipped";
+
+export interface WorkflowInstance {
+  id: string;
+  workflow_key: string;
+  catalog_version: number;
+  business_key: string;
+  current_record_key: string | null;
+  status: string;
+  context: Record<string, unknown>;
+  version: number;
+  started_at: string;
+  completed_at: string | null;
+  updated_at: string;
+}
+
+export interface WorkflowNodeRuntime {
+  record_key: string;
+  status: WorkflowNodeStatus;
+  completion_source: "system" | "user" | null;
+  assigned_role: string | null;
+  assigned_user_id: string | null;
+  attempt_count: number;
+  error_code: string | null;
+  error_message: string | null;
+  started_at: string | null;
+  completed_at: string | null;
+  version: number;
+  available_actions: string[];
+}
+
+export interface WorkflowRuntimeProjection {
+  instance: WorkflowInstance;
+  nodes: WorkflowNodeRuntime[];
+}
+
+export interface WorkflowCommandInput {
+  command: string;
+  nodeKey?: string;
+  payload?: Record<string, unknown>;
+  reason?: string;
+  version: number;
+}
+
 export interface HealthResponse {
   status: "ok";
   application: string;

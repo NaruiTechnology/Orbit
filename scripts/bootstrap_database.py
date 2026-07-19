@@ -131,7 +131,12 @@ def _apply_schema_and_seed(skip_catalog: bool) -> dict[str, int] | None:
                 sql.Literal(database.client_encoding),
             )
         )
-        for script_name in ("001_schema.sql", "002_seed_identity.sql"):
+        for script_name in (
+            "001_schema.sql",
+            "002_seed_identity.sql",
+            "004_workflow_node_runtime.sql",
+            "005_workflow_runtime_functions.sql",
+        ):
             script_path = PROJECT_ROOT / "database" / script_name
             connection.execute(script_path.read_text(encoding="utf-8"))
 

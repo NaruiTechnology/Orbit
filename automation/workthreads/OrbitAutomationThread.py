@@ -8,6 +8,7 @@ from pathlib import Path
 from automation.workstates.bootstrapDatabase_state import bootstrapDatabase_state
 from automation.workstates.importWorkflowCatalog_state import importWorkflowCatalog_state
 from automation.workstates.launchApi_state import launchApi_state
+from automation.workstates.processWorkflowTasks_state import processWorkflowTasks_state
 from automation.workstates.validateConfiguration_state import validateConfiguration_state
 from automation.workstates.verifyDatabase_state import verifyDatabase_state
 from AutomationPy.buildingblocks.decorators import overrides
@@ -19,6 +20,7 @@ STATE_TYPES = {
     "verifyDatabase": verifyDatabase_state,
     "importWorkflowCatalog": importWorkflowCatalog_state,
     "launchApi": launchApi_state,
+    "processWorkflowTasks": processWorkflowTasks_state,
 }
 
 

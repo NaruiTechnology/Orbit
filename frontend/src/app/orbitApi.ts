@@ -7,6 +7,8 @@ import type {
   SessionInfo,
   WorkflowDetail,
   WorkflowRecord,
+  WorkflowCommandInput,
+  WorkflowRuntimeProjection,
   WorkflowSummary,
   WorkflowTree,
 } from "../types";
@@ -32,6 +34,10 @@ interface RecordUpdate {
   values: Record<string, unknown>;
   version: number;
   locale: Locale;
+}
+
+interface WorkflowCommand extends WorkflowCommandInput {
+  instanceId: string;
 }
 
 export const orbitApi = createApi({
@@ -110,6 +116,18 @@ export const orbitApi = createApi({
       query: ({ workflowKey, recordId }) => ({ url: `/workflows/${workflowKey}/records/${recordId}`, method: "DELETE" }),
       invalidatesTags: (_result, _error, argument) => [{ type: "Record", id: argument.workflowKey }, "Workflow"],
     }),
+    workflowRuntime: builder.query<WorkflowRuntimeProjection, { instanceId: string; workflowKey: string }>({
+      query: ({ instanceId, workflowKey }) => ({
+        url: `/workflows/instances/${instanceId}/runtime`, params: { workflow_key: workflowKey },
+      }),
+    }),
+    workflowCommand: builder.mutation<WorkflowRuntimeProjection, WorkflowCommand>({
+      query: ({ instanceId, command, nodeKey, payload, reason, version }) => ({
+        url: `/workflows/instances/${instanceId}/commands`,
+        method: "POST",
+        body: { command, node_key: nodeKey, payload: payload || {}, reason, version },
+      }),
+    }),
   }),
 });
 
@@ -124,3 +142,5 @@ export const useGetRecordsQuery = orbitApi.endpoints.records.useQuery;
 export const useUpdateRecordMutation = orbitApi.endpoints.updateRecord.useMutation;
 export const useCreateRecordMutation = orbitApi.endpoints.createRecord.useMutation;
 export const useDeleteRecordMutation = orbitApi.endpoints.deleteRecord.useMutation;
+export const useGetWorkflowRuntimeQuery = orbitApi.endpoints.workflowRuntime.useQuery;
+export const useWorkflowCommandMutation = orbitApi.endpoints.workflowCommand.useMutation;

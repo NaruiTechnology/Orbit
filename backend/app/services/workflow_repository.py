@@ -21,13 +21,17 @@ from app.schemas import (
     TreeEdge,
     TreeNode,
     WorkflowAccess,
+    WorkflowCommandRequest,
     WorkflowDetail,
     WorkflowInstance,
+    WorkflowNodeRuntime,
     WorkflowRecord,
+    WorkflowRuntimeProjection,
     WorkflowSummary,
     WorkflowTree,
 )
 from app.services.localization import collation_for, localized_value
+from app.services.workflow_runtime_service import WorkflowRuntimeService
 
 
 def _access_model(row: dict[str, Any]) -> WorkflowAccess:
@@ -569,23 +573,14 @@ def _update_runtime_instance(
     ).fetchone()
     if before is None:
         raise HTTPException(status_code=404, detail="Workflow instance not found")
-    updated = connection.execute(
-        """
-        UPDATE orbit_runtime.workflow_instance
-           SET business_key = COALESCE(%s, business_key),
-               status = COALESCE(%s, status),
-               context_json = COALESCE(%s, context_json)
-         WHERE id = %s AND version = %s
-        RETURNING id
-        """,
-        (
-            str(values["business_key"]) if "business_key" in values else None,
-            str(values["status"]) if "status" in values else None,
-            Jsonb(values["context"]) if isinstance(values.get("context"), dict) else None,
-            record_id,
-            request.version,
-        ),
-    ).fetchone()
+    updated = WorkflowRuntimeService(connection).update_record(
+        instance_id=record_id,
+        expected_version=request.version,
+        business_key=str(values["business_key"]) if "business_key" in values else None,
+        status=str(values["status"]) if "status" in values else None,
+        context=values["context"] if isinstance(values.get("context"), dict) else None,
+        workflow_key=workflow_key,
+    )
     if updated is None:
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
@@ -826,7 +821,7 @@ def create_record(
         context = values.get("context") if isinstance(values.get("context"), dict) else {}
         workflow_row = connection.execute(
             """
-            SELECT w.id,
+            SELECT w.id, w.catalog_version,
                    (SELECT record_key FROM orbit_workflow.workflow_record r
                      WHERE r.workflow_id = w.id ORDER BY record_order LIMIT 1) AS first_record_key
               FROM orbit_workflow.workflow_definition w
@@ -837,22 +832,13 @@ def create_record(
         if workflow_row is None:
             raise HTTPException(status_code=404, detail="Workflow not found")
         try:
-            created = connection.execute(
-                """
-                INSERT INTO orbit_runtime.workflow_instance (
-                    workflow_id, business_key, current_record_key, status, context_json,
-                    organization_id, department_id, laboratory_id, started_by
-                )
-                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
-                RETURNING id
-                """,
-                (
-                    workflow_row["id"], business_key, workflow_row["first_record_key"],
-                    values.get("status") or "draft", Jsonb(context),
-                    user.scope.organization_id, user.scope.department_id,
-                    user.scope.laboratory_id, user.user_id,
-                ),
-            ).fetchone()
+            created = WorkflowRuntimeService(connection).create_record(
+                workflow_id=workflow_row["id"], workflow_key=workflow_key,
+                business_key=business_key, status=values.get("status") or "draft",
+                context=context, organization_id=user.scope.organization_id,
+                department_id=user.scope.department_id, laboratory_id=user.scope.laboratory_id,
+                started_by=user.user_id, catalog_version=workflow_row["catalog_version"],
+            )
         except Exception as error:
             if getattr(error, "sqlstate", None) == "23505":
                 raise HTTPException(
@@ -939,16 +925,10 @@ def delete_record(
         return
     definition = get_workflow(connection, user, workflow_key, "en")
     if _is_runtime_workflow(definition):
-        deleted = connection.execute(
-            """
-            DELETE FROM orbit_runtime.workflow_instance i
-             USING orbit_workflow.workflow_definition w
-             WHERE i.id = %s AND i.workflow_id = w.id AND w.workflow_key = %s
-               AND i.organization_id = %s
-            RETURNING i.id
-            """,
-            (record_id, workflow_key, user.scope.organization_id),
-        ).fetchone()
+        deleted_id = WorkflowRuntimeService(connection).delete_record(
+            record_id, workflow_key, user.scope.organization_id
+        )
+        deleted = {"id": deleted_id} if deleted_id else None
         if deleted is None:
             raise HTTPException(status_code=404, detail="Workflow instance not found")
         return
@@ -1048,6 +1028,7 @@ def _instance_model(row: dict[str, Any]) -> WorkflowInstance:
     return WorkflowInstance(
         id=row["id"],
         workflow_key=row["workflow_key"],
+        catalog_version=row["catalog_version"],
         business_key=row["business_key"],
         current_record_key=row["current_record_key"],
         status=row["status"],
@@ -1056,6 +1037,117 @@ def _instance_model(row: dict[str, Any]) -> WorkflowInstance:
         started_at=row["started_at"],
         completed_at=row["completed_at"],
         updated_at=row["updated_at"],
+    )
+
+
+def _available_actions(status: str, can_execute: bool) -> list[str]:
+    if not can_execute:
+        return []
+    if status == "active":
+        return ["submit", "email", "abort"]
+    if status in {"failed", "blocked"}:
+        return ["resubmit", "abort"]
+    if status in {"pending", "waiting"}:
+        return ["acknowledge", "abort"]
+    return []
+
+
+def get_runtime_projection(
+    connection: Connection[dict[str, Any]], user: SessionInfo, instance_id: UUID,
+    workflow_key: str | None = None,
+) -> WorkflowRuntimeProjection:
+    current = connection.execute(
+        """
+        SELECT i.*, w.workflow_key, w.id AS definition_id
+          FROM orbit_runtime.workflow_instance i
+          JOIN orbit_workflow.workflow_definition w ON w.id = i.workflow_id
+         WHERE i.id = %s
+           AND i.organization_id = %s
+           AND (i.department_id IS NULL OR i.department_id = %s)
+           AND (i.laboratory_id IS NULL OR i.laboratory_id = %s)
+        """,
+        (
+            instance_id,
+            user.scope.organization_id,
+            user.scope.department_id,
+            user.scope.laboratory_id,
+        ),
+    ).fetchone()
+    if current is None and workflow_key == "order-evaluation":
+        order = connection.execute(
+            "SELECT order_number FROM orbit_sales.customer_order WHERE id = %s AND organization_id = %s",
+            (instance_id, user.scope.organization_id),
+        ).fetchone()
+        workflow = connection.execute(
+            "SELECT id, catalog_version FROM orbit_workflow.workflow_definition WHERE workflow_key = %s AND is_active",
+            (workflow_key,),
+        ).fetchone()
+        if order and workflow:
+            current = connection.execute(
+                """
+                SELECT i.*, w.workflow_key, w.id AS definition_id
+                  FROM orbit_runtime.workflow_instance i
+                  JOIN orbit_workflow.workflow_definition w ON w.id = i.workflow_id
+                 WHERE i.workflow_id = %s AND i.business_key = %s
+                """,
+                (workflow["id"], order["order_number"]),
+            ).fetchone()
+            if current is None:
+                created = WorkflowRuntimeService(connection).start(
+                    workflow_id=workflow["id"], workflow_key=workflow_key,
+                    business_key=order["order_number"],
+                    context={"order_id": str(instance_id), "order_number": order["order_number"]},
+                    organization_id=user.scope.organization_id,
+                    department_id=user.scope.department_id,
+                    laboratory_id=user.scope.laboratory_id,
+                    started_by=user.user_id,
+                    catalog_version=workflow["catalog_version"],
+                )
+                current = dict(created)
+                current["workflow_key"] = workflow_key
+                current["definition_id"] = workflow["id"]
+            instance_id = current["id"]
+    if current is None:
+        raise HTTPException(status_code=404, detail="Workflow instance not found")
+    access = require_workflow_access(connection, user.user_id, current["workflow_key"], "view")
+    WorkflowRuntimeService(connection).ensure_nodes(
+        instance_id, current["workflow_id"], current["current_record_key"]
+    )
+    rows = connection.execute(
+        """
+        SELECT n.*, r.values_json
+          FROM orbit_runtime.workflow_node_instance n
+          JOIN orbit_workflow.workflow_record r
+            ON r.workflow_id = %s AND r.record_key = n.record_key
+         WHERE n.instance_id = %s
+         ORDER BY r.record_order
+        """,
+        (current["workflow_id"], instance_id),
+    ).fetchall()
+    instance = _instance_model(current)
+    return WorkflowRuntimeProjection(
+        instance=instance,
+        nodes=[
+            WorkflowNodeRuntime(
+                record_key=row["record_key"],
+                status=row["status"],
+                completion_source=row["completion_source"],
+                assigned_role=row["values_json"].get("owner_role"),
+                assigned_user_id=row["assigned_user_id"],
+                attempt_count=row["attempt_count"],
+                error_code=row["error_code"],
+                error_message=row["error_message"],
+                started_at=row["started_at"],
+                completed_at=row["completed_at"],
+                version=row["version"],
+                available_actions=(
+                    _available_actions(row["status"], bool(access["can_execute"]))
+                    if row["record_key"] == current["current_record_key"]
+                    else []
+                ),
+            )
+            for row in rows
+        ],
     )
 
 
@@ -1069,6 +1161,7 @@ def start_instance(
     workflow = connection.execute(
         """
         SELECT w.id,
+               w.catalog_version,
                (SELECT record_key FROM orbit_workflow.workflow_record r
                  WHERE r.workflow_id = w.id ORDER BY record_order LIMIT 1) AS first_record_key
           FROM orbit_workflow.workflow_definition w
@@ -1079,39 +1172,21 @@ def start_instance(
     if workflow is None:
         raise HTTPException(status_code=404, detail="Workflow not found")
     try:
-        row = connection.execute(
-            """
-            INSERT INTO orbit_runtime.workflow_instance (
-                workflow_id, business_key, current_record_key, status, context_json,
-                organization_id, department_id, laboratory_id, started_by
-            )
-            VALUES (%s, %s, %s, 'active', %s, %s, %s, %s, %s)
-            RETURNING *, %s::varchar AS workflow_key
-            """,
-            (
-                workflow["id"],
-                request.business_key,
-                workflow["first_record_key"],
-                Jsonb(request.context),
-                user.scope.organization_id,
-                request.department_id or user.scope.department_id,
-                request.laboratory_id or user.scope.laboratory_id,
-                user.user_id,
-                workflow_key,
-            ),
-        ).fetchone()
+        row = WorkflowRuntimeService(connection).start(
+            workflow_id=workflow["id"],
+            workflow_key=workflow_key,
+            business_key=request.business_key,
+            context=request.context,
+            organization_id=user.scope.organization_id,
+            department_id=request.department_id or user.scope.department_id,
+            laboratory_id=request.laboratory_id or user.scope.laboratory_id,
+            started_by=user.user_id,
+            catalog_version=workflow["catalog_version"],
+        )
     except Exception as error:
         if getattr(error, "sqlstate", None) == "23505":
             raise HTTPException(status_code=409, detail="Business key already exists") from error
         raise
-    connection.execute(
-        """
-        INSERT INTO orbit_runtime.transition_event (
-            instance_id, from_record_key, to_record_key, outcome, payload, actor_user_id
-        ) VALUES (%s, NULL, %s, 'start', %s, %s)
-        """,
-        (row["id"], row["current_record_key"], Jsonb(request.context), user.user_id),
-    )
     return _instance_model(row)
 
 
@@ -1143,51 +1218,133 @@ def transition_instance(
     require_workflow_access(connection, user.user_id, current["workflow_key"], "execute")
     if current["status"] not in {"active", "waiting"}:
         raise HTTPException(status_code=409, detail="Workflow instance is not active")
+    try:
+        updated = WorkflowRuntimeService(connection).transition(
+            instance_id=instance_id,
+            expected_version=request.version,
+            target_record_key=request.target_record_key,
+            outcome=request.outcome,
+            payload=request.payload,
+            actor_user_id=user.user_id,
+            workflow_key=current["workflow_key"],
+        )
+    except Exception as error:
+        sqlstate = getattr(error, "sqlstate", None)
+        if sqlstate == "40001":
+            raise HTTPException(status_code=409, detail="Instance version is stale") from error
+        if sqlstate == "22023":
+            raise HTTPException(
+                status_code=400, detail="Target is not a valid workflow edge"
+            ) from error
+        raise
+    return _instance_model(updated)
 
-    candidates = [
-        edge["target"]
-        for edge in current["edges_json"]
-        if edge["source"] == current["current_record_key"]
-    ]
-    target = request.target_record_key or (candidates[0] if candidates else None)
-    if request.target_record_key and request.target_record_key not in candidates:
-        raise HTTPException(status_code=400, detail="Target is not a valid workflow edge")
-    next_status = "active" if target else "completed"
-    updated = connection.execute(
+
+def command_instance(
+    connection: Connection[dict[str, Any]],
+    user: SessionInfo,
+    instance_id: UUID,
+    request: WorkflowCommandRequest,
+) -> WorkflowRuntimeProjection:
+    """Apply a user-facing workflow command and return the fresh projection."""
+    current = connection.execute(
         """
-        UPDATE orbit_runtime.workflow_instance
-           SET current_record_key = %s,
-               status = %s,
-               context_json = context_json || %s,
-               completed_at = CASE WHEN %s = 'completed' THEN CURRENT_TIMESTAMP ELSE NULL END
-         WHERE id = %s AND version = %s
-        RETURNING *, %s::varchar AS workflow_key
+        SELECT i.*, w.workflow_key
+          FROM orbit_runtime.workflow_instance i
+          JOIN orbit_workflow.workflow_definition w ON w.id = i.workflow_id
+         WHERE i.id = %s
+           AND i.organization_id = %s
+           AND (i.department_id IS NULL OR i.department_id = %s)
+           AND (i.laboratory_id IS NULL OR i.laboratory_id = %s)
         """,
         (
-            target,
-            next_status,
-            Jsonb(request.payload),
-            next_status,
             instance_id,
-            request.version,
-            current["workflow_key"],
+            user.scope.organization_id,
+            user.scope.department_id,
+            user.scope.laboratory_id,
         ),
     ).fetchone()
-    if updated is None:
-        raise HTTPException(status_code=409, detail="Instance version is stale")
-    connection.execute(
-        """
-        INSERT INTO orbit_runtime.transition_event (
-            instance_id, from_record_key, to_record_key, outcome, payload, actor_user_id
-        ) VALUES (%s, %s, %s, %s, %s, %s)
-        """,
-        (
-            instance_id,
-            current["current_record_key"],
-            target,
-            request.outcome,
-            Jsonb(request.payload),
-            user.user_id,
+    if current is None:
+        raise HTTPException(status_code=404, detail="Workflow instance not found")
+    require_workflow_access(connection, user.user_id, current["workflow_key"], "execute")
+    node_key = request.node_key or current["current_record_key"]
+    if node_key != current["current_record_key"]:
+        raise HTTPException(status_code=409, detail="Command must target the current workflow node")
+
+    if request.command in {"abort", "cancel"}:
+        if not request.reason or not request.reason.strip():
+            raise HTTPException(status_code=422, detail="A reason is required to abort or cancel")
+        try:
+            WorkflowRuntimeService(connection).cancel(
+                instance_id, request.version, node_key, request.reason.strip(),
+                user.user_id, request.command, current["workflow_key"],
+            )
+        except Exception as error:
+            if getattr(error, "sqlstate", None) == "40001":
+                raise HTTPException(
+                    status_code=409, detail="Instance version is stale or not cancellable"
+                ) from error
+            raise
+        return get_runtime_projection(connection, user, instance_id)
+
+    if request.command in {"reject", "request_changes"}:
+        if not request.reason or not request.reason.strip():
+            raise HTTPException(
+                status_code=422, detail="A reason is required for this exception outcome"
+            )
+        try:
+            WorkflowRuntimeService(connection).block(
+                instance_id, request.version, node_key, request.command,
+                request.reason.strip(), user.user_id, current["workflow_key"],
+            )
+        except Exception as error:
+            if getattr(error, "sqlstate", None) == "40001":
+                raise HTTPException(
+                    status_code=409, detail="Instance version is stale or not active"
+                ) from error
+            raise
+        return get_runtime_projection(connection, user, instance_id)
+
+    if request.command == "email":
+        recipient = request.payload.get("recipient_email")
+        if not isinstance(recipient, str) or not recipient.strip():
+            raise HTTPException(status_code=422, detail="recipient_email is required")
+        WorkflowRuntimeService(connection).queue_notification(
+            instance_id, node_key, recipient.strip(),
+            str(request.payload.get("subject", "")),
+            str(request.payload.get("body", "")),
+            request.payload, user.user_id,
+        )
+        return get_runtime_projection(connection, user, instance_id)
+
+    if request.command in {"retry", "resubmit"}:
+        try:
+            WorkflowRuntimeService(connection).resume(
+                instance_id, request.version, node_key, request.payload,
+                current["workflow_key"],
+            )
+        except Exception as error:
+            if getattr(error, "sqlstate", None) == "40001":
+                raise HTTPException(
+                    status_code=409, detail="Instance version is stale or not retryable"
+                ) from error
+            raise
+        return get_runtime_projection(connection, user, instance_id)
+
+    if request.command not in {"submit", "acknowledge"}:
+        raise HTTPException(
+            status_code=409,
+            detail="This workflow definition does not yet expose a transition for that command",
+        )
+
+    transition_instance(
+        connection,
+        user,
+        instance_id,
+        InstanceTransitionRequest(
+            outcome=request.command,
+            payload={**request.payload, **({"reason": request.reason} if request.reason else {})},
+            version=request.version,
         ),
     )
-    return _instance_model(updated)
+    return get_runtime_projection(connection, user, instance_id)

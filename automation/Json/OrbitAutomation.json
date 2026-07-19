@@ -54,6 +54,16 @@
       }
     },
     {
+      "processWorkflowTasks": {
+        "skip": true,
+        "transactionComplete": false,
+        "actionData": {
+          "limit": 20
+        },
+        "timeout": 120
+      }
+    },
+    {
       "launchApi": {
         "skip": true,
         "transactionComplete": false,

@@ -154,9 +154,23 @@ class InstanceTransitionRequest(BaseModel):
     version: int = Field(ge=1)
 
 
+class WorkflowCommandRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    command: Literal[
+        "submit", "approve", "reject", "request_changes", "retry",
+        "resubmit", "email", "abort", "cancel", "acknowledge",
+    ] = "submit"
+    node_key: str | None = Field(default=None, max_length=140)
+    payload: dict[str, Any] = Field(default_factory=dict)
+    reason: str | None = Field(default=None, max_length=2000)
+    version: int = Field(ge=1)
+
+
 class WorkflowInstance(BaseModel):
     id: UUID
     workflow_key: str
+    catalog_version: int
     business_key: str
     current_record_key: str | None
     status: str
@@ -165,6 +179,26 @@ class WorkflowInstance(BaseModel):
     started_at: datetime
     completed_at: datetime | None
     updated_at: datetime
+
+
+class WorkflowNodeRuntime(BaseModel):
+    record_key: str
+    status: Literal["pending", "active", "waiting", "completed", "failed", "blocked", "cancelled", "skipped"]
+    completion_source: Literal["system", "user"] | None = None
+    assigned_role: str | None = None
+    assigned_user_id: UUID | None = None
+    attempt_count: int
+    error_code: str | None = None
+    error_message: str | None = None
+    started_at: datetime | None = None
+    completed_at: datetime | None = None
+    version: int
+    available_actions: list[str] = Field(default_factory=list)
+
+
+class WorkflowRuntimeProjection(BaseModel):
+    instance: WorkflowInstance
+    nodes: list[WorkflowNodeRuntime]
 
 
 class HealthResponse(BaseModel):
