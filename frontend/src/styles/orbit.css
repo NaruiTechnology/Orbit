@@ -902,8 +902,8 @@ input:focus-visible {
 .grid-add-button,
 .grid-row-action {
   display: inline-grid;
-  width: 32px;
-  height: 32px;
+  width: 28px;
+  height: 28px;
   padding: 0;
   place-items: center;
   border: 0;
@@ -952,7 +952,7 @@ input:focus-visible {
 .grid-row-actions {
   align-items: center;
   display: flex;
-  gap: 4px;
+  gap: 2px;
   height: 100%;
 }
 
