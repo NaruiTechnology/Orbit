@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 
 import mailIcon from "../assets/mail-icon.svg";
+import { MailComposeDialog } from "./MailComposeDialog";
 import type {
   Locale,
   WorkflowCommandInput,
@@ -39,6 +40,7 @@ export function WorkflowTreePanel({
 }: WorkflowTreePanelProps) {
   const selectedRef = useRef<HTMLLIElement | null>(null);
   const [commandError, setCommandError] = useState<string | null>(null);
+  const [mailComposeOpen, setMailComposeOpen] = useState(false);
   const currentNode = runtime?.nodes.find(
     (node) => node.record_key === runtime.instance.current_record_key,
   );
@@ -151,10 +153,7 @@ export function WorkflowTreePanel({
                             aria-label={translate(locale, "email")}
                             title={translate(locale, "email")}
                             disabled={commandBusy}
-                            onClick={() => {
-                              const recipient = window.prompt(translate(locale, "emailAddress"));
-                              if (recipient?.trim()) void send("email", { recipient_email: recipient.trim() });
-                            }}
+                            onClick={() => setMailComposeOpen(true)}
                           >
                             <img src={mailIcon} alt="" aria-hidden="true" />
                           </button>
@@ -181,6 +180,13 @@ export function WorkflowTreePanel({
           </ol>
         )}
       </div>
+      {mailComposeOpen ? (
+        <MailComposeDialog
+          locale={locale}
+          defaultSubject={`${translate(locale, "email")} · ${currentNode?.record_key || "Orbit workflow"}`}
+          onClose={() => setMailComposeOpen(false)}
+        />
+      ) : null}
     </aside>
   );
 }

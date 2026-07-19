@@ -1270,6 +1270,216 @@ input:focus-visible {
   border-color: var(--signal) !important;
 }
 
+.mail-compose-backdrop {
+  z-index: 40;
+  overflow: auto;
+  padding: 20px;
+  place-items: center;
+}
+
+.mail-compose-dialog {
+  box-sizing: border-box;
+  width: min(680px, calc(100vw - 40px));
+  min-width: min(420px, calc(100vw - 40px));
+  max-width: calc(100vw - 40px);
+  min-height: 420px;
+  max-height: calc(100vh - 40px);
+  padding: 20px;
+  overflow: auto;
+  resize: both;
+}
+
+.mail-compose-dialog__header,
+.mail-compose-dialog__actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.mail-compose-dialog__header h2 {
+  margin: 8px 0 18px;
+  font-family: var(--font-display);
+  font-size: 22px;
+}
+
+.mail-compose-dialog__close {
+  align-self: flex-start;
+  padding: 0 6px;
+  color: var(--ink-soft);
+  font-size: 25px;
+  line-height: 1;
+  background: transparent;
+  border: 0;
+  cursor: pointer;
+}
+
+.mail-compose-field {
+  display: grid;
+  gap: 5px;
+  margin: 10px 0;
+  color: var(--ink-soft);
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.mail-compose-field input {
+  width: 100%;
+  padding: 9px 10px;
+  color: var(--ink);
+  background: var(--control-bg);
+  border: 1px solid var(--line);
+  border-radius: 5px;
+}
+
+.mail-compose-editor-toolbar {
+  display: flex;
+  gap: 4px;
+}
+
+.mail-compose-editor-toolbar button {
+  min-width: 31px;
+  padding: 4px 7px;
+  color: var(--control-fg);
+  background: var(--control-bg);
+  border: 1px solid var(--line);
+  cursor: pointer;
+}
+
+.mail-compose-editor-toolbar button.is-active,
+.mail-compose-editor-toolbar button:hover {
+  color: var(--control-active-fg);
+  background: var(--control-active-bg);
+  border-color: var(--signal);
+}
+
+.mail-compose-editor {
+  min-height: 180px;
+  max-height: min(520px, 55vh);
+  color: var(--ink);
+  background: var(--control-bg);
+  border: 1px solid var(--line);
+  border-radius: 5px;
+  overflow: auto;
+  resize: vertical;
+}
+
+.mail-compose-editor .ProseMirror {
+  min-height: 150px;
+  padding: 10px;
+  outline: none;
+}
+
+.mail-compose-editor p {
+  margin: 0 0 8px;
+}
+
+.mail-compose-editor table {
+  width: max-content;
+  min-width: 100%;
+  margin: 4px 0 10px;
+  border-collapse: collapse;
+  table-layout: auto;
+}
+
+.mail-compose-editor .tableWrapper {
+  max-width: 100%;
+  overflow-x: auto;
+}
+
+.mail-compose-editor th,
+.mail-compose-editor td {
+  min-width: 90px;
+  max-width: 260px;
+  padding: 6px 7px;
+  color: var(--ink);
+  border: 1px solid var(--line-strong);
+  vertical-align: top;
+  text-align: left;
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: normal;
+  text-transform: none;
+  overflow-wrap: anywhere;
+}
+
+.mail-compose-editor th {
+  background: color-mix(in srgb, var(--signal) 12%, var(--control-bg) 88%);
+  font-weight: 800;
+}
+
+.mail-compose-error {
+  margin: 10px 0 0;
+  color: #f06a3b;
+  font-size: 11px;
+}
+
+.mail-compose-warning {
+  margin: 0 0 10px;
+  padding: 8px 10px;
+  color: var(--acid);
+  background: color-mix(in srgb, var(--acid) 12%, var(--surface) 88%);
+  border: 1px solid color-mix(in srgb, var(--acid) 45%, var(--line) 55%);
+  border-radius: 5px;
+  font-size: 11px;
+}
+
+.mail-compose-transport {
+  margin: 0 0 10px;
+  color: var(--ink-soft);
+  font-size: 10px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.mail-compose-dialog__actions {
+  justify-content: flex-end;
+  margin-top: 18px;
+  position: sticky;
+  bottom: -20px;
+  padding: 12px 0 0;
+  background: var(--gradient-surface);
+}
+
+.mail-compose-secondary,
+.mail-compose-primary {
+  min-width: 100px;
+  padding: 8px 12px;
+  border: 1px solid var(--line-strong);
+  cursor: pointer;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+@media (max-width: 600px) {
+  .mail-compose-backdrop {
+    padding: 10px;
+    place-items: stretch;
+  }
+
+  .mail-compose-dialog {
+    width: 100%;
+    min-width: 0;
+    max-width: none;
+    min-height: 0;
+    max-height: calc(100vh - 20px);
+    resize: none;
+  }
+}
+
+.mail-compose-secondary {
+  color: var(--ink);
+  background: transparent;
+}
+
+.mail-compose-primary {
+  color: var(--paper-bright);
+  background: var(--signal);
+  border-color: var(--signal);
+}
+
 .grid-edit-backdrop {
   z-index: 30;
   align-items: start;

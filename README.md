@@ -111,6 +111,57 @@ TWILIO_FROM_NUMBER=
 Those variables are not consumed by Orbit until a Twilio provider adapter is
 implemented and enabled. Do not commit real Twilio credentials.
 
+## Email Configuration
+
+The workflow-panel mail icon opens an HTML compose dialog. When SMTP is
+configured, Orbit sends a multipart plain-text/HTML message through the API.
+When SMTP is not configured, the dialog falls back to the operating system's
+`mailto:` handler so a locally installed webmail or mail application can take
+over. The editor supports rich text and HTML tables. SMTP preserves the HTML
+part; the `mailto:` fallback intentionally sends plain text because the
+`mailto:` standard does not reliably carry rich HTML.
+
+The non-secret SMTP defaults are stored in
+`config/application.json` under `MailConfig`:
+
+```json
+{
+  "SmtpHost": "smtp.gmail.com",
+  "SmtpPort": 587,
+  "SmtpUser": "lyh1154@gmail.com",
+  "SmtpFrom": "lyh1154@gmail.com",
+  "StartTLS": true,
+  "SSL": false,
+  "TimeoutSeconds": 20
+}
+```
+
+Change those values in the JSON file when the SMTP server or sender changes.
+For Gmail, enable 2-Step Verification and create an App Password at
+<https://myaccount.google.com/apppasswords>. Do not use the normal Google
+account password, and do not put the App Password in JSON or source control.
+Provide it only to the API process at runtime:
+
+```bash
+cd /home/vboxuser/Project/OrbitAutomation/Orbit
+read -rsp "Gmail App Password: " ORBIT_SMTP_PASSWORD
+echo
+export ORBIT_SMTP_PASSWORD
+.venv/bin/python scripts/run_api.py --reload
+```
+
+The hidden prompt keeps the password out of shell history and files. The API
+must be started in the same shell that exports `ORBIT_SMTP_PASSWORD`.
+Environment variables override the corresponding non-secret JSON settings if
+needed: `ORBIT_SMTP_HOST`, `ORBIT_SMTP_PORT`, `ORBIT_SMTP_USER`,
+`ORBIT_SMTP_FROM`, `ORBIT_SMTP_STARTTLS`, `ORBIT_SMTP_SSL`, and
+`ORBIT_SMTP_TIMEOUT`.
+
+The relevant endpoints are `GET /api/v1/mail/status` and
+`POST /api/v1/mail/send`. The frontend uses `mailto:` only when the status
+endpoint reports that SMTP is unavailable, or when the user explicitly
+chooses “Open mail app”.
+
 ## Workbook Sync
 
 The source workbook is not copied into the repository. The checked-in `data/workflow_catalog.json` includes a SHA-256 source hash and the original sheet, row, header, and cell references.

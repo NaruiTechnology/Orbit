@@ -18,6 +18,14 @@
   "DefaultUserLogin": "orbit.admin",
   "DatabaseConfig": "config/database.json",
   "WorkflowCatalog": "data/workflow_catalog.json",
-  "SourceTimezone": "Asia/Shanghai"
+  "SourceTimezone": "Asia/Shanghai",
+  "MailConfig": {
+    "SmtpHost": "smtp.gmail.com",
+    "SmtpPort": 587,
+    "SmtpUser": "lyh1154@gmail.com",
+    "SmtpFrom": "lyh1154@gmail.com",
+    "StartTLS": true,
+    "SSL": false,
+    "TimeoutSeconds": 20
+  }
 }
-

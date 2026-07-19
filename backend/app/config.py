@@ -65,6 +65,26 @@ class DatabaseSettings:
 
 
 @dataclass(frozen=True)
+class MailSettings:
+    smtp_host: str
+    smtp_port: int
+    smtp_user: str
+    smtp_password: str
+    from_address: str
+    starttls: bool
+    ssl: bool
+    timeout_seconds: int
+
+    @property
+    def configured(self) -> bool:
+        return bool(
+            self.smtp_host
+            and self.from_address
+            and (not self.smtp_user or self.smtp_password)
+        )
+
+
+@dataclass(frozen=True)
 class ApplicationSettings:
     application_name: str
     environment: str
@@ -79,6 +99,7 @@ class ApplicationSettings:
     workflow_catalog: Path
     source_timezone: str
     database: DatabaseSettings
+    mail: MailSettings
 
 
 def _database_settings(path: Path) -> DatabaseSettings:
@@ -104,6 +125,33 @@ def _database_settings(path: Path) -> DatabaseSettings:
     )
 
 
+def _mail_settings(config: dict[str, Any] | None = None) -> MailSettings:
+    config = config or {}
+    smtp_user = os.getenv("ORBIT_SMTP_USER", config.get("SmtpUser", "")).strip()
+    return MailSettings(
+        smtp_host=os.getenv("ORBIT_SMTP_HOST", config.get("SmtpHost", "")).strip(),
+        smtp_port=int(os.getenv("ORBIT_SMTP_PORT", str(config.get("SmtpPort", 587)))),
+        smtp_user=smtp_user,
+        # Google sometimes displays App Passwords in grouped blocks; spaces
+        # are presentation-only and must not be sent to SMTP.
+        smtp_password="".join(os.getenv("ORBIT_SMTP_PASSWORD", "").split()),
+        from_address=os.getenv("ORBIT_SMTP_FROM", config.get("SmtpFrom", smtp_user)).strip(),
+        starttls=os.getenv(
+            "ORBIT_SMTP_STARTTLS", str(config.get("StartTLS", True))
+        ).lower() in {"1", "true", "yes", "on"},
+        ssl=os.getenv("ORBIT_SMTP_SSL", str(config.get("SSL", False))).lower()
+        in {"1", "true", "yes", "on"},
+        timeout_seconds=int(os.getenv("ORBIT_SMTP_TIMEOUT", str(config.get("TimeoutSeconds", 20)))),
+    )
+
+
+def get_mail_settings() -> MailSettings:
+    """Load mail settings so runtime environment changes take effect immediately."""
+    config_path = _resolve_path(os.getenv("ORBIT_APPLICATION_CONFIG", "config/application.json"))
+    data = _read_json(config_path)
+    return _mail_settings(data.get("MailConfig"))
+
+
 @lru_cache(maxsize=1)
 def get_settings() -> ApplicationSettings:
     config_path = _resolve_path(os.getenv("ORBIT_APPLICATION_CONFIG", "config/application.json"))
@@ -123,4 +171,5 @@ def get_settings() -> ApplicationSettings:
         workflow_catalog=_resolve_path(data["WorkflowCatalog"]),
         source_timezone=data.get("SourceTimezone", "Asia/Shanghai"),
         database=_database_settings(database_path),
+        mail=_mail_settings(data.get("MailConfig")),
     )
