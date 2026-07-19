@@ -39,8 +39,7 @@ cd /home/vboxuser/Project/OrbitAutomation/Orbit
 # 2. Idempotently create the role/database/schemas and import the catalog.
 .venv/bin/python scripts/bootstrap_database.py
 
-# 3. Start FastAPI from config/application.json (127.0.0.1:8120).
-.venv/bin/python scripts/run_api.py --reload
+# 3. Start FastAPI from config/application.json (127.0.0.1:8120).venv/bin/python scripts/run_api.py --reload
 
 # 4. In another terminal, start React (127.0.0.1:5274).
 npm run dev

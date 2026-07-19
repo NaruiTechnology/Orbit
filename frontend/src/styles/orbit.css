@@ -1624,6 +1624,23 @@ input:focus-visible {
   background: color-mix(in srgb, var(--paper-bright) 18%, transparent);
 }
 
+.workflow-node:not(:last-child) .workflow-node__rail::after {
+  position: absolute;
+  bottom: 2px;
+  left: 16px;
+  z-index: 1;
+  width: 0;
+  height: 0;
+  content: "";
+  border-top: 4px solid color-mix(in srgb, var(--paper-bright) 42%, transparent);
+  border-right: 3px solid transparent;
+  border-left: 3px solid transparent;
+}
+
+.workflow-node--complete:not(:last-child) .workflow-node__rail::after {
+  border-top-color: color-mix(in srgb, var(--acid) 56%, transparent);
+}
+
 .workflow-node:first-child .workflow-node__rail::before {
   top: 20px;
 }
