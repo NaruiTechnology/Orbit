@@ -236,6 +236,40 @@ CREATE INDEX IF NOT EXISTS ix_workflow_business_record_values_gin
 CREATE INDEX IF NOT EXISTS ix_workflow_business_record_scope
     ON orbit_workflow.workflow_business_record (organization_id, department_id, laboratory_id);
 
+-- Catalog-derived SLA lookup data.  The compound lookup key is made from the
+-- English group, workflow, record key, and current workflow step so it stays
+-- stable across UI locales while remaining human-readable.
+CREATE TABLE IF NOT EXISTS orbit_workflow.sla_lookup (
+    id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+    lookup_key text NOT NULL UNIQUE,
+    group_name varchar(200) NOT NULL,
+    workflow_name varchar(200) NOT NULL,
+    record_key varchar(140) NOT NULL,
+    current_workflow_step text NOT NULL,
+    sla text NOT NULL,
+    sla_i18n jsonb NOT NULL DEFAULT '{}'::jsonb
+        CHECK (jsonb_typeof(sla_i18n) = 'object'),
+    sla_days numeric(10, 2) NOT NULL CHECK (sla_days >= 1),
+    source_sha256 char(64) NOT NULL,
+    catalog_version integer NOT NULL,
+    is_active boolean NOT NULL DEFAULT true,
+    created_at timestamptz NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at timestamptz NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE (group_name, workflow_name, record_key, current_workflow_step)
+);
+
+-- Keep an existing installation compatible while moving SLA display text to
+-- the locale-keyed JSONB value. The importer replaces this legacy fallback
+-- during the next catalog import.
+ALTER TABLE orbit_workflow.sla_lookup
+    ADD COLUMN IF NOT EXISTS sla_i18n jsonb NOT NULL DEFAULT '{}'::jsonb;
+UPDATE orbit_workflow.sla_lookup
+   SET sla_i18n = jsonb_build_object('en', sla, 'zh_CN', sla, 'zh_HK', sla)
+ WHERE sla_i18n = '{}'::jsonb;
+
+CREATE INDEX IF NOT EXISTS ix_sla_lookup_record
+    ON orbit_workflow.sla_lookup (workflow_name, record_key, is_active);
+
 -- Reusable notification configuration is lookup data, not a workflow step.
 -- It is kept separate so future components can resolve templates directly
 -- without exposing this catalog as a subworkflow.

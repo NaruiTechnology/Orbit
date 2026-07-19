@@ -115,6 +115,7 @@ class TreeNode(BaseModel):
     label: str
     owner_role: str | None = None
     time_limit: str | None = None
+    sla: str | None = None
     is_selected: bool
     is_before_selected: bool
 

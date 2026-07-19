@@ -96,6 +96,7 @@ export interface TreeNode {
   label: string;
   owner_role: string | null;
   time_limit: string | null;
+  sla: string | null;
   is_selected: boolean;
   is_before_selected: boolean;
 }

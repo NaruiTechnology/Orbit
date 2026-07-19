@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import re
 from typing import Any
 from uuid import UUID, uuid4
 
@@ -30,7 +31,7 @@ from app.schemas import (
     WorkflowSummary,
     WorkflowTree,
 )
-from app.services.localization import collation_for, localized_value
+from app.services.localization import collation_for, locale_key, localized_value
 from app.services.workflow_runtime_service import WorkflowRuntimeService
 
 
@@ -105,6 +106,43 @@ def _is_runtime_workflow(definition: WorkflowDetail) -> bool:
 
 def _is_customer_order_workflow(workflow_key: str) -> bool:
     return workflow_key == "order-evaluation"
+
+
+_STEP_ROLE_EN = {
+    "销售": "Sales",
+    "技术部": "Technical Team",
+    "技术部/销售": "Technical Team / Sales",
+    "系统自动": "System",
+    "系统自动/销售": "System / Sales",
+    "财务/销售": "Finance / Sales",
+    "销售/财务": "Sales / Finance",
+    "技术主管及以上": "Technical Manager or above",
+    "技术部（目标实验室）": "Technical Team (Target Laboratory)",
+}
+
+
+def _localized_step_value(value: Any, locale: str) -> str | None:
+    if value in (None, ""):
+        return None
+    if isinstance(value, dict):
+        return localized_value(value, locale)
+    text = str(value)
+    if locale_key(locale) != "en":
+        return text
+    if text in _STEP_ROLE_EN:
+        return _STEP_ROLE_EN[text]
+    day_match = re.fullmatch(r"(\d+(?:\.\d+)?)个工作日内", text)
+    if day_match:
+        days = day_match.group(1)
+        return f"Within {days} business day" + ("s" if days != "1" else "")
+    minute_match = re.fullmatch(r"(\d+)分钟内", text)
+    if minute_match:
+        return f"Within {minute_match.group(1)} minutes"
+    return {
+        "即时": "Immediately",
+        "评估完成后即时": "Immediately after evaluation",
+        "评估复杂度决定": "Determined by evaluation complexity",
+    }.get(text, text)
 
 
 def list_workflows(
@@ -1057,9 +1095,17 @@ def get_tree(
         )
     rows = connection.execute(
         """
-        SELECT r.id, r.record_key, r.record_order, r.label_i18n, r.values_json
+        SELECT r.id, r.record_key, r.record_order, r.label_i18n, r.values_json,
+               sla.sla_i18n,
+               sla.sla
           FROM orbit_workflow.workflow_record r
           JOIN orbit_workflow.workflow_definition w ON w.id = r.workflow_id
+          LEFT JOIN orbit_workflow.sla_lookup sla
+            ON sla.group_name = COALESCE(w.group_name_i18n ->> 'en', w.group_key)
+           AND sla.workflow_name = COALESCE(w.name_i18n ->> 'en', w.workflow_key)
+           AND sla.record_key = r.record_key
+           AND sla.current_workflow_step = COALESCE(r.label_i18n ->> 'en', r.record_key)
+           AND sla.is_active
          WHERE w.workflow_key = %s
          ORDER BY r.record_order
         """,
@@ -1075,8 +1121,9 @@ def get_tree(
             record_key=row["record_key"],
             order=row["record_order"],
             label=localized_value(row["label_i18n"], locale),
-            owner_role=row["values_json"].get("owner_role"),
-            time_limit=row["values_json"].get("time_limit"),
+            owner_role=_localized_step_value(row["values_json"].get("owner_role"), locale),
+            time_limit=_localized_step_value(row["values_json"].get("time_limit"), locale),
+            sla=localized_value(row["sla_i18n"], locale, row["sla"]),
             is_selected=row["id"] == selected_record_id,
             is_before_selected=(
                 selected_order is not None and row["record_order"] < selected_order
@@ -1154,11 +1201,13 @@ def get_runtime_projection(
     ).fetchone()
     if current is None and workflow_key == "order-evaluation":
         order = connection.execute(
-            "SELECT order_number FROM orbit_sales.customer_order WHERE id = %s AND organization_id = %s",
+            "SELECT order_number FROM orbit_sales.customer_order "
+            "WHERE id = %s AND organization_id = %s",
             (instance_id, user.scope.organization_id),
         ).fetchone()
         workflow = connection.execute(
-            "SELECT id, catalog_version FROM orbit_workflow.workflow_definition WHERE workflow_key = %s AND is_active",
+            "SELECT id, catalog_version FROM orbit_workflow.workflow_definition "
+            "WHERE workflow_key = %s AND is_active",
             (workflow_key,),
         ).fetchone()
         if order and workflow:

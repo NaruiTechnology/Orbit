@@ -129,6 +129,11 @@ export function WorkflowTreePanel({
                         {[node.owner_role, node.time_limit].filter(Boolean).join(" · ")}
                       </span>
                     ) : null}
+                    {node.sla ? (
+                      <span className="workflow-node__sla">
+                        {translate(locale, "sla")}: {node.sla}
+                      </span>
+                    ) : null}
                     {isWorkflow && runtime && runtimeNode?.record_key === runtime.instance.current_record_key ? (
                       <div className="workflow-actions" aria-label={translate(locale, "nodeStatus")}>
                         {commandError || runtimeNode.error_message ? (

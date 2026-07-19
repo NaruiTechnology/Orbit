@@ -47,7 +47,8 @@ def main() -> int:
         connection.commit()
     print(
         f"Imported {result['workflow_count']} workflows and "
-        f"{result['record_count']} records from {catalog_path}"
+        f"{result['record_count']} records plus {result['sla_count']} SLA rows "
+        f"from {catalog_path}"
     )
     return 0
 

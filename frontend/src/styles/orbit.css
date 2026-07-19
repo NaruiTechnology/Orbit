@@ -2010,6 +2010,11 @@ input:focus-visible {
   font-size: 8px;
 }
 
+.workflow-node__body .workflow-node__sla {
+  color: var(--signal);
+  font-weight: 800;
+}
+
 .workflow-node--complete .workflow-node__rail > span {
   color: color-mix(in srgb, var(--acid) 78%, var(--paper-bright) 22%);
   background: var(--forest-deep);

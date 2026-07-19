@@ -182,6 +182,7 @@ def main() -> int:
     if result:
         print(
             f"Catalog ready: {result['workflow_count']} workflows, {result['record_count']} records"
+            f", {result['sla_count']} SLA rows"
         )
     return 0
 

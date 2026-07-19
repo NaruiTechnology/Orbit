@@ -2,10 +2,67 @@
 
 from __future__ import annotations
 
+import re
 from typing import Any
 
 from psycopg import Connection
 from psycopg.types.json import Jsonb
+
+_DAY_DURATION_PATTERN = re.compile(
+    r"(?P<days>\d+(?:\.\d+)?)\s*(?:个\s*)?(?:工作日|天|日)",
+    re.IGNORECASE,
+)
+_ENGLISH_DAY_DURATION_PATTERN = re.compile(
+    r"(?P<days>\d+(?:\.\d+)?)\s*(?:business\s+days?|working\s+days?|days?|day)",
+    re.IGNORECASE,
+)
+_CHINESE_DAY_DURATION_PATTERN = re.compile(
+    r"(?P<days>\d+(?:\.\d+)?)\s*个工作日(?P<suffix>内|以内)?",
+)
+
+
+def _sla_days(time_limit: Any) -> float | None:
+    """Return the explicit day duration when a step's SLA is at least one day."""
+    text = str(time_limit or "").strip()
+    if not text or any(
+        marker in text for marker in ("每月", "每季度", "每年", "当月", "当天", "当日")
+    ):
+        return None
+    matches = [
+        *(_DAY_DURATION_PATTERN.finditer(text)),
+        *(_ENGLISH_DAY_DURATION_PATTERN.finditer(text)),
+    ]
+    durations = [float(match.group("days")) for match in matches]
+    qualifying = [days for days in durations if days >= 1]
+    return max(qualifying) if qualifying else None
+
+
+def _sla_i18n(time_limit: Any) -> dict[str, str]:
+    """Build locale-keyed SLA text instead of storing one source-language string."""
+    text = str(time_limit or "").strip()
+    chinese_match = _CHINESE_DAY_DURATION_PATTERN.fullmatch(text)
+    if chinese_match:
+        days = chinese_match.group("days")
+        suffix = "内" if chinese_match.group("suffix") else ""
+        return {
+            "en": f"Within {days} business day" + ("s" if days != "1" else ""),
+            "zh_CN": f"{days}个工作日{suffix}",
+            "zh_HK": f"{days}個工作日{'內' if suffix else ''}",
+        }
+    english_match = _ENGLISH_DAY_DURATION_PATTERN.fullmatch(text)
+    if english_match:
+        days = english_match.group("days")
+        return {
+            "en": text,
+            "zh_CN": f"{days}个工作日内",
+            "zh_HK": f"{days}個工作日內",
+        }
+    return {"en": text, "zh_CN": text, "zh_HK": text}
+
+
+def _english_i18n_value(values: dict[str, Any], fallback: str) -> str:
+    value = values.get("en") or values.get("zh_CN") or fallback
+    return str(value)
 
 
 def import_catalog(
@@ -17,6 +74,7 @@ def import_catalog(
 
     definition_ids: dict[str, str] = {}
     imported_records = 0
+    sla_count = 0
 
     for workflow in catalog["workflows"]:
         metadata = {
@@ -106,14 +164,6 @@ def import_catalog(
                 "DELETE FROM orbit_workflow.customer_pool_rule WHERE definition_id = %s",
                 (definition_id,),
             )
-            connection.execute(
-                "DELETE FROM orbit_workflow.workflow_record WHERE workflow_id = %s",
-                (definition_id,),
-            )
-            connection.execute(
-                "DELETE FROM orbit_workflow.workflow_business_record WHERE workflow_id = %s",
-                (definition_id,),
-            )
             for record in workflow["records"]:
                 values = record["values"]
                 connection.execute(
@@ -148,14 +198,6 @@ def import_catalog(
         if workflow["key"] == "business-alert-rules":
             connection.execute(
                 "DELETE FROM orbit_workflow.business_alert_rule WHERE definition_id = %s",
-                (definition_id,),
-            )
-            connection.execute(
-                "DELETE FROM orbit_workflow.workflow_record WHERE workflow_id = %s",
-                (definition_id,),
-            )
-            connection.execute(
-                "DELETE FROM orbit_workflow.workflow_business_record WHERE workflow_id = %s",
                 (definition_id,),
             )
             for record in workflow["records"]:
@@ -196,19 +238,12 @@ def import_catalog(
             continue
 
         if workflow["definition_type"] == "lookup_table":
-            # Lookup rows have their own stable table. Remove any legacy rows
-            # imported into the generic workflow tables, then replace the
-            # source-derived lookup rows atomically.
+            # Lookup rows have their own stable table. Do not delete from
+            # workflow_record or workflow_business_record here: those tables
+            # belong to the workflow definition/runtime data and are not an
+            # import staging area for lookup rows.
             connection.execute(
                 "DELETE FROM orbit_workflow.notification_template WHERE definition_id = %s",
-                (definition_id,),
-            )
-            connection.execute(
-                "DELETE FROM orbit_workflow.workflow_record WHERE workflow_id = %s",
-                (definition_id,),
-            )
-            connection.execute(
-                "DELETE FROM orbit_workflow.workflow_business_record WHERE workflow_id = %s",
                 (definition_id,),
             )
             for record in workflow["records"]:
@@ -292,25 +327,30 @@ def import_catalog(
                     Jsonb(record["source_cells"]),
                 ),
             )
-            connection.execute(
-                """
-                INSERT INTO orbit_workflow.workflow_business_record (
-                    workflow_id, workflow_record_id, record_key, record_order,
-                    label_i18n, values_json, source_row, source_cells
+            # Workflow definitions are process sources, not business-grid
+            # rows. In particular, never materialize Order Evaluation's
+            # process steps as editable records with a missing table id.
+            if workflow["definition_type"] != "workflow":
+                connection.execute(
+                    """
+                    INSERT INTO orbit_workflow.workflow_business_record (
+                        workflow_id, workflow_record_id, record_key, record_order,
+                        label_i18n, values_json, source_row, source_cells
+                    )
+                    SELECT workflow_id, id, record_key, record_order,
+                           label_i18n, values_json, source_row, source_cells
+                      FROM orbit_workflow.workflow_record
+                     WHERE workflow_id = %s AND record_key = %s
+                    ON CONFLICT (workflow_id, record_key) DO UPDATE
+                       SET workflow_record_id = EXCLUDED.workflow_record_id,
+                           record_order = EXCLUDED.record_order,
+                           label_i18n = EXCLUDED.label_i18n,
+                           values_json = EXCLUDED.values_json,
+                           source_row = EXCLUDED.source_row,
+                           source_cells = EXCLUDED.source_cells
+                    """,
+                    (definition_id, record["record_key"]),
                 )
-                SELECT workflow_id, id, record_key, record_order,
-                       label_i18n, values_json, source_row, source_cells
-                  FROM orbit_workflow.workflow_record
-                 WHERE workflow_id = %s AND record_key = %s
-                ON CONFLICT (workflow_id, record_key) DO UPDATE
-                   SET workflow_record_id = EXCLUDED.workflow_record_id,
-                       record_order = EXCLUDED.record_order,
-                       label_i18n = EXCLUDED.label_i18n,
-                       source_row = EXCLUDED.source_row,
-                       source_cells = EXCLUDED.source_cells
-                """,
-                (definition_id, record["record_key"]),
-            )
             imported_records += 1
 
         connection.execute(
@@ -350,6 +390,61 @@ def import_catalog(
             ),
         )
 
+    # SLA rows are derived entirely from the catalog's workflow-step time
+    # limits. Replacing the generated container makes catalog imports
+    # idempotent and removes rows for deleted or shortened source steps.
+    connection.execute("DELETE FROM orbit_workflow.sla_lookup")
+    for workflow in catalog["workflows"]:
+        if workflow["definition_type"] != "workflow":
+            continue
+        group_name = _english_i18n_value(workflow["group_name_i18n"], workflow["group_key"])
+        workflow_name = _english_i18n_value(workflow["name_i18n"], workflow["key"])
+        for record in workflow["records"]:
+            values = record.get("values", {})
+            sla_days = _sla_days(values.get("time_limit"))
+            if sla_days is None:
+                continue
+            current_step = _english_i18n_value(record["label_i18n"], record["record_key"])
+            sla_i18n = _sla_i18n(values["time_limit"])
+            lookup_key = " | ".join(
+                (group_name, workflow_name, record["record_key"], current_step)
+            )
+            connection.execute(
+                """
+                INSERT INTO orbit_workflow.sla_lookup (
+                    lookup_key, group_name, workflow_name, record_key,
+                    current_workflow_step, sla, sla_i18n, sla_days,
+                    source_sha256, catalog_version, is_active
+                )
+                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, true)
+                ON CONFLICT (lookup_key) DO UPDATE
+                SET group_name = EXCLUDED.group_name,
+                    workflow_name = EXCLUDED.workflow_name,
+                    record_key = EXCLUDED.record_key,
+                    current_workflow_step = EXCLUDED.current_workflow_step,
+                    sla = EXCLUDED.sla,
+                    sla_i18n = EXCLUDED.sla_i18n,
+                    sla_days = EXCLUDED.sla_days,
+                    source_sha256 = EXCLUDED.source_sha256,
+                    catalog_version = EXCLUDED.catalog_version,
+                    is_active = true,
+                    updated_at = CURRENT_TIMESTAMP
+                """,
+                (
+                    lookup_key,
+                    group_name,
+                    workflow_name,
+                    record["record_key"],
+                    current_step,
+                    str(values["time_limit"]),
+                    Jsonb(sla_i18n),
+                    sla_days,
+                    catalog["source_sha256"],
+                    catalog["catalog_version"],
+                ),
+            )
+            sla_count += 1
+
     connection.execute(
         """
         INSERT INTO orbit_audit.audit_event (
@@ -364,6 +459,7 @@ def import_catalog(
                 {
                     "workflow_count": len(catalog["workflows"]),
                     "record_count": imported_records,
+                    "sla_count": sla_count,
                 }
             ),
             Jsonb(
@@ -378,4 +474,5 @@ def import_catalog(
     return {
         "workflow_count": len(definition_ids),
         "record_count": imported_records,
+        "sla_count": sla_count,
     }
