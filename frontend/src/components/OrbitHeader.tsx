@@ -95,6 +95,7 @@ export function OrbitHeader({
             value={theme}
             onChange={(event) => onThemeChange(event.target.value as ThemeMode)}
           >
+            <option value="navy">Navy</option>
             <option value="light">Light</option>
             <option value="green">Green</option>
             <option value="black">Dark</option>

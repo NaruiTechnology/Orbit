@@ -29,6 +29,37 @@
   --font-display: "IBM Plex Serif", "Noto Serif SC", "Noto Serif TC", "Songti SC", serif;
 }
 
+/* Navy theme imported from ionbeam-web's control-panel palette. */
+:root[data-theme="navy"] {
+  color-scheme: dark;
+  --paper: #0b1320;
+  --paper-bright: #e6eef9;
+  --paper-deep: #050a14;
+  --surface: #11203a;
+  --surface-raised: #16294a;
+  --surface-muted: #1b2c4d;
+  --ink: #e6eef9;
+  --ink-soft: #8aa1c4;
+  --forest: #1a3157;
+  --forest-deep: #08111e;
+  --signal: #5fb8ff;
+  --signal-soft: #1f5fa0;
+  --blueprint: #2b78c2;
+  --acid: #facc15;
+  --line: #21385f;
+  --line-strong: #3d8ed5;
+  --control-bg: #0b1828;
+  --control-fg: #e6eef9;
+  --control-active-bg: #1f5fa0;
+  --control-active-fg: #ffffff;
+  --gradient-shell: linear-gradient(135deg, #08111e 0%, #0b1320 42%, #14294a 100%);
+  --gradient-surface: linear-gradient(145deg, #26467c 0%, #11203a 58%, #0d1a2f 100%);
+  --gradient-panel: linear-gradient(145deg, #26467c 0%, #11203a 58%, #0d1a2f 100%);
+  --gradient-card: linear-gradient(90deg, #2a4978 0%, #16294a 60%, #11203a 100%);
+  --gradient-grid: linear-gradient(180deg, #16294a 0%, #0d1a2f 100%);
+  --shadow: 0 4px 18px rgba(0, 0, 0, 0.45);
+}
+
 :root[data-theme="green"] {
   color-scheme: dark;
   --paper: #0f1613;
@@ -1553,12 +1584,14 @@ input:focus-visible {
 .workflow-error { display: grid; gap: 3px; padding: 7px; color: #8d2014; background: #ffe1d8; border-left: 3px solid var(--signal); font-size: 9px; }
 .workflow-error b { font-size: 8px; letter-spacing: 0.08em; text-transform: uppercase; }
 .workflow-abort { color: #8d2014 !important; border-color: color-mix(in srgb, #8d2014 42%, transparent) !important; }
-:root[data-theme="green"] .workflow-abort {
+:root[data-theme="green"] .workflow-abort,
+:root[data-theme="navy"] .workflow-abort {
   color: #d4df86 !important;
   background: #24352e !important;
   border-color: #5f766a !important;
 }
-:root[data-theme="green"] .workflow-abort:not(:disabled):hover {
+:root[data-theme="green"] .workflow-abort:not(:disabled):hover,
+:root[data-theme="navy"] .workflow-abort:not(:disabled):hover {
   color: #eef5f0 !important;
   background: #31483e !important;
   border-color: #8fae9c !important;

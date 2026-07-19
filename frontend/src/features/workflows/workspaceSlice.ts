@@ -25,9 +25,9 @@ const initialState: WorkspaceState = {
   locale: savedLocale && ["en", "zh-CN", "zh-HK"].includes(savedLocale)
     ? savedLocale
     : "zh-CN",
-  theme: savedTheme === "light" || savedTheme === "black"
+  theme: savedTheme === "navy" || savedTheme === "light" || savedTheme === "green" || savedTheme === "black"
     ? savedTheme
-    : "green",
+    : "navy",
   selectedGroup: "sales",
   selectedWorkflow: "order-evaluation",
   selection: { recordId: null, cellKey: null },
