@@ -769,6 +769,52 @@ def create_record(
             )
         )
         order_number = str(values.get("order_number") or f"OE-{uuid4().hex[:12].upper()}")
+        stored_values = {
+            "order_number": order_number,
+            "customer_code": values.get("customer_code"),
+            "customer_name": values.get("customer_name") or " ",
+            "customer_contact": values.get("customer_contact"),
+            "chip_name": values.get("chip_name") or " ",
+            "chip_model": values.get("chip_model"),
+            "package_type": values.get("package_type") or " ",
+            "quantity": values.get("quantity") or 1,
+            "source_laboratory": values.get("source_laboratory"),
+            "target_laboratory": values.get("target_laboratory"),
+            "requested_due_date": values.get("requested_due_date") or None,
+            "priority": values.get("priority") or "normal",
+            "status": values.get("status") or "draft",
+            "evaluation_result": values.get("evaluation_result"),
+            "notes": values.get("notes"),
+        }
+        duplicate = connection.execute(
+            """
+            SELECT id
+              FROM orbit_sales.customer_order
+             WHERE organization_id = %s
+               AND order_number IS NOT DISTINCT FROM %s
+               AND customer_code IS NOT DISTINCT FROM %s
+               AND customer_name IS NOT DISTINCT FROM %s
+               AND customer_contact IS NOT DISTINCT FROM %s
+               AND chip_name IS NOT DISTINCT FROM %s
+               AND chip_model IS NOT DISTINCT FROM %s
+               AND package_type IS NOT DISTINCT FROM %s
+               AND quantity IS NOT DISTINCT FROM %s
+               AND source_laboratory IS NOT DISTINCT FROM %s
+               AND target_laboratory IS NOT DISTINCT FROM %s
+               AND requested_due_date IS NOT DISTINCT FROM %s
+               AND priority IS NOT DISTINCT FROM %s
+               AND status IS NOT DISTINCT FROM %s
+               AND evaluation_result IS NOT DISTINCT FROM %s
+               AND notes IS NOT DISTINCT FROM %s
+             LIMIT 1
+            """,
+            (user.scope.organization_id, *stored_values.values()),
+        ).fetchone()
+        if duplicate is not None:
+            raise HTTPException(
+                status_code=409,
+                detail="An identical order already exists; change at least one field before saving",
+            )
         try:
             created = connection.execute(
                 """

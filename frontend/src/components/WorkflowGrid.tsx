@@ -92,6 +92,7 @@ interface WorkflowGridProps {
   onRecordCreate: (values: Record<string, unknown>) => Promise<WorkflowRecord>;
   onNewRecordSaved?: (record: WorkflowRecord) => void | Promise<void>;
   onRecordDelete: (record: WorkflowRecord) => Promise<void>;
+  existingRecords: WorkflowRecord[];
   onRecordFinishEdit: (recordId: string) => void;
   onSortChange: (sortBy: string, direction: "asc" | "desc") => void;
   profileKey: string | null;
@@ -139,6 +140,7 @@ interface RowActionRendererProps {
   canEdit: boolean;
   locale: Locale;
   onEdit: (record: WorkflowRecord) => void;
+  onDuplicate: (record: WorkflowRecord) => void;
   onDelete: (record: WorkflowRecord) => Promise<void>;
 }
 
@@ -147,6 +149,7 @@ function RowActionRenderer({
   canEdit,
   locale,
   onEdit,
+  onDuplicate,
   onDelete,
 }: RowActionRendererProps) {
   return (
@@ -167,6 +170,22 @@ function RowActionRenderer({
       >
         <svg aria-hidden="true" viewBox="0 0 24 24" focusable="false">
           <path d="m4 16-.8 4.8L8 20l10.8-10.8-4-4L4 16Zm9.4-9.4 4 4" />
+        </svg>
+      </button>
+      <button
+        type="button"
+        className="grid-row-action grid-row-action--duplicate"
+        aria-label={locale === "en" ? "Duplicate row" : "复制行"}
+        title={locale === "en" ? "Duplicate row" : "复制行"}
+        disabled={!canEdit}
+        onMouseDown={(event) => event.stopPropagation()}
+        onClick={(event) => {
+          event.stopPropagation();
+          if (data) onDuplicate(data);
+        }}
+      >
+        <svg aria-hidden="true" viewBox="0 0 24 24" focusable="false">
+          <path d="M8 8h11v11H8zM5 16H4a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h11a1 1 0 0 1 1 1v1" />
         </svg>
       </button>
       <button
@@ -201,6 +220,7 @@ export function WorkflowGrid({
   onRecordCreate,
   onNewRecordSaved,
   onRecordDelete,
+  existingRecords,
   onRecordFinishEdit,
   onSortChange,
   profileKey,
@@ -227,6 +247,38 @@ export function WorkflowGrid({
     setEditValidationErrors({});
   }
 
+  function duplicateSignature(values: Record<string, unknown>): string {
+    return (workflow?.columns || [])
+      .filter((column) => column.editable)
+      .map((column) => {
+        const value = values[column.key];
+        if (value === null || value === undefined) return [column.key, ""];
+        if (typeof value === "string") return [column.key, value.trim()];
+        return [column.key, value];
+      })
+      .map(([key, value]) => `${key}=${JSON.stringify(value)}`)
+      .join("|");
+  }
+
+  function openDuplicateDialog(record: WorkflowRecord) {
+    const draftId = `draft-${crypto.randomUUID()}`;
+    const duplicate: WorkflowRecord = {
+      ...record,
+      id: draftId,
+      tree_record_id: null,
+      record_key: draftId,
+      record_order: 0,
+      label: locale === "en" ? `Copy of ${record.label || record.record_key}` : `复制 ${record.label || record.record_key}`,
+      values: { ...record.values },
+      source_row: null,
+      source_cells: {},
+      version: 1,
+      updated_at: new Date().toISOString(),
+    };
+    setNewRecordId(draftId);
+    openEditDialog(duplicate);
+  }
+
   async function saveEditDialog() {
     if (!editingRecord) return;
     const validationErrors: Record<string, string> = {};
@@ -241,6 +293,16 @@ export function WorkflowGrid({
           validationErrors[column.key] = locale === "en" ? "Enter a positive whole number" : "请输入正整数";
         }
       }
+    }
+    const duplicate = existingRecords.find(
+      (record) => record.id !== editingRecord.id
+        && duplicateSignature(record.values) === duplicateSignature(editValues),
+    );
+    if (duplicate) {
+      setEditError(locale === "en"
+        ? "An identical row already exists. Change at least one field before saving."
+        : "已存在完全相同的记录。保存前请至少修改一个字段。");
+      return;
     }
     if (Object.keys(validationErrors).length > 0) {
       setEditValidationErrors(validationErrors);
@@ -324,9 +386,9 @@ export function WorkflowGrid({
       colId: "actions",
       headerName: locale === "en" ? "Actions" : "操作",
       pinned: "right",
-      width: 108,
-      minWidth: 108,
-      maxWidth: 108,
+      width: 148,
+      minWidth: 148,
+      maxWidth: 148,
       sortable: false,
       filter: false,
       editable: false,
@@ -336,6 +398,7 @@ export function WorkflowGrid({
           canEdit={Boolean(workflow?.access.can_edit)}
           locale={locale}
           onEdit={openEditDialog}
+          onDuplicate={openDuplicateDialog}
           onDelete={onRecordDelete}
         />
       ),
@@ -462,7 +525,7 @@ export function WorkflowGrid({
   return (
     <div className="grid-frame" aria-busy={loading}>
       <div className="grid-toolbar">
-        <button
+      <button
           className="grid-add-button"
           type="button"
           aria-label={locale === "en" ? "Add row" : "新增行"}
@@ -473,7 +536,7 @@ export function WorkflowGrid({
           <svg aria-hidden="true" viewBox="0 0 24 24" focusable="false">
             <path d="M12 5v14M5 12h14" />
           </svg>
-        </button>
+      </button>
         <button
           className="grid-layout-reset-button"
           type="button"

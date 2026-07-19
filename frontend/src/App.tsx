@@ -380,6 +380,7 @@ export function App() {
               onRecordCreate={handleRecordCreate}
               onNewRecordSaved={(record) => void handleNewRecordSaved(record)}
               onRecordDelete={handleRecordDelete}
+              existingRecords={recordsQuery.data?.items || []}
               onRecordFinishEdit={(recordId) => {
                 setDirtyRecordIds((current) => {
                   const next = new Set(current);

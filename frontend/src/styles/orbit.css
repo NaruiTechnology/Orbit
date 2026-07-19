@@ -961,6 +961,11 @@ input:focus-visible {
   color: #8f321f;
 }
 
+.grid-row-action--duplicate {
+  background: transparent;
+  color: var(--blueprint);
+}
+
 .grid-row-action--edit {
   color: var(--ink-soft);
   background: transparent;
