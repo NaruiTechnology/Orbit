@@ -1677,6 +1677,7 @@ input:focus-visible {
   width: 1px;
   content: "";
   background: color-mix(in srgb, var(--paper-bright) 18%, transparent);
+  opacity: 0.6;
 }
 
 .workflow-node:not(:last-child) .workflow-node__rail::after {
@@ -1689,15 +1690,21 @@ input:focus-visible {
   content: "";
   background: color-mix(in srgb, var(--paper-bright) 18%, transparent);
   clip-path: polygon(0 0, 100% 0, 50% 100%);
+  opacity: 0.6;
   pointer-events: none;
 }
 
 .workflow-node--complete:not(:last-child) .workflow-node__rail::after {
-  background: color-mix(in srgb, var(--acid) 56%, transparent);
+  background: lawngreen;
 }
 
 .workflow-node--complete .workflow-node__rail::before {
-  background: color-mix(in srgb, var(--acid) 56%, transparent);
+  background: lawngreen;
+}
+
+.workflow-node--current .workflow-node__rail::before,
+.workflow-node--current:not(:last-child) .workflow-node__rail::after {
+  background: #f06a3b;
 }
 
 .workflow-node:first-child .workflow-node__rail::before {
