@@ -28,6 +28,8 @@ from app.schemas import (
     WorkflowNodeRuntime,
     WorkflowRecord,
     WorkflowRuntimeProjection,
+    WorkflowStepMessageRequest,
+    WorkflowStepMessagesResponse,
     WorkflowSummary,
     WorkflowTree,
 )
@@ -143,6 +145,21 @@ def _localized_step_value(value: Any, locale: str) -> str | None:
         "评估完成后即时": "Immediately after evaluation",
         "评估复杂度决定": "Determined by evaluation complexity",
     }.get(text, text)
+
+
+def _step_contact_value(values: dict[str, Any], *keys: str) -> str | None:
+    for key in keys:
+        value = values.get(key)
+        if value not in (None, ""):
+            return str(value).strip() or None
+    return None
+
+
+def _step_messages(values: dict[str, Any]) -> list[str]:
+    raw = values.get("Messages", values.get("messages", []))
+    if not isinstance(raw, list):
+        return []
+    return [str(message).strip() for message in raw if str(message).strip()]
 
 
 def list_workflows(
@@ -1160,6 +1177,13 @@ def get_tree(
             label=localized_value(row["label_i18n"], locale),
             owner_role=_localized_step_value(row["values_json"].get("owner_role"), locale),
             time_limit=_localized_step_value(row["values_json"].get("time_limit"), locale),
+            ContactName=_step_contact_value(
+                row["values_json"], "ContactName", "contact_name", "联系人姓名"
+            ),
+            Email=_step_contact_value(
+                row["values_json"], "Email", "email", "联系人邮箱"
+            ),
+            Messages=_step_messages(row["values_json"]),
             sla=localized_value(row["sla_i18n"], locale, row["sla"]),
             is_selected=(
                 row["record_key"] == selected_step_key
@@ -1188,6 +1212,63 @@ def get_tree(
         nodes=nodes,
         edges=[TreeEdge(**edge) for edge in definition_row["edges_json"]],
     )
+
+
+def append_workflow_step_message(
+    connection: Connection[dict[str, Any]],
+    user: SessionInfo,
+    workflow_key: str,
+    record_id: UUID,
+    request: WorkflowStepMessageRequest,
+) -> WorkflowStepMessagesResponse:
+    require_workflow_access(connection, user.user_id, workflow_key, "execute")
+    message = request.message.strip()
+    if not message:
+        raise HTTPException(status_code=422, detail="Message cannot be blank")
+    before = connection.execute(
+        """
+        SELECT r.*
+          FROM orbit_workflow.workflow_record r
+          JOIN orbit_workflow.workflow_definition w ON w.id = r.workflow_id
+         WHERE r.id = %s AND w.workflow_key = %s
+         FOR UPDATE
+        """,
+        (record_id, workflow_key),
+    ).fetchone()
+    if before is None:
+        raise HTTPException(status_code=404, detail="Workflow step not found")
+    messages = [*_step_messages(before["values_json"]), message]
+    updated = connection.execute(
+        """
+        UPDATE orbit_workflow.workflow_record
+           SET values_json = jsonb_set(values_json, '{Messages}', %s),
+               version = version + 1,
+               updated_at = CURRENT_TIMESTAMP
+         WHERE id = %s
+        RETURNING values_json
+        """,
+        (Jsonb(messages), record_id),
+    ).fetchone()
+    if updated is None:
+        raise HTTPException(status_code=404, detail="Workflow step not found")
+    connection.execute(
+        """
+        INSERT INTO orbit_audit.audit_event (
+            actor_user_id, action, entity_type, entity_id,
+            organization_id, before_json, after_json, metadata
+        )
+        VALUES (%s, 'workflow_step.message_append', 'workflow_record', %s, %s, %s, %s, %s)
+        """,
+        (
+            user.user_id,
+            str(record_id),
+            user.scope.organization_id,
+            Jsonb(before["values_json"]),
+            Jsonb(updated["values_json"]),
+            Jsonb({"workflow_key": workflow_key}),
+        ),
+    )
+    return WorkflowStepMessagesResponse(record_id=record_id, Messages=messages)
 
 
 def _instance_model(row: dict[str, Any]) -> WorkflowInstance:

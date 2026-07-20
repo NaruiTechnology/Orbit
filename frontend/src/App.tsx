@@ -15,6 +15,7 @@ import {
   useGetWorkflowTreeQuery,
   useGetWorkflowRuntimeQuery,
   useWorkflowCommandMutation,
+  useAppendWorkflowStepMessageMutation,
   useGetWorkflowsQuery,
   useUpdateRecordMutation,
   useCreateRecordMutation,
@@ -89,6 +90,7 @@ export function App() {
   const [createRecord] = useCreateRecordMutation();
   const [deleteRecord] = useDeleteRecordMutation();
   const [sendWorkflowCommand, workflowCommandState] = useWorkflowCommandMutation();
+  const [appendWorkflowStepMessage, appendMessageState] = useAppendWorkflowStepMessageMutation();
   const [dirtyRecordIds, setDirtyRecordIds] = useState<Set<string>>(new Set());
   const [pendingConfirmation, setPendingConfirmation] = useState<PendingConfirmation | null>(null);
   const [confirmationBusy, setConfirmationBusy] = useState(false);
@@ -100,6 +102,16 @@ export function App() {
     if (!instanceId) return;
     const projection = await sendWorkflowCommand({ instanceId, ...command }).unwrap();
     await runtimeQuery.refetch();
+    await treeQuery.refetch();
+  }
+
+  async function handleSaveWorkflowMessage(recordId: string, message: string): Promise<void> {
+    await appendWorkflowStepMessage({
+      workflowKey: workspace.selectedWorkflow,
+      recordId,
+      message,
+      locale: workspace.locale,
+    }).unwrap();
     await treeQuery.refetch();
   }
 
@@ -439,6 +451,8 @@ export function App() {
           runtime={runtimeQuery.data}
           commandBusy={workflowCommandState.isLoading}
           onCommand={handleWorkflowCommand}
+          messageBusy={appendMessageState.isLoading}
+          onSaveMessage={handleSaveWorkflowMessage}
         />
       </main>
       <footer className="orbit-footer">

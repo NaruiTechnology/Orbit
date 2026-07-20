@@ -1,7 +1,10 @@
 import { useEffect, useRef, useState } from "react";
 
 import mailIcon from "../assets/mail-icon.svg";
+import peopleIcon from "../assets/people-icon.svg";
+import cogIcon from "../assets/cog-icon.svg";
 import { MailComposeDialog } from "./MailComposeDialog";
+import { WorkflowMessageDialog } from "./WorkflowMessageDialog";
 import type {
   Locale,
   WorkflowCommandInput,
@@ -18,6 +21,8 @@ interface WorkflowTreePanelProps {
   runtime?: WorkflowRuntimeProjection | undefined;
   commandBusy?: boolean;
   onCommand?: (command: WorkflowCommandInput) => Promise<void>;
+  onSaveMessage?: (recordId: string, message: string) => Promise<void>;
+  messageBusy?: boolean;
 }
 
 function formatCommandError(error: unknown): string {
@@ -37,12 +42,18 @@ export function WorkflowTreePanel({
   runtime,
   commandBusy = false,
   onCommand,
+  onSaveMessage,
+  messageBusy = false,
 }: WorkflowTreePanelProps) {
   const selectedRef = useRef<HTMLLIElement | null>(null);
   const [commandError, setCommandError] = useState<string | null>(null);
   const [mailComposeOpen, setMailComposeOpen] = useState(false);
+  const [messageDialogOpen, setMessageDialogOpen] = useState(false);
   const currentNode = runtime?.nodes.find(
     (node) => node.record_key === runtime.instance.current_record_key,
+  );
+  const currentTreeNode = tree?.nodes.find(
+    (node) => node.record_key === runtime?.instance.current_record_key,
   );
   const runtimeByKey = new Map((runtime?.nodes || []).map((node) => [node.record_key, node]));
 
@@ -155,12 +166,32 @@ export function WorkflowTreePanel({
                           <button
                             type="button"
                             className="workflow-email-button"
+                            aria-label={translate(locale, "addMessage")}
+                            title={translate(locale, "addMessage")}
+                            disabled={commandBusy || messageBusy || !currentTreeNode}
+                            onClick={() => setMessageDialogOpen(true)}
+                          >
+                            <img src={cogIcon} alt="" aria-hidden="true" />
+                          </button>
+                          <button
+                            type="button"
+                            className="workflow-email-button"
                             aria-label={translate(locale, "email")}
                             title={translate(locale, "email")}
                             disabled={commandBusy}
                             onClick={() => setMailComposeOpen(true)}
                           >
                             <img src={mailIcon} alt="" aria-hidden="true" />
+                          </button>
+                          <button
+                            type="button"
+                            className="workflow-email-button"
+                            aria-label={currentTreeNode?.ContactName || translate(locale, "contact")}
+                            title={currentTreeNode?.ContactName || translate(locale, "contact")}
+                            disabled={commandBusy}
+                            onClick={() => setMailComposeOpen(true)}
+                          >
+                            <img src={peopleIcon} alt="" aria-hidden="true" />
                           </button>
                           <button
                             type="button"
@@ -188,8 +219,18 @@ export function WorkflowTreePanel({
       {mailComposeOpen ? (
         <MailComposeDialog
           locale={locale}
+          defaultTo={currentTreeNode?.Email || ""}
           defaultSubject={`${translate(locale, "email")} · ${currentNode?.record_key || "Orbit workflow"}`}
           onClose={() => setMailComposeOpen(false)}
+        />
+      ) : null}
+      {messageDialogOpen && currentTreeNode ? (
+        <WorkflowMessageDialog
+          locale={locale}
+          messages={currentTreeNode.Messages}
+          busy={messageBusy}
+          onSave={(message) => onSaveMessage?.(currentTreeNode.record_id, message) || Promise.resolve()}
+          onClose={() => setMessageDialogOpen(false)}
         />
       ) : null}
     </aside>

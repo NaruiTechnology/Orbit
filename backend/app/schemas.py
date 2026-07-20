@@ -130,6 +130,9 @@ class TreeNode(BaseModel):
     label: str
     owner_role: str | None = None
     time_limit: str | None = None
+    ContactName: str | None = None
+    Email: str | None = None
+    Messages: list[str] = Field(default_factory=list)
     sla: str | None = None
     is_selected: bool
     is_before_selected: bool
@@ -150,6 +153,18 @@ class WorkflowTree(BaseModel):
     selected_cell_value: Any = None
     nodes: list[TreeNode]
     edges: list[TreeEdge]
+
+
+class WorkflowStepMessageRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    message: str = Field(min_length=1, max_length=2000)
+    locale: str = "zh-CN"
+
+
+class WorkflowStepMessagesResponse(BaseModel):
+    record_id: UUID
+    Messages: list[str]
 
 
 class InstanceStartRequest(BaseModel):

@@ -41,6 +41,18 @@ interface WorkflowCommand extends WorkflowCommandInput {
   instanceId: string;
 }
 
+interface AppendWorkflowStepMessage {
+  workflowKey: string;
+  recordId: string;
+  message: string;
+  locale: Locale;
+}
+
+interface WorkflowStepMessagesResponse {
+  record_id: string;
+  Messages: string[];
+}
+
 export const orbitApi = createApi({
   reducerPath: "orbitApi",
   baseQuery: fetchBaseQuery({
@@ -100,6 +112,13 @@ export const orbitApi = createApi({
         },
       }),
     }),
+    appendWorkflowStepMessage: builder.mutation<WorkflowStepMessagesResponse, AppendWorkflowStepMessage>({
+      query: ({ workflowKey, recordId, message, locale }) => ({
+        url: `/workflows/${workflowKey}/steps/${recordId}/messages`,
+        method: "POST",
+        body: { message, locale },
+      }),
+    }),
     updateRecord: builder.mutation<WorkflowRecord, RecordUpdate>({
       query: ({ workflowKey, recordId, values, version, locale }) => ({
         url: `/workflows/${workflowKey}/records/${recordId}`,
@@ -149,3 +168,4 @@ export const useCreateRecordMutation = orbitApi.endpoints.createRecord.useMutati
 export const useDeleteRecordMutation = orbitApi.endpoints.deleteRecord.useMutation;
 export const useGetWorkflowRuntimeQuery = orbitApi.endpoints.workflowRuntime.useQuery;
 export const useWorkflowCommandMutation = orbitApi.endpoints.workflowCommand.useMutation;
+export const useAppendWorkflowStepMessageMutation = orbitApi.endpoints.appendWorkflowStepMessage.useMutation;

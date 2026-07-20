@@ -22,6 +22,8 @@ from app.schemas import (
     WorkflowInstance,
     WorkflowRecord,
     WorkflowRuntimeProjection,
+    WorkflowStepMessageRequest,
+    WorkflowStepMessagesResponse,
     WorkflowSummary,
     WorkflowTree,
 )
@@ -32,6 +34,7 @@ from app.services.workflow_repository import (
     get_runtime_projection,
     get_tree,
     get_workflow,
+    append_workflow_step_message,
     list_records,
     list_workflows,
     start_instance,
@@ -134,6 +137,20 @@ def workflow_tree(
         selected_record_id,
         selected_cell_key,
     )
+
+
+@router.post(
+    "/{workflow_key}/steps/{record_id}/messages",
+    response_model=WorkflowStepMessagesResponse,
+)
+def workflow_step_message_append(
+    workflow_key: str,
+    record_id: UUID,
+    request: WorkflowStepMessageRequest,
+    user: SessionInfo = Depends(get_current_user),
+    connection: Connection[dict[str, Any]] = Depends(get_connection),
+) -> WorkflowStepMessagesResponse:
+    return append_workflow_step_message(connection, user, workflow_key, record_id, request)
 
 
 @router.post(

@@ -10,6 +10,7 @@ import { translate } from "../i18n/translations";
 interface MailComposeDialogProps {
   locale: Locale;
   defaultSubject: string;
+  defaultTo?: string;
   onClose: () => void;
 }
 
@@ -33,8 +34,8 @@ function containsHtmlMarkup(value: string): boolean {
   return /<\s*(html|body|table|thead|tbody|tfoot|tr|th|td|p|ul|ol|li|strong|em|br)\b/i.test(value);
 }
 
-export function MailComposeDialog({ locale, defaultSubject, onClose }: MailComposeDialogProps) {
-  const [to, setTo] = useState("");
+export function MailComposeDialog({ locale, defaultSubject, defaultTo = "", onClose }: MailComposeDialogProps) {
+  const [to, setTo] = useState(defaultTo);
   const [subject, setSubject] = useState(defaultSubject);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
