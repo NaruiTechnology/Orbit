@@ -18,6 +18,21 @@ class ScopeInfo(BaseModel):
     laboratory_name: str | None = None
 
 
+class GeolocationSite(BaseModel):
+    id: str
+    value: str
+    name: str
+    name_zh: str
+    label_key: str
+
+
+class GeolocationCatalog(BaseModel):
+    version: int
+    default_site: str
+    sites: list[GeolocationSite]
+    legacy_aliases: dict[str, str]
+
+
 class SessionInfo(BaseModel):
     user_id: UUID
     login_name: str

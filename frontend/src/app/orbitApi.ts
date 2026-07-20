@@ -1,6 +1,7 @@
 import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
 
 import type {
+  GeolocationCatalog,
   HealthResponse,
   Locale,
   RecordPage,
@@ -54,6 +55,9 @@ export const orbitApi = createApi({
   endpoints: (builder) => ({
     health: builder.query<HealthResponse, void>({
       query: () => "/health",
+    }),
+    geolocation: builder.query<GeolocationCatalog, void>({
+      query: () => "/geolocation",
     }),
     session: builder.query<SessionInfo, Locale>({
       query: (locale) => ({ url: "/session", params: { locale } }),
@@ -134,6 +138,7 @@ export const orbitApi = createApi({
 // Endpoint-local hooks avoid TypeScript 7's unique-symbol declaration merging
 // issue with RTK Query's generated top-level hook aliases.
 export const useGetHealthQuery = orbitApi.endpoints.health.useQuery;
+export const useGetGeolocationQuery = orbitApi.endpoints.geolocation.useQuery;
 export const useGetSessionQuery = orbitApi.endpoints.session.useQuery;
 export const useGetWorkflowQuery = orbitApi.endpoints.workflow.useQuery;
 export const useGetWorkflowTreeQuery = orbitApi.endpoints.workflowTree.useQuery;

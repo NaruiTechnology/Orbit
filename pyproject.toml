@@ -27,7 +27,7 @@ dev = [
 orbit-fiber = "automation.orbitAutomationApp:main"
 
 [tool.hatch.build.targets.wheel]
-packages = ["backend/app", "automation", "AutomationPy"]
+packages = ["backend/app", "automation", "AutomationPy", "shared"]
 
 [tool.pytest.ini_options]
 pythonpath = [".", "backend"]

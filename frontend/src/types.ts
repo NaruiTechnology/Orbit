@@ -1,6 +1,21 @@
 export type Locale = "en" | "zh-CN" | "zh-HK";
 export type ThemeMode = "navy" | "light" | "green" | "black";
 
+export interface GeolocationSite {
+  id: string;
+  value: string;
+  name: string;
+  name_zh: string;
+  label_key: string;
+}
+
+export interface GeolocationCatalog {
+  version: number;
+  default_site: string;
+  sites: GeolocationSite[];
+  legacy_aliases: Record<string, string>;
+}
+
 export interface ScopeInfo {
   organization_id: string;
   organization_name: string;

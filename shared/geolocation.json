@@ -1,0 +1,72 @@
+{
+  "version": 1,
+  "default_site": "Beijing(北京)",
+  "sites": [
+    {
+      "id": "beijing",
+      "value": "Beijing(北京)",
+      "name": "Beijing",
+      "name_zh": "北京",
+      "label_key": "site.beijing"
+    },
+    {
+      "id": "shanghai",
+      "value": "Shanghai(上海)",
+      "name": "Shanghai",
+      "name_zh": "上海",
+      "label_key": "site.shanghai"
+    },
+    {
+      "id": "shenzheng",
+      "value": "Shenzheng(深圳)",
+      "name": "Shenzheng",
+      "name_zh": "深圳",
+      "label_key": "site.shenzheng"
+    },
+    {
+      "id": "wuxi",
+      "value": "Wuxi(无锡)",
+      "name": "Wuxi",
+      "name_zh": "无锡",
+      "label_key": "site.wexi"
+    },
+    {
+      "id": "xian",
+      "value": "Xian(西安)",
+      "name": "Xian",
+      "name_zh": "西安",
+      "label_key": "site.xian"
+    },
+    {
+      "id": "chengdu",
+      "value": "Chengdu(成都)",
+      "name": "Chengdu",
+      "name_zh": "成都",
+      "label_key": "site.chengdu"
+    },
+    {
+      "id": "hangzhou",
+      "value": "Hangzhou(杭州)",
+      "name": "Hangzhou",
+      "name_zh": "杭州",
+      "label_key": "site.hangzhou"
+    },
+    {
+      "id": "tianjing",
+      "value": "Tianjing(天津)",
+      "name": "Tianjing",
+      "name_zh": "天津",
+      "label_key": "site.tianjing"
+    },
+    {
+      "id": "taixin",
+      "value": "Taixin(泰兴)",
+      "name": "Taixin",
+      "name_zh": "泰兴",
+      "label_key": "site.taixin"
+    }
+  ],
+  "legacy_aliases": {
+    "Wexi(无锡)": "Wuxi(无锡)"
+  }
+}
