@@ -343,6 +343,7 @@ function WorkflowRecordsGrid({ detail, records, loading, selectedRecordId, onSel
       rowClassRules={{ "mobility-grid-row-selected": (params) => Boolean(selectedRecordId && (params.data?.tree_record_id || params.data?.id) === selectedRecordId) }}
       rowHeight={42}
       headerHeight={38}
+      domLayout="autoHeight"
       pagination
       paginationPageSize={6}
     />
