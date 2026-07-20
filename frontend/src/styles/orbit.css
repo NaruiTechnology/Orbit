@@ -367,6 +367,71 @@ input:focus-visible {
   gap: 12px;
 }
 
+.system-config-button {
+  display: grid;
+  width: 38px;
+  height: 38px;
+  flex: 0 0 38px;
+  place-items: center;
+  padding: 7px;
+  border: 1px solid var(--line-strong);
+  color: var(--ink);
+  background: var(--surface-muted);
+  cursor: pointer;
+}
+
+.system-config-button:hover,
+.system-config-button:focus-visible {
+  border-color: var(--signal);
+  outline: 2px solid color-mix(in srgb, var(--signal) 30%, transparent);
+  outline-offset: 2px;
+}
+
+.system-config-button img {
+  width: 24px;
+  height: 24px;
+}
+
+.system-config-page {
+  min-height: 0;
+  padding: 14px;
+  overflow: auto;
+  background: var(--paper);
+}
+
+.system-config-card {
+  display: grid;
+  min-height: 100%;
+  grid-template-rows: auto auto auto minmax(420px, 1fr);
+  border: 1px solid var(--line-strong);
+  background: var(--surface);
+  box-shadow: 0 12px 30px rgba(23, 36, 33, .08);
+}
+
+.system-config-card__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 18px 20px;
+  background: var(--gradient-surface);
+  border-bottom: 1px solid var(--line);
+}
+
+.system-config-card__header h1 { margin: 4px 0 0; font-size: 20px; }
+.system-config-kicker { color: var(--signal); font-size: 10px; font-weight: 800; letter-spacing: .16em; text-transform: uppercase; }
+.system-config-back { padding: 8px 12px; border: 1px solid var(--line-strong); color: var(--ink); background: transparent; cursor: pointer; }
+
+.system-config-tabs { display: flex; gap: 0; border-bottom: 1px solid var(--line); background: var(--surface-muted); }
+.system-config-tabs button { padding: 12px 18px; border: 0; border-bottom: 3px solid transparent; color: var(--ink-soft); background: transparent; font-weight: 700; cursor: pointer; }
+.system-config-tabs button[aria-selected="true"] { color: var(--signal); border-bottom-color: var(--signal); background: var(--surface); }
+.system-config-tabs--sub { background: var(--surface); }
+.system-config-tabs--sub button { padding: 10px 16px; font-size: 12px; font-weight: 600; }
+.system-config-error { margin: 0; padding: 10px 16px; color: #a51f1f; background: #fff1f1; border-bottom: 1px solid #efb3b3; }
+.system-config-grid { min-height: 420px; height: 100%; }
+.admin-grid-save { padding: 5px 10px; border: 1px solid var(--signal); color: var(--signal); background: transparent; cursor: pointer; }
+.admin-grid-save:disabled { opacity: .5; cursor: wait; }
+
 .runtime-chip,
 .identity-chip {
   min-width: 0;

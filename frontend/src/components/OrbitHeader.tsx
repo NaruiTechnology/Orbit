@@ -1,5 +1,6 @@
 import type { HealthResponse, Locale, SessionInfo, ThemeMode } from "../types";
 import { translate } from "../i18n/translations";
+import cogIcon from "../assets/cog-icon.svg";
 
 interface OrbitHeaderProps {
   locale: Locale;
@@ -10,6 +11,7 @@ interface OrbitHeaderProps {
   onThemeChange: (theme: ThemeMode) => void;
   onOpenAuth: () => void;
   onSignOut: () => void;
+  onOpenAdmin: () => void;
 }
 
 const localeLabels: Record<Locale, string> = {
@@ -27,7 +29,9 @@ export function OrbitHeader({
   onThemeChange,
   onOpenAuth,
   onSignOut,
+  onOpenAdmin,
 }: OrbitHeaderProps) {
+  const canManageSystem = Boolean(session?.permissions.includes("administration.manage"));
   return (
     <header className="orbit-header">
       <div className="orbit-brand">
@@ -45,6 +49,11 @@ export function OrbitHeader({
       </div>
 
       <div className="orbit-header__meta">
+        {canManageSystem ? (
+          <button className="system-config-button" type="button" onClick={onOpenAdmin} aria-label="System Config" title="System Config">
+            <img src={cogIcon} alt="" aria-hidden="true" />
+          </button>
+        ) : null}
         {session ? (
           <button className="identity-chip identity-chip--button" type="button" onClick={onSignOut} title="Sign out">
             <span className="identity-chip__monogram">

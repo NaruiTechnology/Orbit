@@ -157,3 +157,22 @@ def require_workflow_access(
             detail=f"Workflow {action} access denied",
         )
     return access
+
+
+def require_administration_access(
+    connection: Connection[dict[str, Any]], user_id: Any
+) -> None:
+    allowed = connection.execute(
+        """
+        SELECT EXISTS (
+            SELECT 1
+              FROM orbit_identity.user_role ur
+              JOIN orbit_identity.role_permission rp ON rp.role_id = ur.role_id
+              JOIN orbit_identity.permission p ON p.id = rp.permission_id
+             WHERE ur.user_id = %s AND p.code = 'administration.manage'
+        ) AS allowed
+        """,
+        (user_id,),
+    ).fetchone()
+    if not allowed or not allowed["allowed"]:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Administrator privilege is required")

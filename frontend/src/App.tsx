@@ -29,6 +29,7 @@ import { WorkflowCascade } from "./components/WorkflowCascade";
 import { WorkflowGrid } from "./components/WorkflowGrid";
 import { WorkflowTreePanel } from "./components/WorkflowTreePanel";
 import { AuthDialog } from "./components/AuthDialog";
+import { SystemConfigPage } from "./components/SystemConfigPage";
 import {
   selectCell,
   selectGroup,
@@ -96,6 +97,7 @@ export function App() {
   const [confirmationBusy, setConfirmationBusy] = useState(false);
   const [recordsRevision, setRecordsRevision] = useState(0);
   const [authOpen, setAuthOpen] = useState(() => !localStorage.getItem("orbit:auth-token"));
+  const [adminOpen, setAdminOpen] = useState(() => window.location.pathname === "/admin");
 
   async function handleWorkflowCommand(command: WorkflowCommandInput) {
     const instanceId = runtimeQuery.data?.instance.id || deferredSelection.recordId;
@@ -306,6 +308,16 @@ export function App() {
     void recordsQuery.refetch();
   }
 
+  function openAdmin() {
+    window.history.pushState({}, "", "/admin");
+    setAdminOpen(true);
+  }
+
+  function closeAdmin() {
+    window.history.pushState({}, "", "/");
+    setAdminOpen(false);
+  }
+
   const hasBlockingError =
     workflowsQuery.isError || workflowQuery.isError || recordsQuery.isError;
   const workflow = workflowQuery.data;
@@ -326,6 +338,7 @@ export function App() {
           setAuthOpen(true);
           void sessionQuery.refetch();
         }}
+        onOpenAdmin={openAdmin}
       />
 
       <AuthDialog
@@ -343,7 +356,9 @@ export function App() {
         }}
       />
 
-      <main
+      {adminOpen ? (
+        <SystemConfigPage locale={workspace.locale} theme={workspace.theme} workflows={workflowsQuery.data || []} authToken={authToken} onBack={closeAdmin} onAuthRequired={() => setAuthOpen(true)} />
+      ) : <main
         className="orbit-workspace"
         ref={workspaceRef}
         style={{ "--split-percent": splitPercent + "%" } as CSSProperties}
@@ -454,7 +469,7 @@ export function App() {
           messageBusy={appendMessageState.isLoading}
           onSaveMessage={handleSaveWorkflowMessage}
         />
-      </main>
+      </main>}
       <footer className="orbit-footer">
         <span>© 2026 Ionbeam Technology · Orbit Automation</span>
         <span>All rights reserved.</span>

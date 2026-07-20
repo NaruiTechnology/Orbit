@@ -25,7 +25,7 @@ import type {
 import { translate } from "../i18n/translations";
 
 
-const orbitGridTheme = themeQuartz.withParams({
+export const orbitGridTheme = themeQuartz.withParams({
   accentColor: "#1f6fc2",
   backgroundColor: "#ffffff",
   foregroundColor: "#1a2233",
@@ -42,7 +42,7 @@ const orbitGridTheme = themeQuartz.withParams({
   wrapperBorderRadius: 0,
 });
 
-const orbitGridNavyTheme = themeQuartz.withParams({
+export const orbitGridNavyTheme = themeQuartz.withParams({
   accentColor: "#5fb8ff",
   backgroundColor: "#11203a",
   foregroundColor: "#e6eef9",
@@ -59,7 +59,7 @@ const orbitGridNavyTheme = themeQuartz.withParams({
   wrapperBorderRadius: 0,
 });
 
-const orbitGridGreenTheme = themeQuartz.withParams({
+export const orbitGridGreenTheme = themeQuartz.withParams({
   accentColor: "#f06a3b",
   backgroundColor: "#101814",
   foregroundColor: "#ecf4ef",
@@ -76,7 +76,7 @@ const orbitGridGreenTheme = themeQuartz.withParams({
   wrapperBorderRadius: 0,
 });
 
-const orbitGridBlackTheme = themeQuartz.withParams({
+export const orbitGridBlackTheme = themeQuartz.withParams({
   accentColor: "#ff7043",
   backgroundColor: "#0b0c0f",
   foregroundColor: "#f1f2f4",

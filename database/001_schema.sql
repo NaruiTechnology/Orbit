@@ -206,6 +206,23 @@ CREATE INDEX IF NOT EXISTS ix_workflow_record_values_gin
 CREATE INDEX IF NOT EXISTS ix_workflow_record_scope
     ON orbit_workflow.workflow_record (organization_id, department_id, laboratory_id);
 
+-- Admin-owned routing attributes for each workflow step. HR employee data is
+-- intentionally represented as a nullable future reference for now; the HR
+-- directory will populate it in a later migration.
+CREATE TABLE IF NOT EXISTS orbit_workflow.workflow_step_assignment (
+    id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+    workflow_record_id uuid NOT NULL UNIQUE REFERENCES orbit_workflow.workflow_record(id) ON DELETE CASCADE,
+    laboratory_id uuid REFERENCES orbit_identity.laboratory(id) ON DELETE SET NULL,
+    contact_name varchar(200) NOT NULL DEFAULT '',
+    contact_email varchar(320) NOT NULL DEFAULT '',
+    hr_employee_id uuid,
+    updated_by uuid REFERENCES orbit_identity.app_user(id) ON DELETE SET NULL,
+    updated_at timestamptz NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE INDEX IF NOT EXISTS ix_workflow_step_assignment_laboratory
+    ON orbit_workflow.workflow_step_assignment (laboratory_id);
+
 -- Runtime/business data shown in DataGrids.  This table is deliberately
 -- separate from workflow_record: the latter is the process graph source used
 -- by the tree panel, while this table is the editable business data source.
