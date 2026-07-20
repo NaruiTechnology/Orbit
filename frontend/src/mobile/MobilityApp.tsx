@@ -350,9 +350,15 @@ function WorkflowRecordsGrid({ detail, records, loading, selectedRecordId, onSel
 }
 
 function WorkflowSteps({ tree, loading, text }: { tree: WorkflowTree | undefined; loading: boolean; text: MobilityCopy }) {
+  const explicitCurrentIndex = tree?.nodes.findIndex((node) => node.is_selected) ?? -1;
+  const currentIndex = explicitCurrentIndex >= 0 ? explicitCurrentIndex : tree?.nodes.length ? 0 : -1;
   return <section className="mobility-card mobility-steps-card" aria-busy={loading}>
     <div className="mobility-card__heading"><div><span className="mobility-kicker">{text.steps}</span><h2>{tree?.workflow_name || text.steps}</h2></div><span className="mobility-grid-count">{tree?.nodes.length || 0}</span></div>
-    {loading ? <p className="mobility-empty">{text.loading}</p> : tree?.nodes.length ? <ol className="mobility-steps-list">{tree.nodes.map((node) => <li key={node.record_key} className={node.is_selected ? "is-current" : node.is_before_selected ? "is-complete" : ""}><span>{String(node.order).padStart(2, "0")}</span><div><strong>{node.label}</strong><small>{node.is_selected ? text.current : node.is_before_selected ? text.completed : text.upcoming}{node.owner_role ? ` · ${node.owner_role}` : ""}</small></div></li>)}</ol> : <p className="mobility-empty">{text.noSteps}</p>}
+    {loading ? <p className="mobility-empty">{text.loading}</p> : tree?.nodes.length ? <ol className="mobility-steps-list">{tree.nodes.map((node, index) => {
+      const isCurrent = index === currentIndex;
+      const isComplete = explicitCurrentIndex >= 0 ? node.is_before_selected : index < currentIndex;
+      return <li key={node.record_key} className={isCurrent ? "is-current" : isComplete ? "is-complete" : ""}><span>{String(node.order).padStart(2, "0")}</span><div><strong>{node.label}</strong><small>{isCurrent ? text.current : isComplete ? text.completed : text.upcoming}{node.owner_role ? ` · ${node.owner_role}` : ""}</small></div></li>;
+    })}</ol> : <p className="mobility-empty">{text.noSteps}</p>}
   </section>;
 }
 
