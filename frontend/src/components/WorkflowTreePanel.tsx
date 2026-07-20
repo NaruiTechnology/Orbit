@@ -48,6 +48,7 @@ export function WorkflowTreePanel({
   const selectedRef = useRef<HTMLLIElement | null>(null);
   const [commandError, setCommandError] = useState<string | null>(null);
   const [mailComposeOpen, setMailComposeOpen] = useState(false);
+  const [mailComposeBody, setMailComposeBody] = useState("");
   const [messageDialogOpen, setMessageDialogOpen] = useState(false);
   const currentNode = runtime?.nodes.find(
     (node) => node.record_key === runtime.instance.current_record_key,
@@ -145,6 +146,12 @@ export function WorkflowTreePanel({
                         {translate(locale, "sla")}: {node.sla}
                       </span>
                     ) : null}
+                    {node.ContactName ? (
+                      <span>{translate(locale, "contactName")}: {node.ContactName}</span>
+                    ) : null}
+                    {node.Email ? (
+                      <span>{translate(locale, "contactEmail")}: {node.Email}</span>
+                    ) : null}
                     {isWorkflow && runtime && runtimeNode?.record_key === runtime.instance.current_record_key ? (
                       <div className="workflow-actions" aria-label={translate(locale, "nodeStatus")}>
                         {commandError || runtimeNode.error_message ? (
@@ -179,7 +186,10 @@ export function WorkflowTreePanel({
                             aria-label={translate(locale, "email")}
                             title={translate(locale, "email")}
                             disabled={commandBusy}
-                            onClick={() => setMailComposeOpen(true)}
+                            onClick={() => {
+                              setMailComposeBody("");
+                              setMailComposeOpen(true);
+                            }}
                           >
                             <img src={mailIcon} alt="" aria-hidden="true" />
                           </button>
@@ -189,7 +199,11 @@ export function WorkflowTreePanel({
                             aria-label={currentTreeNode?.ContactName || translate(locale, "contact")}
                             title={currentTreeNode?.ContactName || translate(locale, "contact")}
                             disabled={commandBusy}
-                            onClick={() => setMailComposeOpen(true)}
+                            onClick={() => {
+                              const contactName = currentTreeNode?.ContactName?.trim() || "";
+                              setMailComposeBody(contactName ? `DEAR ${contactName}` : "DEAR");
+                              setMailComposeOpen(true);
+                            }}
                           >
                             <img src={peopleIcon} alt="" aria-hidden="true" />
                           </button>
@@ -220,6 +234,7 @@ export function WorkflowTreePanel({
         <MailComposeDialog
           locale={locale}
           defaultTo={currentTreeNode?.Email || ""}
+          defaultBody={mailComposeBody}
           defaultSubject={`${translate(locale, "email")} · ${currentNode?.record_key || "Orbit workflow"}`}
           onClose={() => setMailComposeOpen(false)}
         />

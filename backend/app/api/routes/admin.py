@@ -21,8 +21,9 @@ class WorkflowStepAssignmentUpdate(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
     laboratory_id: UUID | None = None
-    contact_name: str = Field(default="", max_length=200)
+    phone_number: str = Field(default="", max_length=80)
     contact_email: str = Field(default="", max_length=320)
+    contact_name: str = Field(default="", max_length=200)
     hr_employee_id: UUID | None = None
 
 
@@ -68,7 +69,7 @@ def workflow_config(
         """
         SELECT r.id, r.record_key, r.record_order, r.label_i18n,
                a.laboratory_id, l.code AS laboratory_code, l.name_i18n AS laboratory_name_i18n,
-               a.contact_name, a.contact_email, a.hr_employee_id
+               a.phone_number, a.contact_email, a.contact_name, a.hr_employee_id
           FROM orbit_workflow.workflow_record r
           JOIN orbit_workflow.workflow_step_assignment a ON a.workflow_record_id = r.id
           LEFT JOIN orbit_identity.laboratory l ON l.id = a.laboratory_id
@@ -93,8 +94,9 @@ def workflow_config(
                 "laboratory_id": row["laboratory_id"],
                 "laboratory_code": row["laboratory_code"],
                 "laboratory_name": localized_value(row["laboratory_name_i18n"], locale) if row["laboratory_name_i18n"] else None,
-                "contact_name": row["contact_name"],
+                "phone_number": row["phone_number"],
                 "contact_email": row["contact_email"],
+                "contact_name": row["contact_name"],
                 "hr_employee_id": row["hr_employee_id"],
             }
             for row in steps
@@ -114,7 +116,8 @@ def update_workflow_step(
     updated = connection.execute(
         """
         UPDATE orbit_workflow.workflow_step_assignment a
-           SET laboratory_id = %s, contact_name = %s, contact_email = %s,
+           SET laboratory_id = %s, phone_number = %s, contact_email = %s,
+               contact_name = %s,
                hr_employee_id = %s, updated_by = %s, updated_at = CURRENT_TIMESTAMP
           FROM orbit_workflow.workflow_record r
           JOIN orbit_workflow.workflow_definition w ON w.id = r.workflow_id
@@ -122,8 +125,8 @@ def update_workflow_step(
            AND r.id = %s AND w.workflow_key = %s
          RETURNING a.workflow_record_id
         """,
-        (request.laboratory_id, request.contact_name.strip(), request.contact_email.strip(),
-         request.hr_employee_id, user.user_id, record_id, workflow_key),
+        (request.laboratory_id, request.phone_number.strip(), request.contact_email.strip(),
+         request.contact_name.strip(), request.hr_employee_id, user.user_id, record_id, workflow_key),
     ).fetchone()
     if updated is None:
         raise HTTPException(status_code=404, detail="workflow step not found")

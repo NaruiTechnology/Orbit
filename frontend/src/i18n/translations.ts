@@ -2,7 +2,7 @@ import type { Locale } from "../types";
 
 const translations = {
   en: {
-    appSubtitle: "Workflow operations fabric",
+    appSubtitle: "Workflow steps configuration",
     navigator: "Workflow cascade",
     businessArea: "Business area",
     customerRelations: "Customer Relations",
@@ -33,6 +33,8 @@ const translations = {
     nodeStatus: "Node status",
     email: "Email",
     contact: "Contact",
+    contactName: "Internal contact name",
+    contactEmail: "Internal contact email",
     emailAddress: "Recipient email",
     composeEmail: "Compose email",
     to: "To",
@@ -91,6 +93,8 @@ const translations = {
     nodeStatus: "节点状态",
     email: "发送邮件",
     contact: "联系人",
+    contactName: "内部联系人姓名",
+    contactEmail: "内部联系人邮箱",
     emailAddress: "收件人邮箱",
     composeEmail: "撰写邮件",
     to: "收件人",
@@ -149,6 +153,8 @@ const translations = {
     nodeStatus: "節點狀態",
     email: "發送電郵",
     contact: "聯絡人",
+    contactName: "內部联系人姓名",
+    contactEmail: "內部联系人電郵",
     emailAddress: "收件人電郵",
     composeEmail: "撰寫電郵",
     to: "收件人",

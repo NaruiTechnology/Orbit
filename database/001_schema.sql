@@ -213,8 +213,9 @@ CREATE TABLE IF NOT EXISTS orbit_workflow.workflow_step_assignment (
     id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
     workflow_record_id uuid NOT NULL UNIQUE REFERENCES orbit_workflow.workflow_record(id) ON DELETE CASCADE,
     laboratory_id uuid REFERENCES orbit_identity.laboratory(id) ON DELETE SET NULL,
-    contact_name varchar(200) NOT NULL DEFAULT '',
+    phone_number varchar(80) NOT NULL DEFAULT '',
     contact_email varchar(320) NOT NULL DEFAULT '',
+    contact_name varchar(200) NOT NULL DEFAULT '',
     hr_employee_id uuid,
     updated_by uuid REFERENCES orbit_identity.app_user(id) ON DELETE SET NULL,
     updated_at timestamptz NOT NULL DEFAULT CURRENT_TIMESTAMP
@@ -222,6 +223,28 @@ CREATE TABLE IF NOT EXISTS orbit_workflow.workflow_step_assignment (
 
 CREATE INDEX IF NOT EXISTS ix_workflow_step_assignment_laboratory
     ON orbit_workflow.workflow_step_assignment (laboratory_id);
+
+DO $block$
+BEGIN
+    IF EXISTS (
+        SELECT 1 FROM information_schema.columns
+         WHERE table_schema = 'orbit_workflow'
+           AND table_name = 'workflow_step_assignment'
+           AND column_name = 'contact_name'
+    ) AND NOT EXISTS (
+        SELECT 1 FROM information_schema.columns
+         WHERE table_schema = 'orbit_workflow'
+           AND table_name = 'workflow_step_assignment'
+           AND column_name = 'phone_number'
+    ) THEN
+        ALTER TABLE orbit_workflow.workflow_step_assignment
+            RENAME COLUMN contact_name TO phone_number;
+    END IF;
+END
+$block$;
+
+ALTER TABLE orbit_workflow.workflow_step_assignment
+    ADD COLUMN IF NOT EXISTS contact_name varchar(200) NOT NULL DEFAULT '';
 
 -- Runtime/business data shown in DataGrids.  This table is deliberately
 -- separate from workflow_record: the latter is the process graph source used

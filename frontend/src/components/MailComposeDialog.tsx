@@ -4,6 +4,9 @@ import { DOMParser as ProseMirrorDOMParser } from "@tiptap/pm/model";
 import StarterKit from "@tiptap/starter-kit";
 import { useEffect, useState } from "react";
 
+import cancelIcon from "../assets/cancel-icon.svg";
+import mailIcon from "../assets/mail-icon.svg";
+import saveIcon from "../assets/save-icon.svg";
 import type { Locale } from "../types";
 import { translate } from "../i18n/translations";
 
@@ -11,6 +14,7 @@ interface MailComposeDialogProps {
   locale: Locale;
   defaultSubject: string;
   defaultTo?: string;
+  defaultBody?: string;
   onClose: () => void;
 }
 
@@ -30,11 +34,21 @@ interface MailStatus {
   html_supported?: boolean;
 }
 
+function escapeHtml(value: string): string {
+  return value.replace(/[&<>'"]/g, (character) => ({
+    "&": "&amp;",
+    "<": "&lt;",
+    ">": "&gt;",
+    "'": "&#39;",
+    '"': "&quot;",
+  })[character] ?? character);
+}
+
 function containsHtmlMarkup(value: string): boolean {
   return /<\s*(html|body|table|thead|tbody|tfoot|tr|th|td|p|ul|ol|li|strong|em|br)\b/i.test(value);
 }
 
-export function MailComposeDialog({ locale, defaultSubject, defaultTo = "", onClose }: MailComposeDialogProps) {
+export function MailComposeDialog({ locale, defaultSubject, defaultTo = "", defaultBody = "", onClose }: MailComposeDialogProps) {
   const [to, setTo] = useState(defaultTo);
   const [subject, setSubject] = useState(defaultSubject);
   const [busy, setBusy] = useState(false);
@@ -49,7 +63,7 @@ export function MailComposeDialog({ locale, defaultSubject, defaultTo = "", onCl
       TableHeader,
       TableCell,
     ],
-    content: "<p></p>",
+    content: `<p>${escapeHtml(defaultBody)}</p>`,
     immediatelyRender: false,
     editorProps: {
       handlePaste: (view, event) => {
@@ -173,9 +187,18 @@ export function MailComposeDialog({ locale, defaultSubject, defaultTo = "", onCl
         </div>
         {error ? <p className="mail-compose-error" role="alert">{error}</p> : null}
         <div className="mail-compose-dialog__actions">
-          <button type="button" className="mail-compose-secondary" onClick={() => void fallbackToMailApp()} disabled={busy || !to.trim()}>{translate(locale, "openMailApp")}</button>
-          <button type="button" className="mail-compose-secondary" onClick={onClose} disabled={busy}>{translate(locale, "cancel")}</button>
-          <button type="button" className="mail-compose-primary" onClick={() => void send()} disabled={busy}>{busy ? "…" : translate(locale, "send")}</button>
+          <button type="button" className="mail-compose-secondary" onClick={() => void fallbackToMailApp()} disabled={busy || !to.trim()}>
+            <img src={mailIcon} alt="" aria-hidden="true" />
+            {translate(locale, "openMailApp")}
+          </button>
+          <button type="button" className="mail-compose-secondary" onClick={onClose} disabled={busy}>
+            <img src={cancelIcon} alt="" aria-hidden="true" />
+            {translate(locale, "cancel")}
+          </button>
+          <button type="button" className="mail-compose-primary" onClick={() => void send()} disabled={busy}>
+            <img src={saveIcon} alt="" aria-hidden="true" />
+            {busy ? "…" : translate(locale, "send")}
+          </button>
         </div>
       </section>
     </div>

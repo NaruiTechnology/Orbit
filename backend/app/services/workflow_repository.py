@@ -1113,10 +1113,14 @@ def get_tree(
     rows = connection.execute(
         """
         SELECT r.id, r.record_key, r.record_order, r.label_i18n, r.values_json,
+               assignment.contact_name AS assigned_contact_name,
+               assignment.contact_email AS assigned_contact_email,
                sla.sla_i18n,
                sla.sla
           FROM orbit_workflow.workflow_record r
           JOIN orbit_workflow.workflow_definition w ON w.id = r.workflow_id
+          LEFT JOIN orbit_workflow.workflow_step_assignment assignment
+            ON assignment.workflow_record_id = r.id
           LEFT JOIN orbit_workflow.sla_lookup sla
             ON sla.group_name = COALESCE(w.group_name_i18n ->> 'en', w.group_key)
            AND sla.workflow_name = COALESCE(w.name_i18n ->> 'en', w.workflow_key)
@@ -1177,12 +1181,12 @@ def get_tree(
             label=localized_value(row["label_i18n"], locale),
             owner_role=_localized_step_value(row["values_json"].get("owner_role"), locale),
             time_limit=_localized_step_value(row["values_json"].get("time_limit"), locale),
-            ContactName=_step_contact_value(
+            ContactName=(row["assigned_contact_name"] or _step_contact_value(
                 row["values_json"], "ContactName", "contact_name", "联系人姓名"
-            ),
-            Email=_step_contact_value(
+            )),
+            Email=(row["assigned_contact_email"] or _step_contact_value(
                 row["values_json"], "Email", "email", "联系人邮箱"
-            ),
+            )),
             Messages=_step_messages(row["values_json"]),
             sla=localized_value(row["sla_i18n"], locale, row["sla"]),
             is_selected=(

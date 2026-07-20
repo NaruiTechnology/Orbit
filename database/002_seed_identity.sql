@@ -24,9 +24,9 @@ SELECT
     '20000000-0000-0000-0000-000000000003'::uuid,
     'LAB-' || lpad(number::text, 2, '0'),
     jsonb_build_object(
-        'en', 'Laboratory ' || number,
-        'zh_CN', '实验室' || number,
-        'zh_HK', '實驗室' || number
+        'en', (ARRAY['Beijing', 'Shanghai', 'Shenzheng', 'Wuxi', 'Xian', 'Chengdu', 'Hangzhou', 'Tianjing', 'Taixin'])[number],
+        'zh_CN', (ARRAY['北京', '上海', '深圳', '无锡', '西安', '成都', '杭州', '天津', '泰兴'])[number],
+        'zh_HK', (ARRAY['北京', '上海', '深圳', '無錫', '西安', '成都', '杭州', '天津', '泰興'])[number]
     ),
     'Asia/Shanghai'
 FROM generate_series(1, 9) AS number

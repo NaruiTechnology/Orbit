@@ -402,7 +402,7 @@ input:focus-visible {
 .system-config-card {
   display: grid;
   min-height: 100%;
-  grid-template-rows: auto auto auto minmax(420px, 1fr);
+  grid-template-rows: auto auto auto auto minmax(420px, 1fr);
   border: 1px solid var(--line-strong);
   background: var(--surface);
   box-shadow: 0 12px 30px rgba(23, 36, 33, .08);
@@ -420,7 +420,12 @@ input:focus-visible {
 
 .system-config-card__header h1 { margin: 4px 0 0; font-size: 20px; }
 .system-config-kicker { color: var(--signal); font-size: 10px; font-weight: 800; letter-spacing: .16em; text-transform: uppercase; }
-.system-config-back { padding: 8px 12px; border: 1px solid var(--line-strong); color: var(--ink); background: transparent; cursor: pointer; }
+.system-config-back { padding: 6px 10px; border: 1px solid var(--line-strong); color: var(--ink); background: transparent; cursor: pointer; font-size: 11px; }
+.system-config-back:hover { border-color: var(--signal); color: var(--signal); }
+.admin-grid-select { width: 100%; min-height: 28px; padding: 4px 24px 4px 7px; color: var(--ink); background: var(--control-bg); border: 1px solid var(--line); border-radius: 4px; font: inherit; }
+.admin-grid-select:focus { border-color: var(--signal); outline: none; box-shadow: 0 0 0 1px color-mix(in srgb, var(--signal) 25%, transparent); }
+.admin-grid-input { width: 100%; min-height: 28px; padding: 4px 7px; color: var(--ink); background: var(--control-bg); border: 1px solid var(--line); border-radius: 4px; font: inherit; }
+.admin-grid-input:focus { border-color: var(--signal); outline: none; box-shadow: 0 0 0 1px color-mix(in srgb, var(--signal) 25%, transparent); }
 
 .system-config-tabs { display: flex; gap: 0; border-bottom: 1px solid var(--line); background: var(--surface-muted); }
 .system-config-tabs button { padding: 12px 18px; border: 0; border-bottom: 3px solid transparent; color: var(--ink-soft); background: transparent; font-weight: 700; cursor: pointer; }
@@ -429,6 +434,11 @@ input:focus-visible {
 .system-config-tabs--sub button { padding: 10px 16px; font-size: 12px; font-weight: 600; }
 .system-config-error { margin: 0; padding: 10px 16px; color: #a51f1f; background: #fff1f1; border-bottom: 1px solid #efb3b3; }
 .system-config-grid { min-height: 420px; height: 100%; }
+.system-config-grid-toolbar { display: flex; justify-content: flex-end; align-items: center; min-height: 42px; padding: 6px 10px; background: var(--surface); border-bottom: 1px solid var(--line); }
+.system-config-save-all { color: var(--control-active-fg); background: var(--signal); border-color: var(--signal); }
+.system-config-save-all img { width: 16px; height: 16px; margin-right: 6px; vertical-align: -3px; filter: brightness(0) invert(1); }
+.system-config-save-all:hover:not(:disabled) { color: var(--control-active-fg); background: var(--forest); border-color: var(--forest); }
+.system-config-save-all:disabled { cursor: not-allowed; opacity: .45; }
 .admin-grid-save { padding: 5px 10px; border: 1px solid var(--signal); color: var(--signal); background: transparent; cursor: pointer; }
 .admin-grid-save:disabled { opacity: .5; cursor: wait; }
 
@@ -1098,8 +1108,8 @@ input:focus-visible {
 }
 
 .grid-row-action--update {
-  color: var(--control-active-fg);
-  background: var(--signal);
+  color: var(--signal);
+  background: transparent;
 }
 
 .grid-row-action--cancel {
@@ -1639,6 +1649,10 @@ input:focus-visible {
   background: var(--signal);
   border-color: var(--signal);
 }
+
+.mail-compose-secondary img,
+.mail-compose-primary img { width: 16px; height: 16px; margin-right: 6px; vertical-align: -3px; }
+.mail-compose-primary img { filter: brightness(0) invert(1); }
 
 .grid-edit-backdrop {
   z-index: 30;
