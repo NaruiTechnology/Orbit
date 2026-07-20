@@ -1111,10 +1111,47 @@ def get_tree(
         """,
         (workflow_key,),
     ).fetchall()
+    selected_step_key: str | None = None
+    if selected_record_id is not None and _is_customer_order_workflow(workflow_key):
+        runtime_row = connection.execute(
+            """
+            SELECT i.current_record_key
+              FROM orbit_runtime.workflow_instance i
+              JOIN orbit_workflow.workflow_definition w ON w.id = i.workflow_id
+             WHERE w.workflow_key = %s
+               AND i.organization_id = %s
+               AND (
+                   i.context_json ->> 'order_id' = %s
+                   OR i.business_key = (
+                       SELECT order_number
+                         FROM orbit_sales.customer_order
+                        WHERE id = %s
+                   )
+               )
+             ORDER BY i.updated_at DESC
+             LIMIT 1
+            """,
+            (workflow_key, user.scope.organization_id, str(selected_record_id), selected_record_id),
+        ).fetchone()
+        selected_step_key = runtime_row["current_record_key"] if runtime_row else None
+
     selected_order = next(
-        (row["record_order"] for row in rows if row["id"] == selected_record_id), None
+        (
+            row["record_order"]
+            for row in rows
+            if row["record_key"] == selected_step_key or row["id"] == selected_record_id
+        ),
+        None,
     )
-    selected_row = next((row for row in rows if row["id"] == selected_record_id), None)
+    selected_row = next(
+        (
+            row
+            for row in rows
+            if row["record_key"] == selected_step_key or row["id"] == selected_record_id
+        ),
+        None,
+    )
+    tree_selected_record_id = selected_row["id"] if selected_row else selected_record_id
     nodes = [
         TreeNode(
             record_id=row["id"],
@@ -1124,7 +1161,10 @@ def get_tree(
             owner_role=_localized_step_value(row["values_json"].get("owner_role"), locale),
             time_limit=_localized_step_value(row["values_json"].get("time_limit"), locale),
             sla=localized_value(row["sla_i18n"], locale, row["sla"]),
-            is_selected=row["id"] == selected_record_id,
+            is_selected=(
+                row["record_key"] == selected_step_key
+                or row["id"] == selected_record_id
+            ),
             is_before_selected=(
                 selected_order is not None and row["record_order"] < selected_order
             ),
@@ -1138,7 +1178,7 @@ def get_tree(
     return WorkflowTree(
         workflow_key=workflow_key,
         workflow_name=definition.name,
-        selected_record_id=selected_record_id,
+        selected_record_id=tree_selected_record_id,
         selected_cell_key=selected_cell_key,
         selected_cell_value=(
             selected_row["values_json"].get(selected_cell_key)
