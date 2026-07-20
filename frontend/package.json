@@ -6,7 +6,9 @@
   "description": "React/Redux/TypeScript workflow workspace for Orbit Automation.",
   "scripts": {
     "dev": "vite",
+    "dev:mobility": "VITE_MOBILITY_ONLY=1 vite",
     "build": "tsc -b && vite build",
+    "build:mobility": "VITE_MOBILITY_ONLY=1 tsc -b && VITE_MOBILITY_ONLY=1 vite build",
     "preview": "vite preview",
     "typecheck": "tsc -b --noEmit"
   },
