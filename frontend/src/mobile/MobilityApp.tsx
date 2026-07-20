@@ -5,11 +5,14 @@ import { AgGridReact } from "ag-grid-react";
 import {
   useGetGeolocationQuery,
   useGetHealthQuery,
+  useCreateRecordMutation,
+  useDeleteRecordMutation,
   useGetRecordsQuery,
   useGetSessionQuery,
   useGetWorkflowQuery,
   useGetWorkflowTreeQuery,
   useGetWorkflowsQuery,
+  useUpdateRecordMutation,
 } from "../app/orbitApi";
 import { useAppSelector } from "../app/store";
 import { AuthDialog } from "../components/AuthDialog";
@@ -180,6 +183,9 @@ function WorkflowList({ workflows, text }: { workflows: WorkflowSummary[]; text:
   const [selectedGroup, setSelectedGroup] = useState("sales");
   const [selectedWorkflowKey, setSelectedWorkflowKey] = useState<string | null>(null);
   const [selectedRecordId, setSelectedRecordId] = useState<string | null>(null);
+  const [editorMode, setEditorMode] = useState<"insert" | "edit" | null>(null);
+  const [editorValues, setEditorValues] = useState<Record<string, unknown>>({});
+  const [actionError, setActionError] = useState<string | null>(null);
   const locale = useAppSelector((state) => state.workspace.locale);
   const catalogWorkflows = useMemo(() => workflows.filter((workflow) =>
     !workflow.is_master && workflow.definition_type === "workflow" &&
@@ -204,6 +210,64 @@ function WorkflowList({ workflows, text }: { workflows: WorkflowSummary[]; text:
     recordId: selectedRecordId,
     cellKey: null,
   }, { skip: !selectedWorkflowKey || !selectedRecordId });
+  const [createRecord, createState] = useCreateRecordMutation();
+  const [updateRecord, updateState] = useUpdateRecordMutation();
+  const [deleteRecord, deleteState] = useDeleteRecordMutation();
+  const selectedRecord = useMemo(
+    () => recordsQuery.data?.items.find((record) => (record.tree_record_id || record.id) === selectedRecordId),
+    [recordsQuery.data?.items, selectedRecordId],
+  );
+  const editableColumns = workflowQuery.data?.columns.filter((column) => column.editable) || [];
+  const actionBusy = createState.isLoading || updateState.isLoading || deleteState.isLoading;
+
+  function startEditor(mode: "insert" | "edit") {
+    if (mode === "edit" && !selectedRecord) return;
+    setActionError(null);
+    setEditorMode(mode);
+    setEditorValues(mode === "edit" ? { ...(selectedRecord?.values || {}) } : {});
+  }
+
+  async function saveEditor() {
+    if (!selectedWorkflowKey) return;
+    try {
+      setActionError(null);
+      if (editorMode === "edit" && selectedRecord) {
+        await updateRecord({ workflowKey: selectedWorkflowKey, recordId: selectedRecord.id, values: editorValues, version: selectedRecord.version, locale }).unwrap();
+      } else if (editorMode === "insert") {
+        await createRecord({ workflowKey: selectedWorkflowKey, values: editorValues, locale }).unwrap();
+      }
+      setEditorMode(null);
+      await recordsQuery.refetch();
+    } catch (error) {
+      setActionError(readMutationError(error));
+    }
+  }
+
+  async function duplicateSelected() {
+    if (!selectedWorkflowKey || !selectedRecord) return;
+    try {
+      setActionError(null);
+      const values = { ...selectedRecord.values };
+      if ("order_number" in values) values.order_number = "";
+      await createRecord({ workflowKey: selectedWorkflowKey, values, locale }).unwrap();
+      await recordsQuery.refetch();
+    } catch (error) {
+      setActionError(readMutationError(error));
+    }
+  }
+
+  async function deleteSelected() {
+    if (!selectedWorkflowKey || !selectedRecord) return;
+    if (!window.confirm(text.confirmDelete)) return;
+    try {
+      setActionError(null);
+      await deleteRecord({ workflowKey: selectedWorkflowKey, recordId: selectedRecord.id }).unwrap();
+      setSelectedRecordId(null);
+      await recordsQuery.refetch();
+    } catch (error) {
+      setActionError(readMutationError(error));
+    }
+  }
   return <div className="mobility-stack">
     <section className="mobility-card mobility-grid-card">
       <div className="mobility-grid-card__heading">
@@ -240,6 +304,15 @@ function WorkflowList({ workflows, text }: { workflows: WorkflowSummary[]; text:
         <div className="mobility-card__heading"><div><span className="mobility-kicker">{text.dataRows}</span><h2>{workflowQuery.data?.name || selectedWorkflowKey}</h2></div><span className="mobility-grid-count">{recordsQuery.data?.total ?? 0}</span></div>
         <p className="mobility-grid-hint">{text.selectRow}</p>
         <div className="mobility-grid-toolbar"><label className="mobility-grid-search"><span aria-hidden="true">⌕</span><input type="search" value={search} onChange={(event) => setSearch(event.target.value)} placeholder={text.searchRecords} /></label></div>
+        <div className="mobility-record-actions">
+          <button type="button" disabled={!workflowQuery.data?.access.can_edit || actionBusy} onClick={() => startEditor("insert")}>{text.insert}</button>
+          <button type="button" disabled={!workflowQuery.data?.access.can_edit || !selectedRecord || actionBusy} onClick={() => startEditor("edit")}>{text.edit}</button>
+          <button type="button" className="is-danger" disabled={!workflowQuery.data?.access.can_edit || !selectedRecord || actionBusy} onClick={() => void deleteSelected()}>{text.delete}</button>
+          <button type="button" disabled={!workflowQuery.data?.access.can_edit || !selectedRecord || actionBusy} onClick={() => void duplicateSelected()}>{text.duplicate}</button>
+          <button type="button" disabled={!editorMode && !actionError} onClick={() => { setEditorMode(null); setActionError(null); }}>{text.cancel}</button>
+        </div>
+        {actionError ? <p className="mobility-action-error" role="alert">{actionError}</p> : null}
+        {editorMode ? <MobileRecordEditor columns={editableColumns} values={editorValues} mode={editorMode} busy={actionBusy} text={text} onChange={(key, value) => setEditorValues((current) => ({ ...current, [key]: value }))} onSave={() => void saveEditor()} onCancel={() => setEditorMode(null)} /> : null}
         <WorkflowRecordsGrid detail={workflowQuery.data} records={recordsQuery.data?.items || []} loading={recordsQuery.isLoading} selectedRecordId={selectedRecordId} onSelect={(record) => setSelectedRecordId(record.tree_record_id || record.id)} text={text} />
       </section>
     ) : null}
@@ -289,6 +362,38 @@ function displayValue(value: unknown): string {
   return String(value);
 }
 
+function readMutationError(error: unknown): string {
+  if (error && typeof error === "object" && "data" in error) {
+    const data = error.data;
+    if (typeof data === "string") return data;
+    if (data && typeof data === "object" && "detail" in data) return String(data.detail);
+  }
+  return "The record operation failed.";
+}
+
+function MobileRecordEditor({ columns, values, mode, busy, text, onChange, onSave, onCancel }: {
+  columns: WorkflowDetail["columns"];
+  values: Record<string, unknown>;
+  mode: "insert" | "edit";
+  busy: boolean;
+  text: MobilityCopy;
+  onChange: (key: string, value: unknown) => void;
+  onSave: () => void;
+  onCancel: () => void;
+}) {
+  return <form className="mobility-record-editor" onSubmit={(event) => { event.preventDefault(); onSave(); }}>
+    <div className="mobility-record-editor__heading"><strong>{mode === "insert" ? text.insert : text.edit}</strong><button type="button" onClick={onCancel} disabled={busy}>{text.cancel}</button></div>
+    <div className="mobility-record-editor__fields">
+      {columns.map((column) => {
+        const value = values[column.key];
+        const inputType = column.data_type === "date" ? "date" : column.data_type === "integer" || column.data_type === "decimal" ? "number" : "text";
+        return <label key={column.key}><span>{column.label}</span>{column.data_type === "boolean" ? <input type="checkbox" checked={Boolean(value)} onChange={(event) => onChange(column.key, event.target.checked)} disabled={busy} /> : <input type={inputType} value={value == null ? "" : String(value)} onChange={(event) => onChange(column.key, event.target.value)} disabled={busy} />}</label>;
+      })}
+    </div>
+    <button className="mobility-button mobility-button--primary" type="submit" disabled={busy}>{text.save}</button>
+  </form>;
+}
+
 function AccountPanel({ session, catalog, text, onSignOut }: { session: SessionInfo | undefined; catalog: { default_site: string; sites: readonly { value: string }[] } | undefined; text: MobilityCopy; onSignOut: () => void }) {
   return <div className="mobility-stack">
     <section className="mobility-page-heading"><span className="mobility-kicker">{text.profile}</span><h1>{text.account}</h1><p>{text.accountCopy}</p></section>
@@ -334,13 +439,14 @@ interface MobilityCopy {
   name: string; area: string; type: string; master: string; active: string; searchWorkflows: string; searchRecords: string;
   selectWorkflow: string; workflowGridCopy: string; backToWorkflows: string; dataRows: string; record: string; selectRow: string;
   steps: string; loading: string; noSteps: string; current: string; completed: string; upcoming: string;
+  insert: string; edit: string; duplicate: string; delete: string; save: string; cancel: string; confirmDelete: string;
 }
 
 function copyFor(locale: Locale): MobilityCopy {
   if (locale === "en") return {
-    title: "Mobile workspace", online: "Online", connecting: "Connecting", secureAccess: "Secure mobile access", welcome: "Work from anywhere.", welcomeCopy: "Review your Orbit workspace, monitor workflows, and stay close to the work that matters.", signIn: "Sign in to Orbit", mobileReady: "Phone ready", liveData: "Live workspace data", navigation: "Mobile workspace navigation", home: "Home", workflows: "Workflows", account: "Account", today: "Your workspace", goodMorning: "Welcome", dashboardCopy: "A focused view of your operational workspace, sized for the phone in your hand.", organization: "Organization", summary: "Workspace summary", records: "Records", sites: "Sites", workspace: "Workspace", quickAccess: "Quick access", browseWorkflows: "Browse workflows", browseWorkflowsCopy: "View available processes and records", accountDetails: "Account details", accountDetailsCopy: "Review your scope and access", workflowsCopy: "Available workflows in your current scope.", noWorkflows: "No workflows are available yet.", profile: "Your profile", accountCopy: "Your Orbit identity and workspace scope.", department: "Department", laboratory: "Laboratory", role: "Roles", defaultSite: "Default site", signOut: "Sign out", name: "Workflow", area: "Area", type: "Type", master: "Master", active: "Active", searchWorkflows: "Search workflows", searchRecords: "Search data rows", selectWorkflow: "Select a workflow", workflowGridCopy: "Tap a workflow to load its data rows", backToWorkflows: "Clear", dataRows: "Data rows", record: "Record", selectRow: "Select a row to view its workflow steps", steps: "Workflow steps", loading: "Loading…", noSteps: "No workflow steps found", current: "Current", completed: "Completed", upcoming: "Upcoming",
+    title: "Mobile workspace", online: "Online", connecting: "Connecting", secureAccess: "Secure mobile access", welcome: "Work from anywhere.", welcomeCopy: "Review your Orbit workspace, monitor workflows, and stay close to the work that matters.", signIn: "Sign in to Orbit", mobileReady: "Phone ready", liveData: "Live workspace data", navigation: "Mobile workspace navigation", home: "Home", workflows: "Workflows", account: "Account", today: "Your workspace", goodMorning: "Welcome", dashboardCopy: "A focused view of your operational workspace, sized for the phone in your hand.", organization: "Organization", summary: "Workspace summary", records: "Records", sites: "Sites", workspace: "Workspace", quickAccess: "Quick access", browseWorkflows: "Browse workflows", browseWorkflowsCopy: "View available processes and records", accountDetails: "Account details", accountDetailsCopy: "Review your scope and access", workflowsCopy: "Available workflows in your current scope.", noWorkflows: "No workflows are available yet.", profile: "Your profile", accountCopy: "Your Orbit identity and workspace scope.", department: "Department", laboratory: "Laboratory", role: "Roles", defaultSite: "Default site", signOut: "Sign out", name: "Workflow", area: "Area", type: "Type", master: "Master", active: "Active", searchWorkflows: "Search workflows", searchRecords: "Search data rows", selectWorkflow: "Select a workflow", workflowGridCopy: "Tap a workflow to load its data rows", backToWorkflows: "Clear", dataRows: "Data rows", record: "Record", selectRow: "Select a row to view its workflow steps", steps: "Workflow steps", loading: "Loading…", noSteps: "No workflow steps found", current: "Current", completed: "Completed", upcoming: "Upcoming", insert: "Insert", edit: "Edit", duplicate: "Dup row", delete: "Delete", save: "Save", cancel: "Cancel", confirmDelete: "Delete this selected row?",
   };
   return {
-    title: "移动工作台", online: "在线", connecting: "连接中", secureAccess: "安全移动访问", welcome: "随时随地处理工作。", welcomeCopy: "查看 Orbit 工作空间、关注流程，并随时掌握重要工作。", signIn: "登录 Orbit", mobileReady: "适配手机", liveData: "实时工作空间数据", navigation: "移动工作台导航", home: "首页", workflows: "工作流", account: "账户", today: "您的工作空间", goodMorning: "欢迎", dashboardCopy: "为手机屏幕优化的运营工作空间视图。", organization: "组织", summary: "工作空间摘要", records: "记录", sites: "站点", workspace: "工作空间", quickAccess: "快捷入口", browseWorkflows: "浏览工作流", browseWorkflowsCopy: "查看可用流程和记录", accountDetails: "账户详情", accountDetailsCopy: "查看您的范围和访问权限", workflowsCopy: "当前范围内可用的工作流。", noWorkflows: "暂无可用工作流。", profile: "个人资料", accountCopy: "您的 Orbit 身份和工作空间范围。", department: "部门", laboratory: "实验室", role: "角色", defaultSite: "默认站点", signOut: "退出登录", name: "工作流", area: "业务域", type: "类型", master: "主流程", active: "启用", searchWorkflows: "搜索工作流", searchRecords: "搜索数据记录", selectWorkflow: "选择工作流", workflowGridCopy: "点击工作流加载数据记录", backToWorkflows: "清除", dataRows: "数据记录", record: "记录", selectRow: "选择记录查看工作流步骤", steps: "工作流步骤", loading: "加载中…", noSteps: "未找到工作流步骤", current: "当前", completed: "已完成", upcoming: "待处理",
+    title: "移动工作台", online: "在线", connecting: "连接中", secureAccess: "安全移动访问", welcome: "随时随地处理工作。", welcomeCopy: "查看 Orbit 工作空间、关注流程，并随时掌握重要工作。", signIn: "登录 Orbit", mobileReady: "适配手机", liveData: "实时工作空间数据", navigation: "移动工作台导航", home: "首页", workflows: "工作流", account: "账户", today: "您的工作空间", goodMorning: "欢迎", dashboardCopy: "为手机屏幕优化的运营工作空间视图。", organization: "组织", summary: "工作空间摘要", records: "记录", sites: "站点", workspace: "工作空间", quickAccess: "快捷入口", browseWorkflows: "浏览工作流", browseWorkflowsCopy: "查看可用流程和记录", accountDetails: "账户详情", accountDetailsCopy: "查看您的范围和访问权限", workflowsCopy: "当前范围内可用的工作流。", noWorkflows: "暂无可用工作流。", profile: "个人资料", accountCopy: "您的 Orbit 身份和工作空间范围。", department: "部门", laboratory: "实验室", role: "角色", defaultSite: "默认站点", signOut: "退出登录", name: "工作流", area: "业务域", type: "类型", master: "主流程", active: "启用", searchWorkflows: "搜索工作流", searchRecords: "搜索数据记录", selectWorkflow: "选择工作流", workflowGridCopy: "点击工作流加载数据记录", backToWorkflows: "清除", dataRows: "数据记录", record: "记录", selectRow: "选择记录查看工作流步骤", steps: "工作流步骤", loading: "加载中…", noSteps: "未找到工作流步骤", current: "当前", completed: "已完成", upcoming: "待处理", insert: "新增", edit: "编辑", duplicate: "复制行", delete: "删除", save: "保存", cancel: "取消", confirmDelete: "确定删除当前选中的记录吗？",
   };
 }
