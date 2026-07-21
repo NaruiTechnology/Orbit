@@ -8,39 +8,33 @@ from typing import Any
 from psycopg import Connection
 from psycopg.types.json import Jsonb
 
-_DAY_DURATION_PATTERN = re.compile(
-    r"(?P<days>\d+(?:\.\d+)?)\s*(?:个\s*)?(?:工作日|天|日)",
-    re.IGNORECASE,
-)
 _ENGLISH_DAY_DURATION_PATTERN = re.compile(
     r"(?P<days>\d+(?:\.\d+)?)\s*(?:business\s+days?|working\s+days?|days?|day)",
     re.IGNORECASE,
 )
 _CHINESE_DAY_DURATION_PATTERN = re.compile(
-    r"(?P<days>\d+(?:\.\d+)?)\s*个工作日(?P<suffix>内|以内)?",
+    r"(?P<days>\d+(?:\.\d+)?)\s*(?P<unit>个工作日|工作日|天|日)(?P<suffix>内|以内)?",
 )
 
 
 def _sla_days(time_limit: Any) -> float | None:
-    """Return the explicit day duration when a step's SLA is at least one day."""
+    """Return the numeric duration before a Chinese work-day/day marker."""
     text = str(time_limit or "").strip()
     if not text or any(
         marker in text for marker in ("每月", "每季度", "每年", "当月", "当天", "当日")
     ):
         return None
-    matches = [
-        *(_DAY_DURATION_PATTERN.finditer(text)),
-        *(_ENGLISH_DAY_DURATION_PATTERN.finditer(text)),
-    ]
-    durations = [float(match.group("days")) for match in matches]
-    qualifying = [days for days in durations if days >= 1]
-    return max(qualifying) if qualifying else None
+    match = _CHINESE_DAY_DURATION_PATTERN.search(text)
+    if not match:
+        return None
+    days = float(match.group("days"))
+    return days if days >= 1 else None
 
 
 def _sla_i18n(time_limit: Any) -> dict[str, str]:
     """Build locale-keyed SLA text instead of storing one source-language string."""
     text = str(time_limit or "").strip()
-    chinese_match = _CHINESE_DAY_DURATION_PATTERN.fullmatch(text)
+    chinese_match = _CHINESE_DAY_DURATION_PATTERN.search(text)
     if chinese_match:
         days = chinese_match.group("days")
         suffix = "内" if chinese_match.group("suffix") else ""

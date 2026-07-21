@@ -42,4 +42,10 @@ fi
   --wait \
   start
 
+if ! pg_isready --host="${HOST}" --port="${PORT}" >/dev/null 2>&1; then
+  printf 'PostgreSQL process started but is not accepting connections on %s:%s\n' "${HOST}" "${PORT}" >&2
+  printf 'See %s for the server error.\n' "${DATA_DIR}/server.log" >&2
+  exit 1
+fi
+
 printf 'Orbit PostgreSQL started on %s:%s using %s\n' "${HOST}" "${PORT}" "${DATA_DIR}"

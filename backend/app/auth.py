@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from datetime import datetime, timedelta, timezone
+import hashlib
 import secrets
 from typing import Any, Literal
 
@@ -44,13 +45,42 @@ def revoke_auth_token(token: str | None) -> None:
         _auth_tokens.pop(token, None)
 
 
+def token_digest(token: str) -> str:
+    """Return the non-reversible value used to persist an auth token."""
+    return hashlib.sha256(token.encode("utf-8")).hexdigest()
+
+
+def login_from_persisted_token(
+    connection: Connection[dict[str, Any]], token: str | None
+) -> str | None:
+    if not token:
+        return None
+    row = connection.execute(
+        """
+        SELECT login_name
+          FROM orbit_identity.auth_session
+         WHERE session_token_hash = %s
+           AND is_authorized
+           AND expires_at > CURRENT_TIMESTAMP
+         ORDER BY login_time DESC
+         LIMIT 1
+        """,
+        (token_digest(token),),
+    ).fetchone()
+    return row["login_name"] if row else None
+
+
 def get_current_user(
     locale: str | None = None,
     x_orbit_user: str | None = Header(default=None, alias="X-Orbit-User"),
     x_orbit_auth: str | None = Header(default=None, alias="X-Orbit-Auth"),
     connection: Connection[dict[str, Any]] = Depends(get_connection),
 ) -> SessionInfo:
-    login_name = login_from_token(x_orbit_auth) or x_orbit_user
+    login_name = (
+        login_from_token(x_orbit_auth)
+        or login_from_persisted_token(connection, x_orbit_auth)
+        or x_orbit_user
+    )
     if not login_name:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,

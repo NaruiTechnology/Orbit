@@ -13,7 +13,13 @@ from fastapi import APIRouter, Depends, Header, HTTPException, status
 from psycopg import Connection
 from pydantic import BaseModel, Field
 
-from app.auth import issue_auth_token, login_from_token, revoke_auth_token
+from app.auth import (
+    issue_auth_token,
+    login_from_persisted_token,
+    login_from_token,
+    revoke_auth_token,
+    token_digest,
+)
 from app.config import get_settings
 from app.database import get_connection
 from app.schemas import SessionInfo
@@ -98,9 +104,17 @@ def current_account(
     x_orbit_user: str | None = Header(default=None, alias="X-Orbit-User"),
     connection: Connection[dict[str, Any]] = Depends(get_connection),
 ) -> dict[str, Any]:
-    login = login_from_token(x_orbit_auth) or x_orbit_user or get_settings().default_user_login
+    login = (
+        login_from_token(x_orbit_auth)
+        or login_from_persisted_token(connection, x_orbit_auth)
+        or x_orbit_user
+        or get_settings().default_user_login
+    )
     row = _user(connection, login=login)
-    authenticated = login_from_token(x_orbit_auth) is not None
+    authenticated = bool(
+        login_from_token(x_orbit_auth)
+        or login_from_persisted_token(connection, x_orbit_auth)
+    )
     return {"ok": True, "login": login, "registered": row is not None, "authenticated": authenticated,
             "user": _public_user(row) if row and authenticated else None}
 
@@ -197,9 +211,15 @@ def verify_sms(
     token = issue_auth_token(row["login_name"])
     connection.execute(
         """INSERT INTO orbit_identity.auth_session
-           (user_id, login_name, client_machine_name, site, expires_at)
-           VALUES (%s, %s, 'Orbit browser', %s, %s)""",
-        (row["id"], row["login_name"], request.site.strip(), datetime.now(timezone.utc) + timedelta(days=1)),
+           (user_id, login_name, client_machine_name, site, expires_at, session_token_hash)
+           VALUES (%s, %s, 'Orbit browser', %s, %s, %s)""",
+        (
+            row["id"],
+            row["login_name"],
+            request.site.strip(),
+            datetime.now(timezone.utc) + timedelta(days=1),
+            token_digest(token),
+        ),
     )
     _audit(connection, row["id"], "login_sms_verified", {"site": request.site.strip()})
     _challenges.pop(request.challenge_id, None)

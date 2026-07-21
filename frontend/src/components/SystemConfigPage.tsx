@@ -13,6 +13,7 @@ interface StepRow {
   record_key: string;
   record_order: number;
   step_name: string;
+  sla: string | null;
   laboratory_id: string | null;
   laboratory_code: string | null;
   laboratory_name: string | null;
@@ -171,6 +172,7 @@ export function SystemConfigPage({
   const columns = useMemo<ColDef<StepRow>[]>(() => [
     { field: "record_order", headerName: "#", width: 70, pinned: "left", editable: false },
     { field: "step_name", headerName: locale === "en" ? "Workflow step" : "工作流步骤", minWidth: 220, flex: 1, editable: false },
+    { field: "sla", headerName: "SLA", minWidth: 120, width: 140, editable: false },
     {
       field: "laboratory_id", headerName: locale === "en" ? "Laboratory" : "实验室", minWidth: 210,
       editable: false,

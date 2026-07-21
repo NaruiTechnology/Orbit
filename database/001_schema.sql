@@ -558,8 +558,16 @@ CREATE TABLE IF NOT EXISTS orbit_identity.auth_session (
     site varchar(160) NOT NULL DEFAULT 'Beijing(北京)',
     login_time timestamptz NOT NULL DEFAULT CURRENT_TIMESTAMP,
     is_authorized boolean NOT NULL DEFAULT true,
-    expires_at timestamptz NOT NULL
+    expires_at timestamptz NOT NULL,
+    session_token_hash char(64)
 );
+
+ALTER TABLE orbit_identity.auth_session
+    ADD COLUMN IF NOT EXISTS session_token_hash char(64);
+
+CREATE INDEX IF NOT EXISTS ix_auth_session_token_hash
+    ON orbit_identity.auth_session (session_token_hash)
+    WHERE session_token_hash IS NOT NULL;
 
 CREATE INDEX IF NOT EXISTS ix_auth_session_user_login_time
     ON orbit_identity.auth_session (user_id, login_time DESC);

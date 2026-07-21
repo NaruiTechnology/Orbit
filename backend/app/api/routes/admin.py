@@ -40,7 +40,7 @@ def workflow_config(
 ) -> dict[str, Any]:
     _require_admin(user, connection)
     definition = connection.execute(
-        "SELECT id, name_i18n FROM orbit_workflow.workflow_definition WHERE workflow_key = %s AND is_active",
+        "SELECT id, name_i18n, group_key, group_name_i18n FROM orbit_workflow.workflow_definition WHERE workflow_key = %s AND is_active",
         (workflow_key,),
     ).fetchone()
     if definition is None:
@@ -68,11 +68,19 @@ def workflow_config(
     steps = connection.execute(
         """
         SELECT r.id, r.record_key, r.record_order, r.label_i18n,
+               sla.sla_i18n, sla.sla,
                a.laboratory_id, l.code AS laboratory_code, l.name_i18n AS laboratory_name_i18n,
                a.phone_number, a.contact_email, a.contact_name, a.hr_employee_id
           FROM orbit_workflow.workflow_record r
+          JOIN orbit_workflow.workflow_definition w ON w.id = r.workflow_id
           JOIN orbit_workflow.workflow_step_assignment a ON a.workflow_record_id = r.id
           LEFT JOIN orbit_identity.laboratory l ON l.id = a.laboratory_id
+          LEFT JOIN orbit_workflow.sla_lookup sla
+            ON sla.group_name = COALESCE(w.group_name_i18n ->> 'en', w.group_key)
+           AND sla.workflow_name = COALESCE(w.name_i18n ->> 'en', w.workflow_key)
+           AND sla.record_key = r.record_key
+           AND sla.current_workflow_step = COALESCE(r.label_i18n ->> 'en', r.record_key)
+           AND sla.is_active
          WHERE r.workflow_id = %s
          ORDER BY r.record_order
         """,
@@ -91,6 +99,7 @@ def workflow_config(
                 "record_key": row["record_key"],
                 "record_order": row["record_order"],
                 "step_name": localized_value(row["label_i18n"], locale),
+                "sla": localized_value(row["sla_i18n"], locale, row["sla"]) if row["sla"] else None,
                 "laboratory_id": row["laboratory_id"],
                 "laboratory_code": row["laboratory_code"],
                 "laboratory_name": localized_value(row["laboratory_name_i18n"], locale) if row["laboratory_name_i18n"] else None,

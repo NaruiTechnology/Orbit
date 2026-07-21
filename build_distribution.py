@@ -12,11 +12,19 @@ import zipfile
 from datetime import datetime
 from pathlib import Path
 
-
 ROOT = Path(__file__).resolve().parent
 DEPLOY_PACKAGE = ROOT / "DeployWorkSpace" / "Development" / "DistributionDeploy"
 DIST_DIR = DEPLOY_PACKAGE / "dist_app"
 DIST_ZIP = DEPLOY_PACKAGE / "dist_app.zip"
+
+REQUIRED_DEPLOYMENT_FILES = {
+    "scripts/start_local_postgres.sh",
+    "scripts/bootstrap_database.py",
+    "scripts/check_database.py",
+    "scripts/run_api.py",
+    "DeployWorkSpace/Development/DistributionDeploy/Json/DistributionDeploy.json",
+    "DeployWorkSpace/Development/DistributionDeploy/workstates/verifyDatabase_state.py",
+}
 
 
 def ignored(relative: Path) -> bool:
@@ -87,13 +95,22 @@ def version_label() -> str:
 
 def build() -> tuple[Path, Path, int]:
     files = copy_source_tree()
+    missing = sorted(REQUIRED_DEPLOYMENT_FILES - {path.as_posix() for path in files})
+    if missing:
+        shutil.rmtree(DIST_DIR)
+        raise RuntimeError(
+            "Distribution is missing required deployment files: " + ", ".join(missing)
+        )
     zip_directory(DIST_DIR, DIST_ZIP)
     shutil.rmtree(DIST_DIR)
 
     stamp = datetime.now().strftime("%m%d%y_%H%M")
     workspace_archive = ROOT / f"DeployWorkspace_{version_label()}_{stamp}.zip"
     zip_directory(ROOT / "DeployWorkSpace", workspace_archive, top_level="DeployWorkSpace")
-    print(f"Built {len(files)} source files; Python source preserved; no byte compilation performed.")
+    print(
+        f"Built {len(files)} source files; Python source preserved; "
+        "no byte compilation performed."
+    )
     print(f"Embedded distribution: {DIST_ZIP}")
     print(f"Timestamped handoff:   {workspace_archive}")
     return DIST_ZIP, workspace_archive, len(files)
@@ -101,7 +118,9 @@ def build() -> tuple[Path, Path, int]:
 
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--source", type=Path, help="Compatibility option; must resolve to the Orbit root")
+    parser.add_argument(
+        "--source", type=Path, help="Compatibility option; must resolve to the Orbit root"
+    )
     args = parser.parse_args()
     if args.source and args.source.expanduser().resolve() != ROOT:
         raise SystemExit(f"--source must be {ROOT}")

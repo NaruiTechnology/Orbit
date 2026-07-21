@@ -61,7 +61,7 @@ export function App() {
   const deferredSelection = useDeferredValue(workspace.selection);
 
   const healthQuery = useGetHealthQuery();
-  const sessionQuery = useGetSessionQuery(workspace.locale);
+  const sessionQuery = useGetSessionQuery(workspace.locale, { skip: !authToken });
   const workflowsQuery = useGetWorkflowsQuery(workspace.locale, { skip: !authToken });
   const workflowQuery = useGetWorkflowQuery({
     workflowKey: workspace.selectedWorkflow,
@@ -181,13 +181,19 @@ export function App() {
   }
 
   useEffect(() => {
-    const errors = [workflowsQuery.error, workflowQuery.error, recordsQuery.error, treeQuery.error];
-    if (authToken && errors.some((error) => isUnauthorized(error))) {
+    if (authToken && isUnauthorized(sessionQuery.error)) {
       localStorage.removeItem("orbit:auth-token");
       setAuthToken(null);
       setAuthOpen(true);
     }
-  }, [authToken, recordsQuery.error, treeQuery.error, workflowQuery.error, workflowsQuery.error]);
+  }, [
+    authToken,
+    recordsQuery.error,
+    sessionQuery.error,
+    treeQuery.error,
+    workflowQuery.error,
+    workflowsQuery.error,
+  ]);
 
   useEffect(() => {
     const workflows = workflowsQuery.data;
@@ -348,11 +354,6 @@ export function App() {
         onSignedIn={(_user, token) => {
           setAuthToken(token);
           setAuthOpen(false);
-          void sessionQuery.refetch();
-          void workflowsQuery.refetch();
-          void workflowQuery.refetch();
-          void recordsQuery.refetch();
-          void treeQuery.refetch();
         }}
       />
 

@@ -36,6 +36,7 @@
     {"installToolchain": {"skip": false, "transactionComplete": false, "actionData": {"command": "command -v gcc >/dev/null || (command -v apt-get >/dev/null && sudo apt-get update && sudo apt-get install -y build-essential python3-dev)"}, "timeout": 900}},
     {"installPostgreSQL": {"skip": false, "transactionComplete": false, "actionData": {"command": "./scripts/start_local_postgres.sh"}, "timeout": 300}},
     {"setupIobeamAdminDb": {"skip": false, "transactionComplete": false, "actionData": {"command": ".venv/bin/python scripts/bootstrap_database.py"}, "timeout": 600}},
+    {"verifyDatabase": {"skip": false, "transactionComplete": false, "actionData": {"command": ".venv/bin/python scripts/check_database.py --timeout 60"}, "timeout": 90}},
     {"exportEnv": {"skip": false, "transactionComplete": false, "actionData": {"exports": {"ORBIT_API_HOST": "127.0.0.1", "ORBIT_API_PORT": "8120", "ORBIT_FRONTEND_HOST": "127.0.0.1", "ORBIT_FRONTEND_PORT": "5274"}}}},
     {"setupIonbeamWeb": {"skip": false, "transactionComplete": false, "actionData": {"command": "npm --prefix frontend ci"}, "timeout": 600}},
     {"launchIonbeamWebBackend": {"skip": false, "transactionComplete": false, "actionData": {"command": ".venv/bin/python scripts/run_api.py --reload", "host": "127.0.0.1", "port": 8120, "log": "/tmp/orbit-api.log", "pid": "/tmp/orbit-api.pid"}, "timeout": 60}},
