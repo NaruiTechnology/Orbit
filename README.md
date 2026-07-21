@@ -53,6 +53,18 @@ Stop the dedicated database with:
 ./scripts/stop_local_postgres.sh
 ```
 
+If the API reports `connection refused` on port `55432`, start the database
+from the Orbit root first. Include `./`; the shell does not search the current
+directory for commands automatically:
+
+```bash
+cd /home/vboxuser/Project/OrbitAutomation/Orbit
+./scripts/start_local_postgres.sh
+.venv/bin/python scripts/check_database.py --timeout 10
+.venv/bin/python scripts/bootstrap_database.py
+.venv/bin/python scripts/run_api.py --reload
+```
+
 ## Architecture
 
 PostgreSQL is separated into four schemas:

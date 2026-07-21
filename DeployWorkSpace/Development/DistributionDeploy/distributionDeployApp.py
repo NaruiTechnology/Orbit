@@ -5,9 +5,17 @@ from __future__ import annotations
 
 import argparse
 import json
-from DeployWorkSpace.Development.DistributionDeploy.workthreads.DistributionDeployThread import DistributionDeployThread
+import sys
 from pathlib import Path
 
+PACKAGE_ROOT = Path(__file__).resolve().parent
+ORBIT_ROOT = PACKAGE_ROOT.parents[2]
+if str(ORBIT_ROOT) not in sys.path:
+    sys.path.insert(0, str(ORBIT_ROOT))
+
+from DeployWorkSpace.Development.DistributionDeploy.workthreads.DistributionDeployThread import (  # noqa: E402
+    DistributionDeployThread,
+)
 
 PACKAGE_ROOT = Path(__file__).resolve().parent
 ORBIT_ROOT = PACKAGE_ROOT.parents[2]

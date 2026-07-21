@@ -2,8 +2,8 @@
 
 from __future__ import annotations
 
-import subprocess
 import os
+import subprocess
 
 from .distributionDeploy_state import distributionDeploy_state
 
@@ -16,6 +16,12 @@ class executeShellCommand_state(distributionDeploy_state):
             return True
         environment = os.environ.copy()
         environment.update(self.thread.environment)
-        result = subprocess.run(command, cwd=self.thread.orbit_root, shell=True, check=False, env=environment)
+        result = subprocess.run(
+            command,
+            cwd=self.thread.working_directory(self.action_name),
+            shell=True,
+            check=False,
+            env=environment,
+        )
         self.success = result.returncode == 0
         return self.success
