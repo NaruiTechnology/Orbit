@@ -174,6 +174,97 @@ The relevant endpoints are `GET /api/v1/mail/status` and
 endpoint reports that SMTP is unavailable, or when the user explicitly
 chooses “Open mail app”.
 
+## Orbit SLA Service
+
+`scripts/orbit_service.py` is a standalone one-shot worker intended for the OS
+cron table. Its JSON configuration file is:
+
+```text
+config/orbit_service.json
+```
+
+The default contents are:
+
+```json
+{
+  "interval_minutes": 60,
+  "run_on_start": true,
+  "lock_file": "/tmp/orbit_service.lock",
+  "last_run_file": "/tmp/orbit_service.last-run",
+  "access_url_base": "http://127.0.0.1:5274"
+}
+```
+
+`interval_minutes` is the effective schedule and is currently set to 60
+minutes. The example cron entry invokes the worker every minute; the worker
+reads `config/orbit_service.json`, enforces the configured interval, and exits
+immediately when the next run is not due. `lock_file` prevents overlapping
+runs, while `last_run_file` records the last successful cycle:
+
+```bash
+crontab -e
+# copy scripts/orbit_service.cron.example
+```
+
+Do not paste the cron line at a normal Bash prompt. Either install it with the
+provided helper:
+
+```bash
+python scripts/install_orbit_service_cron.py
+```
+
+or open `crontab -e` and paste the complete entry as one physical line:
+
+```cron
+* * * * * cd /home/vboxuser/Project/OrbitAutomation/Orbit && .venv/bin/python scripts/orbit_service.py 2>&1 | /usr/bin/tee -a /tmp/orbit_service.log
+```
+
+For manual execution with output visible on the console and appended to the
+same log file, use `tee` and `2>&1` (`2>&1` redirects errors to standard output):
+
+```bash
+python scripts/orbit_service.py 2>&1 | tee -a /tmp/orbit_service.log
+```
+
+The log reports `started successfully`, `completed successfully`, and `stopped`
+when the cycle runs, or explains when it was skipped because the configured
+interval has not elapsed.
+
+For an immediate demonstration or administrative test, bypass the interval
+check with `--force`:
+
+```bash
+python scripts/orbit_service.py --force 2>&1 | tee -a /tmp/orbit_service.log
+```
+
+Database migration `database/006_sla_orbit_service.sql` adds the SLA query and
+rule-evaluation functions, per-step XML/CSS email templates, and notification
+deduplication records. Apply it through `scripts/bootstrap_database.py` on a
+new or upgraded database.
+
+The database functions added by this migration are:
+
+| Function | Purpose |
+| --- | --- |
+| `orbit_workflow.extract_sla_days(text)` | Extracts the numeric day value from SLA text. |
+| `orbit_runtime.get_sla_workflow_steps(as_of, workflow_step_id)` | Returns active SLA-enabled workflow steps, due times, violation status, source data, and catalog rules. |
+| `orbit_runtime.evaluate_sla_workflow_steps(workflow_step_id, as_of)` | Returns the rule-evaluation/next-step placeholder decisions. |
+| `orbit_workflow.get_email_template(workflow_step_id)` | Looks up the XML/CSS email template for a workflow step. |
+| `orbit_runtime.claim_sla_notification(...)` | Claims a notification while preventing duplicate sends. |
+| `orbit_runtime.finish_sla_notification(...)` | Marks a notification as sent or failed. |
+
+The protected API endpoint for manually running the rule-evaluation pass for a
+catalog workflow-step UUID is:
+
+```text
+POST /api/v1/workflows/steps/{workflow_step_id}/sla-advance
+```
+
+The endpoint returns the loaded origin-catalog business rules and the next
+catalog step, but currently returns `TODO_RULE_EVALUATION` without mutating
+workflow state. This is the deliberate placeholder for the business-rule
+implementation.
+
 ## Workbook Sync
 
 The source workbook is not copied into the repository. The checked-in `data/workflow_catalog.json` includes a SHA-256 source hash and the original sheet, row, header, and cell references.

@@ -22,6 +22,11 @@ REQUIRED_DEPLOYMENT_FILES = {
     "scripts/bootstrap_database.py",
     "scripts/check_database.py",
     "scripts/run_api.py",
+    "scripts/orbit_service.py",
+    "scripts/install_orbit_service_cron.py",
+    "config/orbit_service.json",
+    "database/006_sla_orbit_service.sql",
+    "scripts/orbit_service.cron.example",
     "DeployWorkSpace/Development/DistributionDeploy/Json/DistributionDeploy.json",
     "DeployWorkSpace/Development/DistributionDeploy/workstates/verifyDatabase_state.py",
 }

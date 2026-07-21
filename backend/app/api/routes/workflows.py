@@ -5,10 +5,10 @@ from __future__ import annotations
 from typing import Any, Literal
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, Query
+from fastapi import APIRouter, Depends, HTTPException, Query
 from psycopg import Connection
 
-from app.auth import get_current_user
+from app.auth import get_current_user, require_workflow_access
 from app.database import get_connection
 from app.schemas import (
     InstanceStartRequest,
@@ -28,21 +28,47 @@ from app.schemas import (
     WorkflowTree,
 )
 from app.services.workflow_repository import (
+    append_workflow_step_message,
     command_instance,
     create_record,
     delete_record,
     get_runtime_projection,
     get_tree,
     get_workflow,
-    append_workflow_step_message,
     list_records,
     list_workflows,
     start_instance,
     transition_instance,
     update_record,
 )
+from app.services.workflow_sla_service import evaluate_sla_workflow_steps
 
 router = APIRouter(prefix="/workflows", tags=["workflows"])
+
+
+@router.post("/steps/{workflow_step_id}/sla-advance")
+def workflow_sla_advance(
+    workflow_step_id: UUID,
+    user: SessionInfo = Depends(get_current_user),
+    connection: Connection[dict[str, Any]] = Depends(get_connection),
+) -> dict[str, Any]:
+    """Run the SLA/rule evaluation placeholder for one catalog step UUID."""
+    step = connection.execute(
+        """
+        SELECT w.workflow_key
+          FROM orbit_workflow.workflow_record r
+          JOIN orbit_workflow.workflow_definition w ON w.id = r.workflow_id
+         WHERE r.id = %s
+        """,
+        (workflow_step_id,),
+    ).fetchone()
+    if step is None:
+        raise HTTPException(status_code=404, detail="Workflow step not found")
+    require_workflow_access(connection, user.user_id, step["workflow_key"], "execute")
+    return {
+        "workflow_step_id": workflow_step_id,
+        "results": evaluate_sla_workflow_steps(connection, workflow_step_id),
+    }
 
 
 @router.get("", response_model=list[WorkflowSummary])

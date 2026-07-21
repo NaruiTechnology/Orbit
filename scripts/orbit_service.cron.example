@@ -1,0 +1,2 @@
+# Invoke every minute; orbit_service.json enforces the configured one-hour interval.
+* * * * * cd /home/vboxuser/Project/OrbitAutomation/Orbit && .venv/bin/python scripts/orbit_service.py 2>&1 | /usr/bin/tee -a /tmp/orbit_service.log

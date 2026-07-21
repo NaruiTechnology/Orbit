@@ -47,8 +47,11 @@ python3 distributionDeployApp.py
 
 The workflow creates or updates `~/OrbitAutomation`, unpacks the source
 distribution there, creates `.venv`, installs Python and frontend dependencies,
-starts the local PostgreSQL/API/frontend services, and waits for both HTTP
-endpoints to become healthy. Use `-r /path/to/deploy-root` to select another
+installs the Orbit SLA worker in the target user's crontab, starts the local
+PostgreSQL/API/frontend services, and waits for both HTTP endpoints to become
+healthy. The worker reads `config/orbit_service.json` and is invoked every
+minute by cron; its default effective interval is one hour. Use
+`-r /path/to/deploy-root` to select another
 target directory, or `--production` to enable production manifest overrides.
 
 For a manual API start from an already unpacked deployment, start PostgreSQL
