@@ -252,6 +252,14 @@ The database functions added by this migration are:
 | `orbit_workflow.get_email_template(workflow_step_id)` | Looks up the XML/CSS email template for a workflow step. |
 | `orbit_runtime.claim_sla_notification(...)` | Claims a notification while preventing duplicate sends. |
 | `orbit_runtime.finish_sla_notification(...)` | Marks a notification as sent or failed. |
+| `orbit_runtime.record_workflow_action(...)` | Records a typed action once and updates the step's latest `action_time`/`action_type`. |
+
+Runtime workflow nodes also expose `start_time`, `complete_time`,
+`action_time`, and `action_type`. `start_time` is set when a node becomes
+active, `complete_time` is set when it exits as completed/cancelled/skipped,
+and the action ledger prevents duplicate typed actions such as notification
+emails. The runtime API additionally returns `sla_violated`; active or waiting
+expired nodes are rendered with a warning background in the workflow panel.
 
 The protected API endpoint for manually running the rule-evaluation pass for a
 catalog workflow-step UUID is:

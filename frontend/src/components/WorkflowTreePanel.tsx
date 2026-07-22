@@ -107,8 +107,14 @@ export function WorkflowTreePanel({
           <ol className="workflow-tree">
             {(tree?.nodes || []).map((node) => {
               const runtimeNode = runtimeByKey.get(node.record_key);
+              const warning = Boolean(
+                runtimeNode?.sla_violated &&
+                (runtimeNode.status === "active" || runtimeNode.status === "waiting"),
+              );
               const state = runtime
-                ? runtimeNode?.status === "completed"
+                ? warning
+                  ? "warning"
+                  : runtimeNode?.status === "completed"
                   ? "complete"
                   : runtimeNode?.record_key === runtime.instance.current_record_key
                     ? "current"
@@ -129,7 +135,9 @@ export function WorkflowTreePanel({
                   </div>
                   <div className="workflow-node__body">
                     <small>
-                      {state === "current"
+                      {state === "warning"
+                        ? translate(locale, "warningStep")
+                        : state === "current"
                         ? translate(locale, "currentStep")
                         : state === "complete"
                           ? translate(locale, "completedStep")

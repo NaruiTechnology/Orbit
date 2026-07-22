@@ -165,6 +165,11 @@ export interface WorkflowNodeRuntime {
   error_message: string | null;
   started_at: string | null;
   completed_at: string | null;
+  start_time: string | null;
+  complete_time: string | null;
+  action_time: string | null;
+  action_type: "notification_email" | "system_task" | "workflow_transition" | "manual_action" | null;
+  sla_violated: boolean;
   version: number;
   available_actions: string[];
 }

@@ -103,10 +103,10 @@ AS $function$
            jsonb_build_object('label', coalesce(r.label_i18n ->> 'en', r.record_key)) || r.values_json,
            r.values_json ->> 'time_limit',
            orbit_workflow.extract_sla_days(r.values_json ->> 'time_limit'),
-           COALESCE(n.started_at, i.started_at),
-           COALESCE(n.started_at, i.started_at)
+           COALESCE(n.start_time, n.started_at, i.started_at),
+           COALESCE(n.start_time, n.started_at, i.started_at)
              + make_interval(days => orbit_workflow.extract_sla_days(r.values_json ->> 'time_limit')::integer),
-           coalesce(p_as_of, CURRENT_TIMESTAMP) >= COALESCE(n.started_at, i.started_at)
+           coalesce(p_as_of, CURRENT_TIMESTAMP) >= COALESCE(n.start_time, n.started_at, i.started_at)
              + make_interval(days => orbit_workflow.extract_sla_days(r.values_json ->> 'time_limit')::integer),
            NULLIF(assignment.contact_email, ''),
            NULLIF(assignment.contact_name, ''),

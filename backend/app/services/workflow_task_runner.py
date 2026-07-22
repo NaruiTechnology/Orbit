@@ -5,6 +5,7 @@ from __future__ import annotations
 from typing import Any
 
 from psycopg import Connection
+from psycopg.types.json import Jsonb
 
 from app.services.workflow_runtime_service import WorkflowRuntimeService
 
@@ -26,6 +27,23 @@ def process_system_tasks(
         try:
             output = _execute_system_action(task)
             runtime.complete_system_task(task["task_id"], output)
+            node = connection.execute(
+                """
+                SELECT id
+                  FROM orbit_runtime.workflow_node_instance
+                 WHERE instance_id = %s AND record_key = %s
+                """,
+                (task["instance_id"], task["record_key"]),
+            ).fetchone()
+            if node:
+                connection.execute(
+                    """
+                    SELECT orbit_runtime.record_workflow_action(
+                        %s, 'system_task', %s, %s
+                    )
+                    """,
+                    (node["id"], str(task["task_id"]), Jsonb(output)),
+                )
             processed += 1
         except Exception as error:  # noqa: BLE001 - persist worker failure before continuing
             runtime.fail_system_task(task["task_id"], str(error))

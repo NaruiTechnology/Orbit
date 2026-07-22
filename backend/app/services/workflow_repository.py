@@ -106,8 +106,14 @@ def _is_runtime_workflow(definition: WorkflowDetail) -> bool:
     return definition.definition_type == "workflow"
 
 
-def _is_customer_order_workflow(workflow_key: str) -> bool:
-    return workflow_key == "order-evaluation"
+def _is_customer_relations_workflow(definition: WorkflowDetail) -> bool:
+    """Process tabs in the Customer Relations workspace share order rows.
+
+    The UI's Customer Relations lane contains every non-HR process workflow,
+    including technical/order execution stages, so those stages must use the
+    same customer-order source as Order Evaluation.
+    """
+    return definition.group_key != "hr" and definition.definition_type == "workflow"
 
 
 _STEP_ROLE_EN = {
@@ -176,13 +182,20 @@ def list_workflows(
                w.definition_type,
                w.is_master,
                w.display_order,
-               count(DISTINCT record.id) AS record_count,
+               CASE
+                   WHEN w.group_key <> 'hr' AND w.definition_type = 'workflow'
+                   THEN (SELECT count(*) FROM orbit_sales.customer_order)
+                   WHEN w.definition_type = 'workflow'
+                   THEN count(DISTINCT instance.id)
+                   ELSE count(DISTINCT record.id)
+               END AS record_count,
                bool_or(access.can_view) AS can_view,
                bool_or(access.can_edit) AS can_edit,
                bool_or(access.can_execute) AS can_execute
           FROM orbit_workflow.workflow_definition w
           LEFT JOIN orbit_workflow.workflow_definition parent ON parent.id = w.parent_id
           LEFT JOIN orbit_workflow.workflow_business_record record ON record.workflow_id = w.id
+          LEFT JOIN orbit_runtime.workflow_instance instance ON instance.workflow_id = w.id
           JOIN orbit_identity.user_role ur ON ur.user_id = %s
           JOIN orbit_identity.role_workflow_access access ON access.role_id = ur.role_id
          WHERE w.is_active
@@ -228,11 +241,21 @@ def get_workflow(
         """
         SELECT w.*,
                parent.workflow_key AS parent_key,
-               (
-                   SELECT count(*)
-                     FROM orbit_workflow.workflow_business_record r
-                    WHERE r.workflow_id = w.id
-               ) AS record_count
+               CASE
+                   WHEN w.group_key <> 'hr' AND w.definition_type = 'workflow' THEN (
+                       SELECT count(*) FROM orbit_sales.customer_order
+                   )
+                   WHEN w.definition_type = 'workflow' THEN (
+                       SELECT count(*)
+                         FROM orbit_runtime.workflow_instance i
+                        WHERE i.workflow_id = w.id
+                   )
+                   ELSE (
+                       SELECT count(*)
+                         FROM orbit_workflow.workflow_business_record r
+                        WHERE r.workflow_id = w.id
+                   )
+               END AS record_count
           FROM orbit_workflow.workflow_definition w
           LEFT JOIN orbit_workflow.workflow_definition parent ON parent.id = w.parent_id
          WHERE w.workflow_key = %s AND w.is_active
@@ -243,7 +266,11 @@ def get_workflow(
         raise HTTPException(status_code=404, detail="Workflow not found")
     columns = (
         _customer_order_columns(locale)
-        if workflow_key == "order-evaluation"
+        if _is_customer_relations_workflow(
+            WorkflowDetail.model_construct(
+                group_key=row["group_key"], definition_type=row["definition_type"]
+            )
+        )
         else _runtime_columns(locale)
         if row["definition_type"] == "workflow"
         else [
@@ -364,7 +391,7 @@ def list_records(
     search: str | None,
 ) -> RecordPage:
     definition = get_workflow(connection, user, workflow_key, locale)
-    if _is_customer_order_workflow(workflow_key):
+    if _is_customer_relations_workflow(definition):
         return _list_customer_orders(
             connection, user, locale, offset, limit, sort_by, sort_direction, search
         )
@@ -492,6 +519,7 @@ def _list_customer_orders(
                    'evaluation_result', evaluation_result, 'notes', notes
                ) AS values_json,
                NULL::integer AS source_row, '{}'::jsonb AS source_cells,
+               id AS tree_record_id,
                version, updated_at
           FROM orbit_sales.customer_order
          WHERE
@@ -575,7 +603,7 @@ def _list_runtime_instances(
                ) AS values_json,
                NULL::integer AS source_row,
                '{}'::jsonb AS source_cells,
-               n.id AS tree_record_id,
+               i.id AS tree_record_id,
                i.version,
                i.updated_at,
                i.business_key AS record_key
@@ -665,6 +693,7 @@ def _customer_order_record(
                    'evaluation_result', evaluation_result, 'notes', notes
                ) AS values_json,
                NULL::integer AS source_row, '{}'::jsonb AS source_cells,
+               id AS tree_record_id,
                version, updated_at
           FROM orbit_sales.customer_order
          WHERE id = %s
@@ -726,7 +755,7 @@ def update_record(
 ) -> WorkflowRecord:
     require_workflow_access(connection, user.user_id, workflow_key, "edit")
     definition = get_workflow(connection, user, workflow_key, request.locale)
-    if _is_customer_order_workflow(workflow_key):
+    if _is_customer_relations_workflow(definition):
         return _update_customer_order(connection, user, record_id, request)
     if _is_runtime_workflow(definition):
         return _update_runtime_instance(connection, user, workflow_key, record_id, request)
@@ -816,7 +845,7 @@ def create_record(
 ) -> WorkflowRecord:
     require_workflow_access(connection, user.user_id, workflow_key, "edit")
     definition = get_workflow(connection, user, workflow_key, request.locale)
-    if _is_customer_order_workflow(workflow_key):
+    if _is_customer_relations_workflow(definition):
         values = _normalise_order_values(
             _editable_values(
                 WorkflowDetail.model_construct(columns=_customer_order_columns()),
@@ -1045,7 +1074,8 @@ def delete_record(
     record_id: UUID,
 ) -> None:
     require_workflow_access(connection, user.user_id, workflow_key, "edit")
-    if _is_customer_order_workflow(workflow_key):
+    definition = get_workflow(connection, user, workflow_key, "en")
+    if _is_customer_relations_workflow(definition):
         deleted = connection.execute(
             """
             DELETE FROM orbit_sales.customer_order
@@ -1057,7 +1087,6 @@ def delete_record(
         if deleted is None:
             raise HTTPException(status_code=404, detail="Customer order not found")
         return
-    definition = get_workflow(connection, user, workflow_key, "en")
     if _is_runtime_workflow(definition):
         deleted_id = WorkflowRuntimeService(connection).delete_record(
             record_id, workflow_key, user.scope.organization_id
@@ -1133,34 +1162,59 @@ def get_tree(
         (workflow_key,),
     ).fetchall()
     selected_step_key: str | None = None
-    if selected_record_id is not None and _is_customer_order_workflow(workflow_key):
-        runtime_row = connection.execute(
+    if selected_record_id is not None and _is_runtime_workflow(definition):
+        if _is_customer_relations_workflow(definition):
+            runtime_filter = """
+                   AND (
+                       i.id = %s
+                       OR i.context_json ->> 'order_id' = %s
+                       OR i.business_key = (
+                           SELECT order_number
+                             FROM orbit_sales.customer_order
+                            WHERE id = %s
+                       )
+                   )
             """
+            runtime_parameters = (
+                workflow_key,
+                user.scope.organization_id,
+                selected_record_id,
+                str(selected_record_id),
+                selected_record_id,
+            )
+        else:
+            runtime_filter = "AND i.id = %s"
+            runtime_parameters = (
+                workflow_key,
+                user.scope.organization_id,
+                selected_record_id,
+            )
+        runtime_row = connection.execute(
+            f"""
             SELECT i.current_record_key
               FROM orbit_runtime.workflow_instance i
               JOIN orbit_workflow.workflow_definition w ON w.id = i.workflow_id
              WHERE w.workflow_key = %s
                AND i.organization_id = %s
-               AND (
-                   i.context_json ->> 'order_id' = %s
-                   OR i.business_key = (
-                       SELECT order_number
-                         FROM orbit_sales.customer_order
-                        WHERE id = %s
-                   )
-               )
+               {runtime_filter}
              ORDER BY i.updated_at DESC
              LIMIT 1
             """,
-            (workflow_key, user.scope.organization_id, str(selected_record_id), selected_record_id),
+            runtime_parameters,
         ).fetchone()
         selected_step_key = runtime_row["current_record_key"] if runtime_row else None
+        if selected_step_key is None and _is_customer_relations_workflow(definition) and rows:
+            # The runtime projection may initialize a new instance in a
+            # parallel request. Keep the tree aligned with that instance's
+            # deterministic first step until the projection is available.
+            selected_step_key = rows[0]["record_key"]
 
     selected_order = next(
         (
             row["record_order"]
             for row in rows
-            if row["record_key"] == selected_step_key or row["id"] == selected_record_id
+            if row["record_key"] == selected_step_key
+            or (selected_step_key is None and row["id"] == selected_record_id)
         ),
         None,
     )
@@ -1168,11 +1222,12 @@ def get_tree(
         (
             row
             for row in rows
-            if row["record_key"] == selected_step_key or row["id"] == selected_record_id
+            if row["record_key"] == selected_step_key
+            or (selected_step_key is None and row["id"] == selected_record_id)
         ),
         None,
     )
-    tree_selected_record_id = selected_row["id"] if selected_row else selected_record_id
+    tree_selected_record_id = selected_record_id
     nodes = [
         TreeNode(
             record_id=row["id"],
@@ -1324,16 +1379,26 @@ def get_runtime_projection(
             user.scope.laboratory_id,
         ),
     ).fetchone()
-    if current is None and workflow_key == "order-evaluation":
+    workflow = None
+    if current is None and workflow_key:
+        workflow = connection.execute(
+            """
+            SELECT id, catalog_version, group_key, definition_type
+              FROM orbit_workflow.workflow_definition
+             WHERE workflow_key = %s AND is_active
+            """,
+            (workflow_key,),
+        ).fetchone()
+    if (
+        current is None
+        and workflow is not None
+        and workflow["group_key"] != "hr"
+        and workflow["definition_type"] == "workflow"
+    ):
         order = connection.execute(
             "SELECT order_number FROM orbit_sales.customer_order "
             "WHERE id = %s AND organization_id = %s",
             (instance_id, user.scope.organization_id),
-        ).fetchone()
-        workflow = connection.execute(
-            "SELECT id, catalog_version FROM orbit_workflow.workflow_definition "
-            "WHERE workflow_key = %s AND is_active",
-            (workflow_key,),
         ).fetchone()
         if order and workflow:
             current = connection.execute(
@@ -1368,8 +1433,21 @@ def get_runtime_projection(
     )
     rows = connection.execute(
         """
-        SELECT n.*, r.values_json
+        SELECT n.*, r.values_json,
+               CASE
+                   WHEN n.status IN ('active', 'waiting')
+                    AND orbit_workflow.extract_sla_days(r.values_json ->> 'time_limit') IS NOT NULL
+                    AND CURRENT_TIMESTAMP >= COALESCE(n.start_time, n.started_at, i.started_at)
+                        + make_interval(
+                            days => orbit_workflow.extract_sla_days(
+                                r.values_json ->> 'time_limit'
+                            )::integer
+                        )
+                   THEN true
+                   ELSE false
+               END AS sla_violated
           FROM orbit_runtime.workflow_node_instance n
+          JOIN orbit_runtime.workflow_instance i ON i.id = n.instance_id
           JOIN orbit_workflow.workflow_record r
             ON r.workflow_id = %s AND r.record_key = n.record_key
          WHERE n.instance_id = %s
@@ -1392,6 +1470,11 @@ def get_runtime_projection(
                 error_message=row["error_message"],
                 started_at=row["started_at"],
                 completed_at=row["completed_at"],
+                start_time=row["start_time"],
+                complete_time=row["complete_time"],
+                action_time=row["action_time"],
+                action_type=row["action_type"],
+                sla_violated=row["sla_violated"],
                 version=row["version"],
                 available_actions=(
                     _available_actions(row["status"], bool(access["can_execute"]))
@@ -1574,7 +1657,7 @@ def command_instance(
         try:
             WorkflowRuntimeService(connection).resume(
                 instance_id, request.version, node_key, request.payload,
-                current["workflow_key"],
+                current["workflow_key"], user.user_id,
             )
         except Exception as error:
             if getattr(error, "sqlstate", None) == "40001":

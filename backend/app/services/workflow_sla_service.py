@@ -14,6 +14,7 @@ from typing import Any
 from uuid import UUID
 
 from psycopg import Connection
+from psycopg.types.json import Jsonb
 
 from app.config import get_mail_settings
 
@@ -121,6 +122,19 @@ def _send_violation_emails(
                 connection.execute(
                     "SELECT orbit_runtime.finish_sla_notification(%s, 'sent')",
                     (notification_id,),
+                )
+            for item in items:
+                connection.execute(
+                    """
+                    SELECT orbit_runtime.record_workflow_action(
+                        %s, 'notification_email', %s, %s
+                    )
+                    """,
+                    (
+                        item["workflow_node_instance_id"],
+                        f"{recipient}:{item['due_at']}",
+                        Jsonb({"recipient": recipient, "notification": "sla"}),
+                    ),
                 )
             sent += 1
         except Exception as error:  # noqa: BLE001 - continue processing other recipients

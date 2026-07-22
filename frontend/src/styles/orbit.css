@@ -2223,6 +2223,31 @@ input:focus-visible {
   color: var(--ink-soft);
 }
 
+.workflow-node--warning .workflow-node__rail::before,
+.workflow-node--warning:not(:last-child) .workflow-node__rail::after {
+  background: #facc15;
+}
+
+.workflow-node--warning .workflow-node__rail > span {
+  color: #1f2937;
+  background: #facc15;
+  border-color: #fde68a;
+  box-shadow: 0 0 10px rgba(250, 204, 21, 0.7);
+}
+
+.workflow-node--warning .workflow-node__body {
+  color: #422006;
+  background: linear-gradient(135deg, #fef3c7, #fde68a);
+  border-color: #f59e0b;
+  box-shadow: 1px 1px 0 rgba(217, 119, 6, 0.75);
+}
+
+.workflow-node--warning .workflow-node__body small,
+.workflow-node--warning .workflow-node__body span,
+.workflow-node--warning .workflow-node__body .workflow-node__sla {
+  color: #92400e;
+}
+
 .tree-loading {
   display: grid;
   gap: 8px;

@@ -53,3 +53,21 @@ def test_notification_templates_are_lookup_tables_not_workflows() -> None:
     assert definitions["business-alert-rules"]["definition_type"] == "lookup_table"
     assert definitions["customer-pool-rules"]["definition_type"] == "lookup_table"
     assert definitions["hr-notification-templates"]["definition_type"] == "lookup_table"
+
+
+def test_order_evaluation_drops_duplicate_official_order_step() -> None:
+    catalog = build_catalog(WORKBOOK)
+    workflow = next(item for item in catalog["workflows"] if item["key"] == "order-evaluation")
+
+    assert [record["record_key"] for record in workflow["records"]] == [
+        "order-evaluation-002",
+        "order-evaluation-003",
+        "order-evaluation-004",
+        "order-evaluation-005",
+        "order-evaluation-006",
+        "order-evaluation-007",
+        "order-evaluation-008",
+        "order-evaluation-009",
+    ]
+    assert len(workflow["edges"]) == 7
+    assert workflow["edges"][-1]["target"] == "order-evaluation-009"

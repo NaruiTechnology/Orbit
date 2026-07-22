@@ -223,6 +223,13 @@ class WorkflowNodeRuntime(BaseModel):
     error_message: str | None = None
     started_at: datetime | None = None
     completed_at: datetime | None = None
+    start_time: datetime | None = None
+    complete_time: datetime | None = None
+    action_time: datetime | None = None
+    action_type: Literal[
+        "notification_email", "system_task", "workflow_transition", "manual_action"
+    ] | None = None
+    sla_violated: bool = False
     version: int
     available_actions: list[str] = Field(default_factory=list)
 

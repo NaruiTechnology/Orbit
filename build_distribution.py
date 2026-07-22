@@ -26,6 +26,7 @@ REQUIRED_DEPLOYMENT_FILES = {
     "scripts/install_orbit_service_cron.py",
     "config/orbit_service.json",
     "database/006_sla_orbit_service.sql",
+    "database/007_workflow_timing_actions.sql",
     "scripts/orbit_service.cron.example",
     "DeployWorkSpace/Development/DistributionDeploy/Json/DistributionDeploy.json",
     "DeployWorkSpace/Development/DistributionDeploy/workstates/verifyDatabase_state.py",

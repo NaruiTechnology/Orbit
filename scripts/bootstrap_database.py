@@ -136,6 +136,7 @@ def _apply_schema_and_seed(skip_catalog: bool) -> dict[str, int] | None:
             "002_seed_identity.sql",
             "004_workflow_node_runtime.sql",
             "005_workflow_runtime_functions.sql",
+            "007_workflow_timing_actions.sql",
             "006_sla_orbit_service.sql",
         ):
             script_path = PROJECT_ROOT / "database" / script_name

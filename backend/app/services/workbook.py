@@ -683,6 +683,24 @@ def _edge_records(records: list[dict[str, Any]]) -> list[dict[str, Any]]:
     return edges
 
 
+def _is_duplicate_workflow_record(
+    workflow_key: str, values: dict[str, Any], records: list[dict[str, Any]]
+) -> bool:
+    """Suppress known duplicate rows from the requirements workbook.
+
+    The Order Evaluation sheet contains two source rows for step 8. They
+    describe the same transition into an official order; the later row is a
+    duplicate with fewer details. Keep the first occurrence so the generated
+    catalog, edges, and runtime state all expose one terminal step.
+    """
+    if workflow_key != "order-evaluation":
+        return False
+    step_number = values.get("step_number")
+    return step_number == 8 and any(
+        record["values"].get("step_number") == step_number for record in records
+    )
+
+
 def build_catalog(source: Path) -> dict[str, Any]:
     """Transform workbook sheets into API-ready workflow definitions."""
 
@@ -742,6 +760,8 @@ def build_catalog(source: Path) -> dict[str, Any]:
                 values[column_key] = _coerce_value(column_key, cell.value)
                 source_cells[column_key] = cell.reference
             if not values:
+                continue
+            if _is_duplicate_workflow_record(key, values, records):
                 continue
             record_key = f"{key}-{source_row:03d}"
             label = _label_for(values, f"Row {source_row}")

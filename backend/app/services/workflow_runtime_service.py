@@ -27,7 +27,7 @@ class WorkflowRuntimeService:
         started_by: UUID,
         catalog_version: int,
     ) -> dict[str, Any]:
-        return self.connection.execute(
+        instance = self.connection.execute(
             """
             SELECT instance.*, %s::varchar AS workflow_key
               FROM orbit_runtime.start_workflow_instance(
@@ -45,6 +45,39 @@ class WorkflowRuntimeService:
                 started_by,
                 catalog_version,
             ),
+        ).fetchone()
+        if instance and instance.get("current_record_key"):
+            self.record_action(
+                instance["id"],
+                instance["current_record_key"],
+                "workflow_transition",
+                f"start:{instance['id']}",
+                {"outcome": "start", "actor_user_id": str(started_by)},
+            )
+        return instance
+
+    def record_action(
+        self,
+        instance_id: UUID,
+        record_key: str,
+        action_type: str,
+        action_key: str,
+        payload: dict[str, Any] | None = None,
+    ) -> None:
+        """Record the latest durable action on a workflow node.
+
+        The database function is idempotent by node/type/key, so retries do
+        not create duplicate audit rows or move the action clock forward.
+        """
+        self.connection.execute(
+            """
+            SELECT orbit_runtime.record_workflow_action(
+                n.id, %s::orbit_runtime.workflow_action_type, %s, %s
+            )
+              FROM orbit_runtime.workflow_node_instance n
+             WHERE n.instance_id = %s AND n.record_key = %s
+            """,
+            (action_type, action_key, Jsonb(payload or {}), instance_id, record_key),
         ).fetchone()
 
     def ensure_nodes(
@@ -134,7 +167,12 @@ class WorkflowRuntimeService:
         actor_user_id: UUID,
         workflow_key: str,
     ) -> dict[str, Any]:
-        return self.connection.execute(
+        previous = self.connection.execute(
+            "SELECT current_record_key FROM orbit_runtime.workflow_instance WHERE id = %s",
+            (instance_id,),
+        ).fetchone()
+        from_record_key = previous["current_record_key"] if previous else None
+        instance = self.connection.execute(
             """
             SELECT instance.*, %s::varchar AS workflow_key
               FROM orbit_runtime.transition_workflow_instance(
@@ -151,6 +189,20 @@ class WorkflowRuntimeService:
                 actor_user_id,
             ),
         ).fetchone()
+        if instance:
+            self.record_action(
+                instance_id,
+                from_record_key or target_record_key or "",
+                "workflow_transition",
+                f"transition:{expected_version}:{outcome}",
+                {
+                    "from_record_key": from_record_key,
+                    "to_record_key": instance.get("current_record_key"),
+                    "outcome": outcome,
+                    "actor_user_id": str(actor_user_id),
+                },
+            )
+        return instance
 
     def cancel(
         self,
@@ -162,7 +214,7 @@ class WorkflowRuntimeService:
         outcome: str,
         workflow_key: str,
     ) -> dict[str, Any]:
-        return self.connection.execute(
+        instance = self.connection.execute(
             """
             SELECT instance.*, %s::varchar AS workflow_key
               FROM orbit_runtime.cancel_workflow_instance(
@@ -179,6 +231,11 @@ class WorkflowRuntimeService:
                 outcome,
             ),
         ).fetchone()
+        self.record_action(
+            instance_id, record_key, "manual_action", f"cancel:{expected_version}:{outcome}",
+            {"outcome": outcome, "reason": reason, "actor_user_id": str(actor_user_id)},
+        )
+        return instance
 
     def block(
         self,
@@ -190,7 +247,7 @@ class WorkflowRuntimeService:
         actor_user_id: UUID,
         workflow_key: str,
     ) -> dict[str, Any]:
-        return self.connection.execute(
+        instance = self.connection.execute(
             """
             SELECT instance.*, %s::varchar AS workflow_key
               FROM orbit_runtime.block_workflow_node(
@@ -207,6 +264,11 @@ class WorkflowRuntimeService:
                 actor_user_id,
             ),
         ).fetchone()
+        self.record_action(
+            instance_id, record_key, "manual_action", f"block:{expected_version}:{outcome}",
+            {"outcome": outcome, "reason": reason, "actor_user_id": str(actor_user_id)},
+        )
+        return instance
 
     def resume(
         self,
@@ -215,8 +277,9 @@ class WorkflowRuntimeService:
         record_key: str,
         payload: dict[str, Any],
         workflow_key: str,
+        actor_user_id: UUID | None = None,
     ) -> dict[str, Any]:
-        return self.connection.execute(
+        instance = self.connection.execute(
             """
             SELECT instance.*, %s::varchar AS workflow_key
               FROM orbit_runtime.resume_workflow_node(
@@ -231,6 +294,11 @@ class WorkflowRuntimeService:
                 Jsonb(payload),
             ),
         ).fetchone()
+        self.record_action(
+            instance_id, record_key, "manual_action", f"resume:{expected_version}",
+            {"outcome": "resume", "actor_user_id": str(actor_user_id) if actor_user_id else "system"},
+        )
+        return instance
 
     def queue_notification(
         self,
@@ -257,6 +325,10 @@ class WorkflowRuntimeService:
                 Jsonb(payload),
                 actor_user_id,
             ),
+        )
+        self.record_action(
+            instance_id, record_key, "manual_action", f"email:{recipient}:{subject}",
+            {"outcome": "email_queued", "recipient": recipient, "actor_user_id": str(actor_user_id)},
         )
 
     def claim_system_tasks(self, limit: int) -> list[dict[str, Any]]:
