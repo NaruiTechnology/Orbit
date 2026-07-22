@@ -111,12 +111,17 @@ export function WorkflowTreePanel({
                 runtimeNode?.sla_violated &&
                 (runtimeNode.status === "active" || runtimeNode.status === "waiting"),
               );
+              const isCurrent = Boolean(
+                runtimeNode &&
+                runtimeNode.record_key === runtime?.instance.current_record_key &&
+                (runtimeNode.status === "active" || runtimeNode.status === "waiting"),
+              );
               const state = runtime
                 ? warning
                   ? "warning"
                   : runtimeNode?.status === "completed"
                   ? "complete"
-                  : runtimeNode?.record_key === runtime.instance.current_record_key
+                  : isCurrent
                     ? "current"
                     : "upcoming"
                 : node.is_selected
@@ -160,7 +165,7 @@ export function WorkflowTreePanel({
                     {node.Email ? (
                       <span>{translate(locale, "contactEmail")}: {node.Email}</span>
                     ) : null}
-                    {isWorkflow && runtime && runtimeNode?.record_key === runtime.instance.current_record_key ? (
+                    {isWorkflow && runtime && runtimeNode && isCurrent ? (
                       <div className="workflow-actions" aria-label={translate(locale, "nodeStatus")}>
                         {commandError || runtimeNode.error_message ? (
                           <div className="workflow-error" role="alert">

@@ -116,6 +116,18 @@ def _is_customer_relations_workflow(definition: WorkflowDetail) -> bool:
     return definition.group_key != "hr" and definition.definition_type == "workflow"
 
 
+# The origin catalog does not encode links between subworkflow sheets. These
+# links are derived from the master workflow's stage descriptions and the
+# first/last step text in each source sheet. Branch workflows are deliberately
+# omitted from the mandatory chain.
+_SUBWORKFLOW_PREREQUISITES: dict[str, tuple[str, ...]] = {
+    "technical-intake": ("order-evaluation",),
+    "technical-processing": ("technical-intake",),
+    "billing-and-collection": ("technical-processing", "cross-laboratory-orders"),
+    "customer-pool-reclaim": ("billing-and-collection",),
+}
+
+
 _STEP_ROLE_EN = {
     "销售": "Sales",
     "技术部": "Technical Team",
@@ -1191,9 +1203,11 @@ def get_tree(
             )
         runtime_row = connection.execute(
             f"""
-            SELECT i.current_record_key
+            SELECT i.current_record_key, n.status AS current_step_status
               FROM orbit_runtime.workflow_instance i
               JOIN orbit_workflow.workflow_definition w ON w.id = i.workflow_id
+              LEFT JOIN orbit_runtime.workflow_node_instance n
+                ON n.instance_id = i.id AND n.record_key = i.current_record_key
              WHERE w.workflow_key = %s
                AND i.organization_id = %s
                {runtime_filter}
@@ -1202,8 +1216,17 @@ def get_tree(
             """,
             runtime_parameters,
         ).fetchone()
-        selected_step_key = runtime_row["current_record_key"] if runtime_row else None
-        if selected_step_key is None and _is_customer_relations_workflow(definition) and rows:
+        selected_step_key = (
+            runtime_row["current_record_key"]
+            if runtime_row and runtime_row["current_step_status"] in {"active", "waiting"}
+            else None
+        )
+        if (
+            selected_step_key is None
+            and _is_customer_relations_workflow(definition)
+            and workflow_key not in _SUBWORKFLOW_PREREQUISITES
+            and rows
+        ):
             # The runtime projection may initialize a new instance in a
             # parallel request. Keep the tree aligned with that instance's
             # deterministic first step until the projection is available.
@@ -1353,9 +1376,143 @@ def _available_actions(status: str, can_execute: bool) -> list[str]:
         return ["submit", "email", "abort"]
     if status in {"failed", "blocked"}:
         return ["resubmit", "abort"]
-    if status in {"pending", "waiting"}:
+    if status == "waiting":
         return ["acknowledge", "abort"]
+    if status == "pending":
+        return []
     return []
+
+
+def _subworkflow_dependency_ready(
+    connection: Connection[dict[str, Any]],
+    current: dict[str, Any],
+) -> bool:
+    """Return whether one of the catalog-derived predecessor paths is done."""
+    prerequisites = _SUBWORKFLOW_PREREQUISITES.get(current["workflow_key"])
+    if not prerequisites:
+        return True
+    business_key = str(current.get("business_key") or "").strip()
+    order_id = (current.get("context_json") or {}).get("order_id")
+    for prerequisite in prerequisites:
+        row = connection.execute(
+            """
+            SELECT n.status AS last_step_status, i.status AS instance_status
+              FROM orbit_runtime.workflow_instance i
+              JOIN orbit_workflow.workflow_definition w
+                ON w.id = i.workflow_id
+              JOIN LATERAL (
+                  SELECT record_key
+                    FROM orbit_workflow.workflow_record
+                   WHERE workflow_id = i.workflow_id
+                   ORDER BY record_order DESC
+                   LIMIT 1
+              ) last_record ON true
+              LEFT JOIN orbit_runtime.workflow_node_instance n
+                ON n.instance_id = i.id AND n.record_key = last_record.record_key
+             WHERE w.workflow_key = %s
+               AND (
+                   btrim(i.business_key) = %s
+                   OR i.context_json ->> 'order_id' = %s
+               )
+             ORDER BY i.updated_at DESC
+             LIMIT 1
+            """,
+            (prerequisite, business_key, str(order_id) if order_id else ""),
+        ).fetchone()
+        if row and row["instance_status"] == "completed" and row["last_step_status"] == "completed":
+            return True
+    return False
+
+
+def _synchronize_subworkflow_dependency(
+    connection: Connection[dict[str, Any]],
+    current: dict[str, Any],
+) -> dict[str, Any]:
+    """Gate or release the first node of a dependent subworkflow."""
+    if current["workflow_key"] not in _SUBWORKFLOW_PREREQUISITES:
+        return current
+    first = connection.execute(
+        """
+        SELECT record_key
+          FROM orbit_workflow.workflow_record
+         WHERE workflow_id = %s
+         ORDER BY record_order
+         LIMIT 1
+        """,
+        (current["workflow_id"],),
+    ).fetchone()
+    first_key = first["record_key"] if first else None
+    if not first_key or current["current_record_key"] != first_key:
+        return current
+    ready = _subworkflow_dependency_ready(connection, current)
+    changed = False
+    if not ready and current["status"] in {"active", "waiting"}:
+        connection.execute(
+            """
+            UPDATE orbit_runtime.workflow_instance
+               SET status = 'waiting'
+             WHERE id = %s AND status <> 'waiting'
+            """,
+            (current["id"],),
+        )
+        connection.execute(
+            """
+            UPDATE orbit_runtime.workflow_node_instance
+               SET status = 'pending', started_at = NULL,
+                   start_time = NULL, action_time = NULL, action_type = NULL
+             WHERE instance_id = %s AND record_key = %s
+               AND status = 'active'
+            """,
+            (current["id"], first_key),
+        )
+        connection.execute(
+            """
+            UPDATE orbit_runtime.workflow_task
+               SET state = 'cancelled', completed_at = CURRENT_TIMESTAMP
+             WHERE instance_id = %s AND record_key = %s
+               AND state IN ('open', 'claimed')
+            """,
+            (current["id"], first_key),
+        )
+        changed = True
+    elif ready and current["status"] == "waiting":
+        connection.execute(
+            """
+            UPDATE orbit_runtime.workflow_instance
+               SET status = 'active'
+             WHERE id = %s AND status = 'waiting'
+            """,
+            (current["id"],),
+        )
+        connection.execute(
+            """
+            UPDATE orbit_runtime.workflow_node_instance
+               SET status = 'active', started_at = COALESCE(started_at, CURRENT_TIMESTAMP)
+             WHERE instance_id = %s AND record_key = %s
+               AND status = 'pending'
+            """,
+            (current["id"], first_key),
+        )
+        connection.execute(
+            """
+            INSERT INTO orbit_runtime.workflow_task (instance_id, record_key, state, payload)
+            VALUES (%s, %s, 'open', '{}'::jsonb)
+            ON CONFLICT (instance_id, record_key) WHERE state IN ('open', 'claimed') DO NOTHING
+            """,
+            (current["id"], first_key),
+        )
+        changed = True
+    if not changed:
+        return current
+    return connection.execute(
+        """
+        SELECT i.*, w.workflow_key, w.id AS definition_id
+          FROM orbit_runtime.workflow_instance i
+          JOIN orbit_workflow.workflow_definition w ON w.id = i.workflow_id
+         WHERE i.id = %s
+        """,
+        (current["id"],),
+    ).fetchone()
 
 
 def get_runtime_projection(
@@ -1427,6 +1584,7 @@ def get_runtime_projection(
             instance_id = current["id"]
     if current is None:
         raise HTTPException(status_code=404, detail="Workflow instance not found")
+    current = _synchronize_subworkflow_dependency(connection, current)
     access = require_workflow_access(connection, user.user_id, current["workflow_key"], "view")
     WorkflowRuntimeService(connection).ensure_nodes(
         instance_id, current["workflow_id"], current["current_record_key"]
@@ -1523,6 +1681,7 @@ def start_instance(
         if getattr(error, "sqlstate", None) == "23505":
             raise HTTPException(status_code=409, detail="Business key already exists") from error
         raise
+    row = _synchronize_subworkflow_dependency(connection, row)
     return _instance_model(row)
 
 
@@ -1552,6 +1711,16 @@ def transition_instance(
     if current is None:
         raise HTTPException(status_code=404, detail="Workflow instance not found")
     require_workflow_access(connection, user.user_id, current["workflow_key"], "execute")
+    current = _synchronize_subworkflow_dependency(connection, current)
+    if (
+        current["workflow_key"] in _SUBWORKFLOW_PREREQUISITES
+        and current["status"] == "waiting"
+        and not _subworkflow_dependency_ready(connection, current)
+    ):
+        raise HTTPException(
+            status_code=409,
+            detail="This workflow is waiting for its predecessor workflow to complete",
+        )
     if current["status"] not in {"active", "waiting"}:
         raise HTTPException(status_code=409, detail="Workflow instance is not active")
     try:
