@@ -2,7 +2,7 @@ import type { Locale } from "../types";
 
 const translations = {
   en: {
-    appSubtitle: "Customer management",
+    appSubtitle: "System management",
     navigator: "Workflow cascade",
     businessArea: "Business area",
     customerRelations: "Customer Relations",
@@ -69,7 +69,7 @@ const translations = {
     commandFailed: "The workflow command failed.",
   },
   "zh-CN": {
-    appSubtitle: "客户管理",
+    appSubtitle: "系统管理",
     navigator: "流程级联选择",
     businessArea: "业务分区",
     customerRelations: "客户关系",
@@ -136,7 +136,7 @@ const translations = {
     commandFailed: "工作流操作失败。",
   },
   "zh-HK": {
-    appSubtitle: "客戶管理",
+    appSubtitle: "系統管理",
     navigator: "流程級聯選擇",
     businessArea: "業務分區",
     customerRelations: "客戶關係",
