@@ -13,6 +13,7 @@ import type {
   WorkflowSummary,
   WorkflowTree,
 } from "../types";
+import type { BusinessEntityRecord, BusinessEntityResponse } from "../salesTypes";
 
 interface RecordQuery {
   workflowKey: string;
@@ -63,7 +64,7 @@ export const orbitApi = createApi({
       return headers;
     },
   }),
-  tagTypes: ["Workflow", "Record"],
+  tagTypes: ["Workflow", "Record", "BusinessEntities"],
   endpoints: (builder) => ({
     health: builder.query<HealthResponse, void>({
       query: () => "/health",
@@ -73,6 +74,22 @@ export const orbitApi = createApi({
     }),
     session: builder.query<SessionInfo, Locale>({
       query: (locale) => ({ url: "/session", params: { locale } }),
+    }),
+    businessEntities: builder.query<BusinessEntityResponse, Locale>({
+      query: (locale) => ({ url: "/admin/business-entities", params: { locale } }),
+      providesTags: ["BusinessEntities"],
+    }),
+    createBusinessEntityRecord: builder.mutation<BusinessEntityRecord, { entityKey: string; values: Record<string, unknown> }>({
+      query: ({ entityKey, values }) => ({ url: `/admin/business-entities/${entityKey}/records`, method: "POST", body: { values } }),
+      invalidatesTags: ["BusinessEntities"],
+    }),
+    updateBusinessEntityRecord: builder.mutation<BusinessEntityRecord, { entityKey: string; recordId: string; values: Record<string, unknown>; version: number }>({
+      query: ({ entityKey, recordId, values, version }) => ({ url: `/admin/business-entities/${entityKey}/records/${recordId}`, method: "PATCH", body: { values, version } }),
+      invalidatesTags: ["BusinessEntities"],
+    }),
+    deleteBusinessEntityRecord: builder.mutation<void, { entityKey: string; recordId: string }>({
+      query: ({ entityKey, recordId }) => ({ url: `/admin/business-entities/${entityKey}/records/${recordId}`, method: "DELETE" }),
+      invalidatesTags: ["BusinessEntities"],
     }),
     workflows: builder.query<WorkflowSummary[], Locale>({
       query: (locale) => ({ url: "/workflows", params: { locale } }),
@@ -159,6 +176,10 @@ export const orbitApi = createApi({
 export const useGetHealthQuery = orbitApi.endpoints.health.useQuery;
 export const useGetGeolocationQuery = orbitApi.endpoints.geolocation.useQuery;
 export const useGetSessionQuery = orbitApi.endpoints.session.useQuery;
+export const useGetBusinessEntitiesQuery = orbitApi.endpoints.businessEntities.useQuery;
+export const useCreateBusinessEntityRecordMutation = orbitApi.endpoints.createBusinessEntityRecord.useMutation;
+export const useUpdateBusinessEntityRecordMutation = orbitApi.endpoints.updateBusinessEntityRecord.useMutation;
+export const useDeleteBusinessEntityRecordMutation = orbitApi.endpoints.deleteBusinessEntityRecord.useMutation;
 export const useGetWorkflowQuery = orbitApi.endpoints.workflow.useQuery;
 export const useGetWorkflowTreeQuery = orbitApi.endpoints.workflowTree.useQuery;
 export const useGetWorkflowsQuery = orbitApi.endpoints.workflows.useQuery;

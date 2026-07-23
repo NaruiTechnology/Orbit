@@ -8,6 +8,8 @@ from uuid import UUID
 from fastapi import APIRouter, Depends, HTTPException, Query
 from pydantic import BaseModel, ConfigDict, Field
 from psycopg import Connection
+from psycopg import sql
+from psycopg.types.json import Jsonb
 
 from app.auth import get_current_user, require_administration_access
 from app.database import get_connection
@@ -27,8 +29,228 @@ class WorkflowStepAssignmentUpdate(BaseModel):
     hr_employee_id: UUID | None = None
 
 
+class BusinessEntityRecordRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    values: dict[str, Any] = Field(default_factory=dict)
+    version: int | None = None
+
+
 def _require_admin(user: SessionInfo, connection: Connection[dict[str, Any]]) -> None:
     require_administration_access(connection, user.user_id)
+
+
+_BUSINESS_ENTITY_SYSTEM_COLUMNS = {
+    "id", "organization_id", "department_id", "laboratory_id", "version",
+    "created_at", "updated_at",
+}
+_BUSINESS_ENTITY_TABLES = {
+    "customer_profile", "billing_information", "quotation", "contract",
+    "sales_order", "chip_retention", "bill", "payment_collection",
+    "outsourced_service",
+}
+
+
+def _business_entity_data_type(postgres_type: str) -> str:
+    if postgres_type in {"integer", "bigint", "smallint"}:
+        return "integer"
+    if postgres_type in {"numeric", "decimal", "real", "double precision"}:
+        return "decimal"
+    if postgres_type == "date":
+        return "date"
+    if postgres_type in {"boolean"}:
+        return "boolean"
+    return "text"
+
+
+def _business_entity_columns(connection: Connection[dict[str, Any]], table_name: str, include_system: bool = False) -> list[dict[str, Any]]:
+    rows = connection.execute(
+        """
+        SELECT column_name, data_type, is_nullable, is_generated, column_default
+          FROM information_schema.columns
+         WHERE table_schema = 'orbit_sales' AND table_name = %s
+         ORDER BY ordinal_position
+        """,
+        (table_name,),
+    ).fetchall()
+    return [
+        {
+            "key": row["column_name"],
+            "data_type": _business_entity_data_type(row["data_type"]),
+            "editable": row["column_name"] not in _BUSINESS_ENTITY_SYSTEM_COLUMNS and row["is_generated"] == "NEVER",
+            "required": row["is_nullable"] == "NO" and row["column_default"] is None,
+            "postgres_type": row["data_type"],
+        }
+        for row in rows
+        if include_system or row["column_name"] not in _BUSINESS_ENTITY_SYSTEM_COLUMNS
+    ]
+
+
+def _business_entity_table(connection: Connection[dict[str, Any]], entity_key: str) -> tuple[str, list[dict[str, Any]]]:
+    entity = connection.execute(
+        "SELECT table_name FROM orbit_sales.business_entity_catalog WHERE entity_key = %s AND is_active",
+        (entity_key,),
+    ).fetchone()
+    if entity is None or entity["table_name"] not in _BUSINESS_ENTITY_TABLES:
+        raise HTTPException(status_code=404, detail="business entity not found")
+    table_name = entity["table_name"]
+    return table_name, _business_entity_columns(connection, table_name)
+
+
+def _record_values(request_values: dict[str, Any], columns: list[dict[str, Any]], user: SessionInfo) -> dict[str, Any]:
+    editable = {column["key"]: column for column in columns if column["editable"]}
+    unknown = sorted(set(request_values) - set(editable))
+    if unknown:
+        raise HTTPException(status_code=422, detail=f"Unsupported or read-only fields: {', '.join(unknown)}")
+    values = dict(request_values)
+    scope = user.scope
+    for key, value in (("organization_id", scope.organization_id), ("department_id", scope.department_id), ("laboratory_id", scope.laboratory_id)):
+        if key in editable and key not in values and value:
+            values[key] = value
+    if "sales_owner_id" in editable and "sales_owner_id" not in values:
+        values["sales_owner_id"] = user.user_id
+    return values
+
+
+def _database_value(value: Any, column: dict[str, Any]) -> Any:
+    if column["postgres_type"] == "boolean" and isinstance(value, str):
+        if value in {"是", "Yes", "true", "True", "1"}:
+            return True
+        if value in {"否", "No", "false", "False", "0"}:
+            return False
+    return Jsonb(value) if column["postgres_type"] == "jsonb" and value is not None else value
+
+
+@router.get("/business-entities")
+def business_entities(
+    locale: str = Query(default="en"),
+    user: SessionInfo = Depends(get_current_user),
+    connection: Connection[dict[str, Any]] = Depends(get_connection),
+) -> dict[str, Any]:
+    """Return the database-backed nine-entity catalog and dynamic grid data."""
+    _require_admin(user, connection)
+    catalog = connection.execute(
+        """
+        SELECT entity_key, table_name, name_i18n, display_order
+          FROM orbit_sales.business_entity_catalog
+         WHERE is_active
+         ORDER BY display_order
+        """
+    ).fetchall()
+    entities: list[dict[str, Any]] = []
+    for entity in catalog:
+        table_name = entity["table_name"]
+        if table_name not in _BUSINESS_ENTITY_TABLES:
+            raise HTTPException(status_code=500, detail=f"Unsupported business entity table: {table_name}")
+        columns = _business_entity_columns(connection, table_name)
+        selected_columns = [column["key"] for column in columns]
+        if selected_columns:
+            select_sql = sql.SQL(", ").join(sql.Identifier(column) for column in ["id", *selected_columns, "version", "updated_at"])
+            records = connection.execute(
+                sql.SQL("SELECT {} FROM orbit_sales.{} ORDER BY updated_at DESC LIMIT 500").format(
+                    select_sql, sql.Identifier(table_name)
+                )
+            ).fetchall()
+        else:
+            records = []
+        entities.append(
+            {
+                "key": entity["entity_key"],
+                "table_name": table_name,
+                "name": localized_value(entity["name_i18n"], locale),
+                "name_i18n": entity["name_i18n"],
+                "display_order": entity["display_order"],
+                "record_count": len(records),
+                "columns": columns,
+                "records": [
+                    {
+                        "id": record["id"],
+                        "values": {column: record[column] for column in selected_columns},
+                        "version": record["version"],
+                        "updated_at": record["updated_at"],
+                    }
+                    for record in records
+                ],
+            }
+        )
+    return {"entities": entities}
+
+
+@router.post("/business-entities/{entity_key}/records")
+def create_business_entity_record(
+    entity_key: str,
+    request: BusinessEntityRecordRequest,
+    user: SessionInfo = Depends(get_current_user),
+    connection: Connection[dict[str, Any]] = Depends(get_connection),
+) -> dict[str, Any]:
+    _require_admin(user, connection)
+    table_name, _public_columns = _business_entity_table(connection, entity_key)
+    columns = _business_entity_columns(connection, table_name, include_system=True)
+    values = _record_values(request.values, columns, user)
+    if not values:
+        raise HTTPException(status_code=422, detail="At least one editable field is required")
+    column_map = {column["key"]: column for column in columns}
+    for key, value in (("organization_id", user.scope.organization_id), ("department_id", user.scope.department_id), ("laboratory_id", user.scope.laboratory_id)):
+        if key in column_map and value:
+            values.setdefault(key, value)
+    names = list(values)
+    try:
+        statement = sql.SQL("INSERT INTO orbit_sales.{} ({}) VALUES ({}) RETURNING id, version, updated_at").format(
+            sql.Identifier(table_name),
+            sql.SQL(", ").join(sql.Identifier(name) for name in names),
+            sql.SQL(", ").join(sql.Placeholder() for _ in names),
+        )
+        result = connection.execute(statement, tuple(_database_value(values[name], column_map[name]) for name in names)).fetchone()
+    except Exception as error:
+        raise HTTPException(status_code=422, detail=f"Could not create record: {error}") from error
+    return {"id": result["id"], "values": values, "version": result["version"], "updated_at": result["updated_at"]}
+
+
+@router.patch("/business-entities/{entity_key}/records/{record_id}")
+def update_business_entity_record(
+    entity_key: str,
+    record_id: UUID,
+    request: BusinessEntityRecordRequest,
+    user: SessionInfo = Depends(get_current_user),
+    connection: Connection[dict[str, Any]] = Depends(get_connection),
+) -> dict[str, Any]:
+    _require_admin(user, connection)
+    if request.version is None:
+        raise HTTPException(status_code=422, detail="version is required for updates")
+    table_name, columns = _business_entity_table(connection, entity_key)
+    values = _record_values(request.values, columns, user)
+    if not values:
+        raise HTTPException(status_code=422, detail="At least one editable field is required")
+    column_map = {column["key"]: column for column in columns}
+    names = list(values)
+    assignments = sql.SQL(", ").join(sql.SQL("{} = {} ").format(sql.Identifier(name), sql.Placeholder()) for name in names)
+    statement = sql.SQL("UPDATE orbit_sales.{} SET {} WHERE id = {} AND version = {} RETURNING id, version, updated_at").format(
+        sql.Identifier(table_name), assignments, sql.Placeholder(), sql.Placeholder()
+    )
+    try:
+        result = connection.execute(statement, tuple(_database_value(values[name], column_map[name]) for name in names) + (record_id, request.version)).fetchone()
+    except Exception as error:
+        raise HTTPException(status_code=422, detail=f"Could not update record: {error}") from error
+    if result is None:
+        raise HTTPException(status_code=409, detail="Record was changed or no longer exists")
+    return {"id": result["id"], "values": values, "version": result["version"], "updated_at": result["updated_at"]}
+
+
+@router.delete("/business-entities/{entity_key}/records/{record_id}", status_code=204)
+def delete_business_entity_record(
+    entity_key: str,
+    record_id: UUID,
+    user: SessionInfo = Depends(get_current_user),
+    connection: Connection[dict[str, Any]] = Depends(get_connection),
+) -> None:
+    _require_admin(user, connection)
+    table_name, _columns = _business_entity_table(connection, entity_key)
+    result = connection.execute(
+        sql.SQL("DELETE FROM orbit_sales.{} WHERE id = {} RETURNING id").format(sql.Identifier(table_name), sql.Placeholder()),
+        (record_id,),
+    ).fetchone()
+    if result is None:
+        raise HTTPException(status_code=404, detail="record not found")
 
 
 @router.get("/workflow-config/{workflow_key}")
