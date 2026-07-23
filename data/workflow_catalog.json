@@ -1191,6 +1191,36 @@
             "exception_branch": "G9",
             "notes": "H9"
           }
+        },
+        {
+          "record_key": "order-evaluation-010",
+          "record_order": 9,
+          "source_row": 10,
+          "label_i18n": {
+            "en": "Proceed to Official Order",
+            "zh_CN": "进入正式下单",
+            "zh_HK": "進入正式下單"
+          },
+          "values": {
+            "step_number": 8,
+            "step_name": "进入正式下单",
+            "owner_role": "销售",
+            "system_action": "选择批量/非批量下单→填写正式订单信息",
+            "time_limit": "-",
+            "success_condition": "提交成功",
+            "exception_branch": "取消→订单终止",
+            "notes": "正式订单关联评估订单号"
+          },
+          "source_cells": {
+            "step_number": "A10",
+            "step_name": "B10",
+            "owner_role": "C10",
+            "system_action": "D10",
+            "time_limit": "E10",
+            "success_condition": "F10",
+            "exception_branch": "G10",
+            "notes": "H10"
+          }
         }
       ],
       "edges": [
@@ -1233,6 +1263,12 @@
         {
           "source": "order-evaluation-008",
           "target": "order-evaluation-009",
+          "kind": "sequence",
+          "label": null
+        },
+        {
+          "source": "order-evaluation-009",
+          "target": "order-evaluation-010",
           "kind": "sequence",
           "label": null
         }
@@ -19851,7 +19887,7 @@
           "record_order": 19,
           "source_row": 20,
           "label_i18n": {
-            "en": "维修时长统计",
+            "en": "Track repair duration",
             "zh_CN": "维修时长统计",
             "zh_HK": "維修時长統計"
           },

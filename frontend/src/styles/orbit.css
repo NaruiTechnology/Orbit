@@ -400,9 +400,9 @@ input:focus-visible {
 }
 
 .system-config-card {
-  display: grid;
+  display: flex;
+  flex-direction: column;
   min-height: 100%;
-  grid-template-rows: auto auto auto auto minmax(420px, 1fr);
   border: 1px solid var(--line-strong);
   background: var(--surface);
   box-shadow: 0 12px 30px rgba(23, 36, 33, .08);
@@ -427,13 +427,23 @@ input:focus-visible {
 .admin-grid-input { width: 100%; min-height: 28px; padding: 4px 7px; color: var(--ink); background: var(--control-bg); border: 1px solid var(--line); border-radius: 4px; font: inherit; }
 .admin-grid-input:focus { border-color: var(--signal); outline: none; box-shadow: 0 0 0 1px color-mix(in srgb, var(--signal) 25%, transparent); }
 
-.system-config-tabs { display: flex; gap: 0; border-bottom: 1px solid var(--line); background: var(--surface-muted); }
-.system-config-tabs button { padding: 12px 18px; border: 0; border-bottom: 3px solid transparent; color: var(--ink-soft); background: transparent; font-weight: 700; cursor: pointer; }
-.system-config-tabs--top > button,
-.system-config-tabs--sub > button { flex: 1 1 0; min-width: 0; text-align: center; }
-.system-config-tabs button[aria-selected="true"] { color: var(--signal); border-bottom-color: var(--signal); background: var(--surface); }
-.system-config-tabs--sub { background: var(--surface); }
-.system-config-tabs--sub button { padding: 10px 16px; font-size: 12px; font-weight: 600; }
+.system-config-tabs { display: grid; gap: 7px; padding: 4px; border-bottom: 1px solid var(--line); background: var(--surface-muted); }
+.system-config-tabs button { min-width: 0; min-height: 42px; padding: 9px 12px; color: var(--control-fg); border: 1px solid var(--line); border-radius: 4px; background: var(--gradient-card); font-weight: 700; cursor: pointer; transition: border-color 140ms ease, background 140ms ease, box-shadow 140ms ease; }
+.system-config-tabs button:hover { border-color: var(--signal); }
+.system-config-tabs--top { grid-template-columns: repeat(2, minmax(0, 1fr)); padding: 5px; background: linear-gradient(90deg, var(--forest-deep), var(--surface)); border-bottom: 0; }
+.system-config-tabs--top button { min-height: 40px; font-size: 16px; }
+.system-config-tabs--mode { grid-template-columns: repeat(2, minmax(0, 1fr)); background: var(--surface); }
+.system-config-tabs--mode button { min-height: 42px; }
+.system-config-tabs--sub { grid-template-columns: repeat(7, minmax(110px, 1fr)); padding: 5px; overflow-x: auto; background: var(--forest-deep); border-top: 1px solid var(--line-strong); }
+.system-config-tabs--sub button { min-height: 58px; padding: 8px 10px; color: var(--ink); font-size: 12px; line-height: 1.25; }
+.system-config-tabs button[aria-selected="true"] { color: var(--control-active-fg); border-color: var(--signal); background: linear-gradient(135deg, var(--control-active-bg), var(--forest)); box-shadow: inset 4px 0 0 var(--signal); }
+.system-config-workflow-panel { display: grid; min-height: 0; flex: 1 1 auto; grid-template-rows: auto minmax(0, 1fr); background: var(--surface); }
+.system-config-business-panel { min-height: 0; flex: 1 1 auto; overflow: auto; }
+.system-config-workflow-content { display: grid; min-height: 0; grid-template-rows: auto auto minmax(0, 1fr); }
+.system-config-workflow-heading { display: flex; align-items: center; justify-content: space-between; gap: 14px; padding: 14px 18px; border-bottom: 1px solid var(--line); background: var(--gradient-surface); }
+.system-config-workflow-heading h2 { margin: 4px 0 0; font-size: 18px; }
+.system-config-workflow-count { padding: 6px 10px; color: var(--signal); border: 1px solid var(--line-strong); border-radius: 999px; font-size: 11px; font-weight: 800; }
+.system-config-workflow-empty { display: grid; min-height: 280px; color: var(--ink-soft); place-items: center; }
 .system-config-error { margin: 0; padding: 10px 16px; color: #a51f1f; background: #fff1f1; border-bottom: 1px solid #efb3b3; }
 .system-config-grid { min-height: 420px; height: 100%; }
 .sales-templates { position: relative; min-height: 420px; padding: 22px; overflow: hidden; background: var(--gradient-panel); }

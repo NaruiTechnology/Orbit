@@ -103,7 +103,7 @@ export function SystemConfigPage({
     !workflow.is_master && workflow.definition_type === "workflow" &&
     (topTab === "people-operations" ? workflow.group_key === "hr" : workflow.group_key !== "hr")
   ), [topTab, workflows]);
-  const showingSalesTemplates = topTab === "customer-relations" && customerSubTab === "templates";
+  const selectedWorkflow = subWorkflows.find((workflow) => workflow.key === workflowKey) || null;
 
   function resetWorkflowGrid() {
     gridApiRef.current?.resetColumnState();
@@ -117,9 +117,8 @@ export function SystemConfigPage({
   }, [subWorkflows, workflowKey]);
 
   useEffect(() => {
-    if (showingSalesTemplates) {
+    if (!selectedWorkflow || (topTab === "customer-relations" && customerSubTab === "templates")) {
       setLoading(false);
-      setError("");
       return;
     }
     let cancelled = false;
@@ -136,7 +135,7 @@ export function SystemConfigPage({
       .catch((reason) => { if (!cancelled) setError(reason instanceof Error ? reason.message : String(reason)); })
       .finally(() => { if (!cancelled) setLoading(false); });
     return () => { cancelled = true; };
-  }, [authToken, locale, showingSalesTemplates, workflowKey]);
+  }, [authToken, customerSubTab, locale, selectedWorkflow, topTab, workflowKey]);
 
   const markDirty = useCallback((step: StepRow) => {
     dirtyRowsRef.current = { ...dirtyRowsRef.current, [step.id]: { ...step } };
@@ -249,17 +248,33 @@ export function SystemConfigPage({
         <button type="button" role="tab" aria-selected={topTab === "customer-relations"} onClick={() => setTopTab("customer-relations")}>{locale === "en" ? "Customer Relations" : locale === "zh-HK" ? "客戶關係" : "客户关系"}</button>
         <button type="button" role="tab" aria-selected={topTab === "people-operations"} onClick={() => setTopTab("people-operations")}>{locale === "en" ? "People Operations" : "人员运营"}</button>
       </nav>
-      {topTab === "customer-relations" ? <nav className="system-config-tabs system-config-tabs--sub" aria-label="Customer Relations configuration" role="tablist">
+      {topTab === "customer-relations" ? <nav className="system-config-tabs system-config-tabs--mode" aria-label="Customer Relations configuration" role="tablist">
         <button type="button" role="tab" aria-selected={customerSubTab === "steps"} onClick={() => setCustomerSubTab("steps")}>{translate(locale, "steps")}</button>
         <button type="button" role="tab" aria-selected={customerSubTab === "templates"} onClick={() => setCustomerSubTab("templates")}>{translate(locale, "templates")}</button>
-      </nav> : <nav className="system-config-tabs system-config-tabs--sub" aria-label="Workflow configuration" role="tablist">
-        {subWorkflows.map((workflow) => <button type="button" role="tab" aria-selected={workflow.key === workflowKey} key={workflow.key} onClick={() => setWorkflowKey(workflow.key)}>{workflow.name}</button>)}
-      </nav>}
-      {showingSalesTemplates ? <SalesTemplatesPage locale={locale} theme={theme} /> : <>
-      {error && <p className="system-config-error" role="alert">{error}</p>}
-      <div className="system-config-grid-toolbar"><button type="button" className="grid-layout-reset-button" aria-label={locale === "en" ? "Reset grid settings" : "重置表格设置"} title={locale === "en" ? "Reset grid settings" : "重置表格设置"} onClick={resetWorkflowGrid}>{locale === "en" ? "Reset grid" : locale === "zh-HK" ? "重置表格" : "重置表格"}</button><button type="button" className="grid-layout-reset-button system-config-save-all" disabled={!Object.keys(dirtyRows).length || savingAll || Boolean(savingId)} onClick={() => void saveAll()}><img src={saveIcon} alt="" aria-hidden="true" />{savingAll ? "Saving…" : "Save all"}</button></div>
-      <div className="system-config-grid grid-frame" aria-busy={loading}><AgGridReact<StepRow> theme={theme === "navy" ? orbitGridNavyTheme : theme === "light" ? orbitGridTheme : theme === "black" ? orbitGridBlackTheme : orbitGridGreenTheme} rowData={config?.steps || []} columnDefs={columns} defaultColDef={{ sortable: true, filter: true, floatingFilter: true, resizable: true, suppressHeaderMenuButton: false }} stopEditingWhenCellsLoseFocus rowHeight={44} headerHeight={46} floatingFiltersHeight={34} enableBrowserTooltips ensureDomOrder suppressAnimationFrame onGridReady={(event) => { gridApiRef.current = event.api; }} onCellValueChanged={(event) => { if (event.data) markDirty(event.data); }} /></div>
-      </>}
+      </nav> : null}
+      {topTab === "customer-relations" && customerSubTab === "templates" ? <div className="system-config-business-panel">
+        <SalesTemplatesPage locale={locale} theme={theme} />
+      </div> : <section className="system-config-workflow-panel" aria-label={translate(locale, "steps")}>
+        <nav className="system-config-tabs system-config-tabs--sub" aria-label={`${topTab} workflow steps`} role="tablist">
+          {subWorkflows.map((workflow) => (
+            <button type="button" role="tab" aria-selected={workflow.key === workflowKey} key={workflow.key} onClick={() => setWorkflowKey(workflow.key)}>
+              {workflow.name}
+            </button>
+          ))}
+        </nav>
+        {selectedWorkflow ? <div className="system-config-workflow-content" role="tabpanel">
+          <header className="system-config-workflow-heading">
+            <div>
+              <span className="system-config-kicker">{translate(locale, "steps")}</span>
+              <h2>{selectedWorkflow.name}</h2>
+            </div>
+            <span className="system-config-workflow-count">{config?.steps.length || 0} {locale === "en" ? "steps" : "步骤"}</span>
+          </header>
+          {error && <p className="system-config-error" role="alert">{error}</p>}
+          <div className="system-config-grid-toolbar"><button type="button" className="grid-layout-reset-button" aria-label={locale === "en" ? "Reset grid settings" : "重置表格设置"} title={locale === "en" ? "Reset grid settings" : "重置表格设置"} onClick={resetWorkflowGrid}>{locale === "en" ? "Reset grid" : locale === "zh-HK" ? "重置表格" : "重置表格"}</button><button type="button" className="grid-layout-reset-button system-config-save-all" disabled={!Object.keys(dirtyRows).length || savingAll || Boolean(savingId)} onClick={() => void saveAll()}><img src={saveIcon} alt="" aria-hidden="true" />{savingAll ? "Saving…" : "Save all"}</button></div>
+          <div className="system-config-grid grid-frame" aria-busy={loading}><AgGridReact<StepRow> theme={theme === "navy" ? orbitGridNavyTheme : theme === "light" ? orbitGridTheme : theme === "black" ? orbitGridBlackTheme : orbitGridGreenTheme} rowData={config?.steps || []} columnDefs={columns} defaultColDef={{ sortable: true, filter: true, floatingFilter: true, resizable: true, suppressHeaderMenuButton: false }} stopEditingWhenCellsLoseFocus rowHeight={44} headerHeight={46} floatingFiltersHeight={34} enableBrowserTooltips ensureDomOrder suppressAnimationFrame onGridReady={(event) => { gridApiRef.current = event.api; }} onCellValueChanged={(event) => { if (event.data) markDirty(event.data); }} /></div>
+        </div> : <div className="system-config-workflow-empty">{locale === "en" ? "Select a workflow panel to view its steps." : "请选择一个工作流面板查看步骤。"}</div>}
+      </section>}
     </section>
   </main>;
 }
