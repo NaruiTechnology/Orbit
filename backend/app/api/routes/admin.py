@@ -36,8 +36,132 @@ class BusinessEntityRecordRequest(BaseModel):
     version: int | None = None
 
 
+class AccessUserUpdate(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    role_code: str = Field(min_length=1, max_length=32)
+    is_active: bool
+
+
+class AccessUserCreate(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    login_name: str = Field(min_length=1, max_length=120)
+    first_name: str = Field(default="", max_length=100)
+    last_name: str = Field(default="", max_length=100)
+    email: str = Field(default="", max_length=320)
+    phone_number: str = Field(default="", max_length=40)
+    company_name: str = Field(default="", max_length=160)
+    site: str = Field(default="Beijing(北京)", max_length=160)
+    role_code: str = Field(default="user", min_length=1, max_length=32)
+    is_active: bool = True
+
+
 def _require_admin(user: SessionInfo, connection: Connection[dict[str, Any]]) -> None:
     require_administration_access(connection, user.user_id)
+
+
+@router.get("/access-management")
+def access_management(
+    locale: str = Query(default="en"),
+    user: SessionInfo = Depends(get_current_user),
+    connection: Connection[dict[str, Any]] = Depends(get_connection),
+) -> dict[str, Any]:
+    _require_admin(user, connection)
+    roles = connection.execute(
+        """SELECT role_id, role_name, display_name_i18n
+             FROM orbit_identity.role_definition
+            WHERE is_active AND role_name IN ('AUDIT', 'ADMIN', 'SUPER_USER', 'USER')
+            ORDER BY CASE role_name WHEN 'AUDIT' THEN 0 WHEN 'ADMIN' THEN 1 WHEN 'SUPER_USER' THEN 2 ELSE 3 END"""
+    ).fetchall()
+    rows = connection.execute(
+        """SELECT u.id, u.login_name, u.first_name, u.last_name, u.email,
+                  u.phone_number, u.company_name, u.site, u.is_active,
+                  u.created_at, MAX(s.login_time) AS last_sign_in,
+                  COALESCE(MAX(r.code) FILTER (WHERE r.code IN ('audit','admin','super_user','user')), 'user') AS role_code,
+                  COALESCE((array_agg(r.name_i18n ORDER BY r.code) FILTER (WHERE r.code IN ('audit','admin','super_user','user')))[1], '{"en":"User"}'::jsonb) AS role_name_i18n
+             FROM orbit_identity.app_user u
+             LEFT JOIN orbit_identity.user_role ur ON ur.user_id = u.id
+             LEFT JOIN orbit_identity.role r ON r.id = ur.role_id
+             LEFT JOIN orbit_identity.auth_session s ON s.user_id = u.id
+            GROUP BY u.id
+            ORDER BY u.created_at DESC, u.login_name"""
+    ).fetchall()
+    return {
+        "roles": [{"code": row["role_name"].lower(), "name": localized_value(row["display_name_i18n"], locale)} for row in roles],
+        "users": [
+            {**dict(row), "role_name": localized_value(row["role_name_i18n"], locale)}
+            for row in rows
+        ],
+    }
+
+
+@router.patch("/access-management/users/{user_id}")
+def update_access_user(
+    user_id: UUID,
+    request: AccessUserUpdate,
+    user: SessionInfo = Depends(get_current_user),
+    connection: Connection[dict[str, Any]] = Depends(get_connection),
+) -> dict[str, Any]:
+    _require_admin(user, connection)
+    if request.role_code not in {"audit", "admin", "super_user", "user"}:
+        raise HTTPException(status_code=422, detail="unsupported access role")
+    role = connection.execute("SELECT id FROM orbit_identity.role WHERE code = %s", (request.role_code,)).fetchone()
+    if role is None:
+        raise HTTPException(status_code=422, detail="access role is not configured")
+    updated = connection.execute(
+        "UPDATE orbit_identity.app_user SET is_active = %s WHERE id = %s RETURNING id",
+        (request.is_active, user_id),
+    ).fetchone()
+    if updated is None:
+        raise HTTPException(status_code=404, detail="user not found")
+    connection.execute("DELETE FROM orbit_identity.user_role WHERE user_id = %s", (user_id,))
+    connection.execute("INSERT INTO orbit_identity.user_role (user_id, role_id) VALUES (%s, %s)", (user_id, role["id"]))
+    return {"ok": True, "user_id": user_id, "role_code": request.role_code, "is_active": request.is_active}
+
+
+@router.post("/access-management/users")
+def create_access_user(
+    request: AccessUserCreate,
+    user: SessionInfo = Depends(get_current_user),
+    connection: Connection[dict[str, Any]] = Depends(get_connection),
+) -> dict[str, Any]:
+    _require_admin(user, connection)
+    if request.role_code not in {"audit", "admin", "super_user", "user"}:
+        raise HTTPException(status_code=422, detail="unsupported access role")
+    role = connection.execute("SELECT id FROM orbit_identity.role WHERE code = %s", (request.role_code,)).fetchone()
+    if role is None:
+        raise HTTPException(status_code=422, detail="access role is not configured")
+    try:
+        row = connection.execute(
+            """INSERT INTO orbit_identity.app_user
+               (login_name, display_name_i18n, first_name, last_name, email, phone_number, company_name, site, is_active)
+               VALUES (%s, jsonb_build_object('en', %s, 'zh_CN', %s, 'zh_HK', %s), %s, %s, %s, %s, %s, %s, %s)
+               RETURNING id, login_name, first_name, last_name, email, phone_number, company_name, site, is_active, created_at""",
+            (request.login_name.strip(), f"{request.first_name.strip()} {request.last_name.strip()}".strip(),
+             f"{request.first_name.strip()} {request.last_name.strip()}".strip(),
+             f"{request.first_name.strip()} {request.last_name.strip()}".strip(), request.first_name.strip(),
+             request.last_name.strip(), request.email.strip(), request.phone_number.strip(),
+             request.company_name.strip(), request.site.strip(), request.is_active),
+        ).fetchone()
+    except Exception as error:
+        raise HTTPException(status_code=409, detail=f"Could not create account: {error}") from error
+    connection.execute("INSERT INTO orbit_identity.user_role (user_id, role_id) VALUES (%s, %s)", (row["id"], role["id"]))
+    return {**dict(row), "role_code": request.role_code, "role_name": request.role_code}
+
+
+@router.delete("/access-management/users/{user_id}", status_code=204)
+def delete_access_user(
+    user_id: UUID,
+    user: SessionInfo = Depends(get_current_user),
+    connection: Connection[dict[str, Any]] = Depends(get_connection),
+) -> None:
+    _require_admin(user, connection)
+    if user_id == user.user_id:
+        raise HTTPException(status_code=400, detail="The current account cannot be deleted")
+    deleted = connection.execute("DELETE FROM orbit_identity.app_user WHERE id = %s RETURNING id", (user_id,)).fetchone()
+    if deleted is None:
+        raise HTTPException(status_code=404, detail="user not found")
 
 
 _BUSINESS_ENTITY_SYSTEM_COLUMNS = {
