@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Fail-fast PostgreSQL readiness check used before starting the API."""
+"""Fail-fast PostgreSQL readiness check used before database bootstrap or API startup."""
 
 from __future__ import annotations
 
@@ -71,6 +71,38 @@ def main() -> int:
             return 0
         except Exception as error:
             last_error = error
+            # A fresh deployment has a running PostgreSQL server before the
+            # application role/database exists. Confirm the server through
+            # the bootstrap administrator so the next action can create them.
+            admin_host = os.getenv("ORBIT_DB_ADMIN_HOST")
+            if admin_host is None:
+                admin_host = (
+                    "/var/run/postgresql"
+                    if not database.admin_password
+                    and database.host in {"127.0.0.1", "localhost"}
+                    else database.host
+                )
+            try:
+                with psycopg.connect(
+                    dbname=database.admin_database_name,
+                    user=os.getenv("ORBIT_DB_ADMIN_USER", database.admin_user),
+                    password=os.getenv(
+                        "ORBIT_DB_ADMIN_PASSWORD", database.admin_password
+                    ),
+                    host=admin_host,
+                    port=database.port,
+                ) as connection:
+                    admin_database = connection.execute(
+                        "SELECT current_database()"
+                    ).fetchone()[0]
+                print(
+                    f"Database server preflight passed: "
+                    f"{endpoint_host}:{endpoint_port}/{admin_database}; "
+                    f"{endpoint_database} will be prepared by bootstrap"
+                )
+                return 0
+            except Exception as admin_error:
+                last_error = admin_error
             if time.monotonic() >= deadline:
                 break
             time.sleep(max(args.interval, 0))

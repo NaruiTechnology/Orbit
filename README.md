@@ -36,12 +36,16 @@ cd /home/vboxuser/Project/OrbitAutomation/Orbit
 # 1. Start the user-owned PostgreSQL cluster.
 ./scripts/start_local_postgres.sh
 
-# 2. Idempotently create the role/database/schemas and import the catalog.
+# 2. Confirm PostgreSQL is accepting connections.
+.venv/bin/python scripts/check_database.py --timeout 10
+
+# 3. Idempotently create the role/database/schemas and import the catalog.
 .venv/bin/python scripts/bootstrap_database.py
 
-# 3. Start FastAPI from config/application.json (127.0.0.1:8120).venv/bin/python scripts/run_api.py --reload
+# 4. Start FastAPI from config/application.json (127.0.0.1:8120).
+.venv/bin/python scripts/run_api.py --reload
 
-# 4. In another terminal, start React (127.0.0.1:5274).
+# 5. In another terminal, start React (127.0.0.1:5274).
 npm run dev
 ```
 

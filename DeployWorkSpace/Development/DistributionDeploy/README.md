@@ -54,8 +54,19 @@ minute by cron; its default effective interval is one hour. Use
 `-r /path/to/deploy-root` to select another
 target directory, or `--production` to enable production manifest overrides.
 
-For a manual API start from an already unpacked deployment, start PostgreSQL
-first with `./scripts/start_local_postgres.sh`; omitting `./` causes
+The final startup actions run from the deployed Orbit root in this order:
+
+```bash
+./scripts/start_local_postgres.sh
+.venv/bin/python scripts/check_database.py --timeout 10
+.venv/bin/python scripts/bootstrap_database.py
+.venv/bin/python scripts/run_api.py --reload
+npm --prefix frontend run dev -- --host 127.0.0.1
+```
+
+The API and frontend commands are launched as detached services, followed by
+health checks for both endpoints. For a manual start from an already unpacked
+deployment, include `./` when starting PostgreSQL; omitting it causes
 `command not found` in a normal Ubuntu shell.
 
 Do not run the workflow from inside the final deploy directory: the staging

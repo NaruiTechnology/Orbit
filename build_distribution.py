@@ -18,6 +18,8 @@ DIST_DIR = DEPLOY_PACKAGE / "dist_app"
 DIST_ZIP = DEPLOY_PACKAGE / "dist_app.zip"
 
 REQUIRED_DEPLOYMENT_FILES = {
+    "frontend/package.json",
+    "package.json",
     "scripts/start_local_postgres.sh",
     "scripts/bootstrap_database.py",
     "scripts/check_database.py",
@@ -29,7 +31,10 @@ REQUIRED_DEPLOYMENT_FILES = {
     "database/007_workflow_timing_actions.sql",
     "scripts/orbit_service.cron.example",
     "DeployWorkSpace/Development/DistributionDeploy/Json/DistributionDeploy.json",
+    "DeployWorkSpace/Development/DistributionDeploy/workstates/launchIonbeamWebBackend_state.py",
+    "DeployWorkSpace/Development/DistributionDeploy/workstates/launchIonbeamWebFrontend_state.py",
     "DeployWorkSpace/Development/DistributionDeploy/workstates/verifyDatabase_state.py",
+    "DeployWorkSpace/Development/DistributionDeploy/workstates/verifyIonbeamWeb_state.py",
 }
 
 

@@ -38,9 +38,20 @@ class DistributionDeployThread:
         return True
 
     def _state(self, name: str, action: dict):
-        module = importlib.import_module(
+        module_name = (
             f"DeployWorkSpace.Development.DistributionDeploy.workstates.{name}_state"
         )
+        try:
+            module = importlib.import_module(module_name)
+        except ModuleNotFoundError as error:
+            # Command-only actions intentionally use the generic state and do
+            # not need a one-file-per-action wrapper. Do not hide missing
+            # imports raised from inside a real state module.
+            if error.name != module_name:
+                raise
+            module = importlib.import_module(
+                "DeployWorkSpace.Development.DistributionDeploy.workstates.executeShellCommand_state"
+            )
         state_type = getattr(module, f"{name}_state", None)
         if state_type is None:
             module = importlib.import_module(
