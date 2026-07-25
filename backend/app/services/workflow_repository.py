@@ -1156,6 +1156,7 @@ def get_tree(
         SELECT r.id, r.record_key, r.record_order, r.label_i18n, r.values_json,
                assignment.contact_name AS assigned_contact_name,
                assignment.contact_email AS assigned_contact_email,
+               assignment.sla AS assigned_sla,
                sla.sla_i18n,
                sla.sla
           FROM orbit_workflow.workflow_record r
@@ -1266,7 +1267,7 @@ def get_tree(
                 row["values_json"], "Email", "email", "联系人邮箱"
             )),
             Messages=_step_messages(row["values_json"]),
-            sla=localized_value(row["sla_i18n"], locale, row["sla"]),
+            sla=_localized_step_value(row["assigned_sla"], locale) or localized_value(row["sla_i18n"], locale, row["sla"]),
             is_selected=(
                 row["record_key"] == selected_step_key
                 or row["id"] == selected_record_id
@@ -1591,14 +1592,14 @@ def get_runtime_projection(
     )
     rows = connection.execute(
         """
-        SELECT n.*, r.values_json,
+        SELECT n.*, r.values_json, assignment.sla AS assigned_sla,
                CASE
                    WHEN n.status IN ('active', 'waiting')
-                    AND orbit_workflow.extract_sla_days(r.values_json ->> 'time_limit') IS NOT NULL
+                    AND orbit_workflow.extract_sla_days(COALESCE(assignment.sla, r.values_json ->> 'time_limit')) IS NOT NULL
                     AND CURRENT_TIMESTAMP >= COALESCE(n.start_time, n.started_at, i.started_at)
                         + make_interval(
                             days => orbit_workflow.extract_sla_days(
-                                r.values_json ->> 'time_limit'
+                                COALESCE(assignment.sla, r.values_json ->> 'time_limit')
                             )::integer
                         )
                    THEN true
@@ -1608,6 +1609,8 @@ def get_runtime_projection(
           JOIN orbit_runtime.workflow_instance i ON i.id = n.instance_id
           JOIN orbit_workflow.workflow_record r
             ON r.workflow_id = %s AND r.record_key = n.record_key
+          LEFT JOIN orbit_workflow.workflow_step_assignment assignment
+            ON assignment.workflow_record_id = r.id
          WHERE n.instance_id = %s
          ORDER BY r.record_order
         """,

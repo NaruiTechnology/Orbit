@@ -223,7 +223,7 @@ export function SystemConfigPage({
       const response = await fetch(`/api/v1/admin/workflow-config/${encodeURIComponent(workflowKey)}/steps/${step.id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json", "X-Orbit-Auth": localStorage.getItem("orbit:auth-token") || "" },
-        body: JSON.stringify({ businessEntity: step.businessEntity || null, laboratory_id: step.laboratory_id || null, phone_number: step.phone_number, contact_email: step.contact_email, contact_name: step.contact_name, hr_employee_id: step.hr_employee_id || null }),
+        body: JSON.stringify({ businessEntity: step.businessEntity || null, sla: step.sla || null, laboratory_id: step.laboratory_id || null, phone_number: step.phone_number, contact_email: step.contact_email, contact_name: step.contact_name, hr_employee_id: step.hr_employee_id || null }),
       });
       if (!response.ok) throw new Error((await response.json().catch(() => ({}))).detail || `HTTP ${response.status}`);
       setConfig((current) => current
@@ -597,6 +597,7 @@ export function SystemConfigPage({
                 <button type="button" className="grid-edit-dialog__close" aria-label={locale === "en" ? "Close" : "关闭"} onClick={() => setStepDialog(null)} disabled={Boolean(savingId)}><svg className="grid-edit-action__icon" aria-hidden="true" viewBox="0 0 24 24" focusable="false"><path d="M6 6l12 12M18 6 6 18" /></svg></button>
               </header>
               <div className="grid-edit-dialog__body">
+                <label className="grid-edit-field"><span>SLA</span><input type="text" value={stepDialog.sla || ""} placeholder="—" onChange={(event) => updateStepDialog({ sla: event.target.value || null })} disabled={Boolean(savingId)} /></label>
                 <label className="grid-edit-field"><span>Business entity</span><select value={stepDialog.businessEntity || ""} onChange={(event) => updateStepDialog({ businessEntity: event.target.value || null })} disabled={Boolean(savingId)}><option value="">{locale === "en" ? "Select business entity" : "选择业务实体"}</option>{(config?.businessEntities || []).map((entity) => <option key={entity.key} value={entity.name}>{entity.name}</option>)}</select></label>
                 <label className="grid-edit-field"><span>{locale === "en" ? "Laboratory" : "实验室"}</span><select value={stepDialog.laboratory_id || ""} onChange={(event) => { const laboratoryId = event.target.value || null; const laboratory = config?.laboratories.find((item) => item.id === laboratoryId); updateStepDialog({ laboratory_id: laboratoryId, laboratory_name: laboratory?.name || null, laboratory_code: laboratory?.code || null }); }} disabled={Boolean(savingId)}><option value="">{locale === "en" ? "Select laboratory" : "选择实验室"}</option>{(config?.laboratories || []).map((laboratory) => <option key={laboratory.id} value={laboratory.id}>{laboratory.name}</option>)}</select></label>
                 <label className="grid-edit-field"><span>{locale === "en" ? "Phone Number" : "电话号码"}</span><input type="tel" value={stepDialog.phone_number} onChange={(event) => updateStepDialog({ phone_number: event.target.value })} disabled={Boolean(savingId)} /></label>
@@ -604,7 +605,7 @@ export function SystemConfigPage({
                 <label className="grid-edit-field"><span>{locale === "en" ? "Contact Name" : "联系人姓名"}</span><input type="text" value={stepDialog.contact_name} onChange={(event) => updateStepDialog({ contact_name: event.target.value })} disabled={Boolean(savingId)} /></label>
               </div>
               {stepDialogError ? <p className="grid-edit-dialog__error" role="alert">{stepDialogError}</p> : null}
-              <footer className="dialog-actions grid-edit-dialog__actions"><button type="button" className="confirm-dialog__cancel" onClick={() => setStepDialog(null)} disabled={Boolean(savingId)}>{locale === "en" ? "Cancel" : "取消"}</button><button type="button" className="confirm-dialog__confirm" onClick={() => void applyStepDialog()} disabled={Boolean(savingId)}>{savingId ? (locale === "en" ? "Saving…" : "保存中…") : (locale === "en" ? "Save" : "保存")}</button></footer>
+              <footer className="dialog-actions grid-edit-dialog__actions"><button type="button" className="confirm-dialog__cancel" onClick={() => setStepDialog(null)} disabled={Boolean(savingId)}><svg className="grid-edit-action__icon" aria-hidden="true" viewBox="0 0 24 24" focusable="false"><path d="M6 6l12 12M18 6 6 18" /></svg>{locale === "en" ? "Cancel" : "取消"}</button><button type="button" className="confirm-dialog__confirm" onClick={() => void applyStepDialog()} disabled={Boolean(savingId)}><svg className="grid-edit-action__icon" aria-hidden="true" viewBox="0 0 24 24" focusable="false"><path d="m5 12 4 4L19 6" /></svg>{savingId ? (locale === "en" ? "Saving…" : "保存中…") : (locale === "en" ? "Save" : "保存")}</button></footer>
             </section>
           </div> : null}
         </div> : <div className="system-config-workflow-empty">{locale === "en" ? "Select a workflow panel to view its steps." : "请选择一个工作流面板查看步骤。"}</div>}

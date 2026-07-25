@@ -105,13 +105,13 @@ AS $function$
            i.business_key,
            i.context_json || jsonb_build_object('business_key', i.business_key),
            jsonb_build_object('label', coalesce(r.label_i18n ->> 'en', r.record_key)) || r.values_json,
-           r.values_json ->> 'time_limit',
-           orbit_workflow.extract_sla_days(r.values_json ->> 'time_limit'),
+           COALESCE(assignment.sla, r.values_json ->> 'time_limit'),
+           orbit_workflow.extract_sla_days(COALESCE(assignment.sla, r.values_json ->> 'time_limit')),
            COALESCE(n.start_time, n.started_at, i.started_at),
            COALESCE(n.start_time, n.started_at, i.started_at)
-             + make_interval(days => orbit_workflow.extract_sla_days(r.values_json ->> 'time_limit')::integer),
+             + make_interval(days => orbit_workflow.extract_sla_days(COALESCE(assignment.sla, r.values_json ->> 'time_limit'))::integer),
            coalesce(p_as_of, CURRENT_TIMESTAMP) >= COALESCE(n.start_time, n.started_at, i.started_at)
-             + make_interval(days => orbit_workflow.extract_sla_days(r.values_json ->> 'time_limit')::integer),
+             + make_interval(days => orbit_workflow.extract_sla_days(COALESCE(assignment.sla, r.values_json ->> 'time_limit'))::integer),
            NULLIF(assignment.contact_email, ''),
            NULLIF(assignment.contact_name, ''),
            assignment.business_entity,
@@ -146,7 +146,7 @@ AS $function$
       ) next_step ON true
      WHERE i.status IN ('active', 'waiting')
        AND n.status IN ('active', 'waiting')
-       AND orbit_workflow.extract_sla_days(r.values_json ->> 'time_limit') IS NOT NULL
+       AND orbit_workflow.extract_sla_days(COALESCE(assignment.sla, r.values_json ->> 'time_limit')) IS NOT NULL
        AND (p_workflow_step_id IS NULL OR r.id = p_workflow_step_id)
 $function$;
 
