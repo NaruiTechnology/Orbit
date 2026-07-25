@@ -7,6 +7,7 @@ import { translate } from "../i18n/translations";
 import { orbitGridBlackTheme, orbitGridGreenTheme, orbitGridNavyTheme, orbitGridTheme } from "./WorkflowGrid";
 import { SalesTemplatesPage } from "./SalesTemplatesPage";
 import saveIcon from "../assets/save-icon.svg";
+import { GEOLOCATION_SITES, normalizeSite } from "../geolocation";
 
 interface Laboratory { id: string; code: string; name: string }
 interface StepRow {
@@ -42,13 +43,18 @@ interface AccessUserRow {
   isDraft?: boolean;
 }
 interface AccessResponse { roles: AccessRole[]; users: AccessUserRow[] }
-type AccessTextField = "first_name" | "last_name" | "email" | "phone_number" | "company_name" | "site";
+type AccessDialogMode = "add" | "edit" | "copy";
+interface AccessDialogState { mode: AccessDialogMode; row: AccessUserRow }
+type AccessDialogField = "login_name" | "first_name" | "last_name" | "email" | "phone_number" | "company_name" | "site" | "role_code";
 
-function AccessTextCell({ data, value, field, editing, onChange }: ICellRendererParams<AccessUserRow> & { field: AccessTextField; editing: boolean; onChange: (field: AccessTextField, value: string) => void }) {
-  if (!data) return null;
-  if (!editing) return <span>{String(value ?? "")}</span>;
-  return <input className="admin-grid-input" value={String(value ?? "")} aria-label={field} onMouseDown={(event) => event.stopPropagation()} onClick={(event) => event.stopPropagation()} onChange={(event) => { event.stopPropagation(); onChange(field, event.target.value); }} />;
-}
+const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
+const PHONE_PATTERNS: Record<string, RegExp> = {
+  CN: /^(?:\+?86)?1[3-9]\d{9}$/,
+};
+const COUNTRY_BY_SITE: Record<string, string> = {
+  "Beijing(北京)": "CN", "Shanghai(上海)": "CN", "Shenzheng(深圳)": "CN", "Wuxi(无锡)": "CN",
+  "Xian(西安)": "CN", "Chengdu(成都)": "CN", "Hangzhou(杭州)": "CN", "Tianjing(天津)": "CN", "Taixin(泰兴)": "CN",
+};
 
 type TextCellField = "phone_number" | "contact_email" | "contact_name";
 
@@ -121,7 +127,9 @@ export function SystemConfigPage({
   const [accessError, setAccessError] = useState("");
   const [accessDirtyRows, setAccessDirtyRows] = useState<Record<string, AccessUserRow>>({});
   const [accessDeletedIds, setAccessDeletedIds] = useState<string[]>([]);
-  const [accessEditingIds, setAccessEditingIds] = useState<Record<string, boolean>>({});
+  const [accessDialog, setAccessDialog] = useState<AccessDialogState | null>(null);
+  const [accessDialogError, setAccessDialogError] = useState("");
+  const [accessDialogErrors, setAccessDialogErrors] = useState<Partial<Record<AccessDialogField, string>>>({});
   const [accessSaving, setAccessSaving] = useState(false);
   const [dirtyRows, setDirtyRows] = useState<Record<string, StepRow>>({});
   const dirtyRowsRef = useRef<Record<string, StepRow>>({});
@@ -182,7 +190,7 @@ export function SystemConfigPage({
         if (!response.ok) throw new Error((await response.json().catch(() => ({}))).detail || `HTTP ${response.status}`);
         return response.json() as Promise<AccessResponse>;
       })
-      .then((next) => { if (!cancelled) { setAccess(next); setAccessDirtyRows({}); setAccessDeletedIds([]); setAccessEditingIds({}); } })
+      .then((next) => { if (!cancelled) { setAccess(next); setAccessDirtyRows({}); setAccessDeletedIds([]); setAccessDialog(null); } })
       .catch((reason) => { if (!cancelled) setAccessError(reason instanceof Error ? reason.message : String(reason)); })
       .finally(() => { if (!cancelled) setAccessLoading(false); });
     return () => { cancelled = true; };
@@ -298,12 +306,139 @@ export function SystemConfigPage({
     setAccessDirtyRows((current) => ({ ...current, [next.id]: next }));
   }
 
-  function addAccessRow(source?: AccessUserRow) {
+  function newAccessDraft(source?: AccessUserRow): AccessUserRow {
     const id = `draft-${crypto.randomUUID()}`;
-    const draft: AccessUserRow = { id, login_name: source ? `${source.login_name}-copy` : "", first_name: source?.first_name || "", last_name: source?.last_name || "", email: source?.email || "", phone_number: source?.phone_number || "", company_name: source?.company_name || "", site: source?.site || "Beijing(北京)", is_active: true, created_at: "", last_sign_in: null, role_code: source?.role_code || "user", role_name: source?.role_name || "User", isDraft: true };
-    setAccess((current) => current ? { ...current, users: [draft, ...current.users] } : { roles: [], users: [draft] });
-    setAccessDirtyRows((current) => ({ ...current, [id]: draft }));
-    setAccessEditingIds((current) => ({ ...current, [id]: true }));
+    return { id, login_name: source ? `${source.login_name}-copy` : "", first_name: source?.first_name || "", last_name: source?.last_name || "", email: source?.email || "user@ionbeamtech.com", phone_number: source?.phone_number || "", company_name: source?.company_name || "", site: source?.site || "Beijing(北京)", is_active: true, created_at: "", last_sign_in: null, role_code: source?.role_code || "user", role_name: source?.role_name || "User", isDraft: true };
+  }
+
+  function openAccessDialog(mode: AccessDialogMode, source?: AccessUserRow) {
+    const row = mode === "edit" && source ? { ...source } : newAccessDraft(source);
+    setAccessDialogError("");
+    setAccessDialogErrors({});
+    setAccessDialog({ mode, row });
+  }
+
+  function updateAccessDialog(patch: Partial<AccessUserRow>) {
+    setAccessDialog((current) => current ? { ...current, row: { ...current.row, ...patch } } : current);
+    setAccessDialogErrors((current) => {
+      const next = { ...current };
+      Object.keys(patch).forEach((field) => delete next[field as AccessDialogField]);
+      return next;
+    });
+  }
+
+  function validateAccessDialog(row: AccessUserRow): Partial<Record<AccessDialogField, string>> {
+    const errors: Partial<Record<AccessDialogField, string>> = {};
+    const requiredFields: AccessDialogField[] = ["login_name", "first_name", "last_name", "email", "phone_number", "company_name", "site", "role_code"];
+    requiredFields.forEach((field) => {
+      if (!String(row[field] ?? "").trim()) errors[field] = locale === "en" ? "This field is required." : "此字段为必填项。";
+    });
+    if (row.email.trim() && !EMAIL_PATTERN.test(row.email.trim())) {
+      errors.email = locale === "en" ? "Enter a valid email address." : "请输入有效的电子邮件地址。";
+    }
+    const country = COUNTRY_BY_SITE[normalizeSite(row.site)] || "CN";
+    const phonePattern = PHONE_PATTERNS[country];
+    if (row.phone_number.trim() && phonePattern && !phonePattern.test(row.phone_number.replace(/[\s()-]/g, ""))) {
+      errors.phone_number = locale === "en" ? `Enter a valid ${country} phone number.` : `请输入有效的${country}电话号码。`;
+    }
+    return errors;
+  }
+
+  async function applyAccessDialog() {
+    if (!accessDialog) return;
+    const row = { ...accessDialog.row, login_name: accessDialog.row.login_name.trim() };
+    const errors = validateAccessDialog(row);
+    if (Object.keys(errors).length) {
+      setAccessDialogErrors(errors);
+      setAccessDialogError(locale === "en" ? "Please correct the highlighted fields." : "请修正高亮显示的字段。");
+      return;
+    }
+
+    setAccessSaving(true);
+    setAccessDialogError("");
+    try {
+      const body = {
+        login_name: row.login_name,
+        first_name: row.first_name,
+        last_name: row.last_name,
+        email: row.email,
+        phone_number: row.phone_number,
+        company_name: row.company_name,
+        site: row.site,
+        role_code: row.role_code,
+        is_active: row.is_active,
+      };
+      const isNew = accessDialog.mode !== "edit" || row.isDraft;
+      const response = await fetch(
+        isNew
+          ? "/api/v1/admin/access-management/users"
+          : `/api/v1/admin/access-management/users/${row.id}`,
+        {
+          method: isNew ? "POST" : "PATCH",
+          headers: {
+            "Content-Type": "application/json",
+            "X-Orbit-Auth": localStorage.getItem("orbit:auth-token") || "",
+          },
+          body: JSON.stringify(body),
+        },
+      );
+      if (!response.ok) {
+        const detail = await response.json().catch(() => ({}));
+        throw new Error(detail.detail || `HTTP ${response.status}`);
+      }
+
+      const refreshed = await fetch(
+        `/api/v1/admin/access-management?locale=${locale}`,
+        { headers: { "X-Orbit-Auth": localStorage.getItem("orbit:auth-token") || "" } },
+      );
+      if (!refreshed.ok) throw new Error(`HTTP ${refreshed.status}`);
+      const nextAccess = await refreshed.json() as AccessResponse;
+
+      // Keep unrelated grid edits pending, but remove the row just persisted.
+      const pendingRows = Object.values(accessDirtyRows).filter(
+        (pending) => pending.id !== row.id && !nextAccess.users.some((item) => item.id === pending.id),
+      );
+      setAccessDirtyRows((current) => {
+        const next = { ...current };
+        delete next[row.id];
+        return next;
+      });
+      setAccess({ ...nextAccess, users: [...pendingRows, ...nextAccess.users] });
+      setAccessDialog(null);
+      setAccessDialogErrors({});
+    } catch (reason) {
+      setAccessDialogError(reason instanceof Error ? reason.message : String(reason));
+    } finally {
+      setAccessSaving(false);
+    }
+  }
+
+  function addAccessRow(source?: AccessUserRow) {
+    openAccessDialog(source ? "copy" : "add", source);
+  }
+
+  function closeAccessDialog() {
+    setAccessDialog(null);
+    setAccessDialogError("");
+    setAccessDialogErrors({});
+  }
+
+  function accessDialogLabel(field: string) {
+    const labels: Record<string, string> = { login_name: "Login", first_name: "First name", last_name: "Last name", email: "Email", phone_number: "Phone", company_name: "Company", site: "Site" };
+    return locale === "en" ? labels[field] : ({ login_name: "登录名", first_name: "名", last_name: "姓", email: "电子邮件", phone_number: "电话", company_name: "公司", site: "站点" }[field] || labels[field]);
+  }
+
+  function accessDialogInput(field: Exclude<AccessDialogField, "role_code">) {
+    if (!accessDialog) return null;
+    const value = accessDialog.row[field];
+    const readOnly = field === "login_name" && accessDialog.mode === "edit";
+    return <label key={field} className="grid-edit-field">
+      <span>{accessDialogLabel(field)}<b className="grid-edit-field__required" aria-label="required">*</b></span>
+      {field === "site" ? <select value={normalizeSite(value)} aria-invalid={Boolean(accessDialogErrors[field])} aria-describedby={accessDialogErrors[field] ? `${field}-error` : undefined} onChange={(event) => updateAccessDialog({ site: event.target.value })} disabled={accessSaving}>
+        {GEOLOCATION_SITES.map((site) => <option key={site.id} value={site.value}>{locale === "en" ? `${site.name} (${site.name_zh})` : site.value}</option>)}
+      </select> : <input type={field === "email" ? "email" : field === "phone_number" ? "tel" : "text"} value={value} readOnly={readOnly} required aria-invalid={Boolean(accessDialogErrors[field])} aria-describedby={accessDialogErrors[field] ? `${field}-error` : undefined} onChange={(event) => updateAccessDialog({ [field]: event.target.value })} disabled={accessSaving} />}
+      {accessDialogErrors[field] ? <small id={`${field}-error`} className="grid-edit-field__error">{accessDialogErrors[field]}</small> : null}
+    </label>;
   }
 
   function deleteAccessRow(row: AccessUserRow) {
@@ -323,42 +458,40 @@ export function SystemConfigPage({
       }
       for (const row of Object.values(accessDirtyRows)) {
         const body = { login_name: row.login_name, first_name: row.first_name, last_name: row.last_name, email: row.email, phone_number: row.phone_number, company_name: row.company_name, site: row.site, role_code: row.role_code, is_active: row.is_active };
-        const response = await fetch(row.isDraft ? "/api/v1/admin/access-management/users" : `/api/v1/admin/access-management/users/${row.id}`, { method: row.isDraft ? "POST" : "PATCH", headers: { "Content-Type": "application/json", "X-Orbit-Auth": localStorage.getItem("orbit:auth-token") || "" }, body: JSON.stringify(row.isDraft ? body : { role_code: row.role_code, is_active: row.is_active }) });
+        const response = await fetch(row.isDraft ? "/api/v1/admin/access-management/users" : `/api/v1/admin/access-management/users/${row.id}`, { method: row.isDraft ? "POST" : "PATCH", headers: { "Content-Type": "application/json", "X-Orbit-Auth": localStorage.getItem("orbit:auth-token") || "" }, body: JSON.stringify(row.isDraft ? body : { ...body, login_name: row.login_name, first_name: row.first_name, last_name: row.last_name, email: row.email, phone_number: row.phone_number, company_name: row.company_name, site: row.site }) });
         if (!response.ok) throw new Error((await response.json().catch(() => ({}))).detail || `HTTP ${response.status}`);
       }
       const refreshed = await fetch(`/api/v1/admin/access-management?locale=${locale}`, { headers: { "X-Orbit-Auth": localStorage.getItem("orbit:auth-token") || "" } });
       if (!refreshed.ok) throw new Error(`HTTP ${refreshed.status}`);
-      setAccess(await refreshed.json() as AccessResponse); setAccessDirtyRows({}); setAccessDeletedIds([]); setAccessEditingIds({});
+      setAccess(await refreshed.json() as AccessResponse); setAccessDirtyRows({}); setAccessDeletedIds([]); setAccessDialog(null);
     } catch (reason) { setAccessError(reason instanceof Error ? reason.message : String(reason)); }
     finally { setAccessSaving(false); }
   }
 
   const accessColumns = useMemo<ColDef<AccessUserRow>[]>(() => [
     { field: "login_name", headerName: locale === "en" ? "Login" : "登录名", minWidth: 170, pinned: "left", enableRowGroup: true },
-    { field: "first_name", headerName: locale === "en" ? "First name" : "名", minWidth: 130, cellRenderer: (params: ICellRendererParams<AccessUserRow>) => <AccessTextCell {...params} field="first_name" editing={Boolean(params.data && accessEditingIds[params.data.id])} onChange={(field, value) => params.data && changeAccessRow(params.data, { [field]: value })} /> },
-    { field: "last_name", headerName: locale === "en" ? "Last name" : "姓", minWidth: 130, cellRenderer: (params: ICellRendererParams<AccessUserRow>) => <AccessTextCell {...params} field="last_name" editing={Boolean(params.data && accessEditingIds[params.data.id])} onChange={(field, value) => params.data && changeAccessRow(params.data, { [field]: value })} /> },
-    { field: "email", headerName: locale === "en" ? "Email" : "电子邮件", minWidth: 230, cellRenderer: (params: ICellRendererParams<AccessUserRow>) => <AccessTextCell {...params} field="email" editing={Boolean(params.data && accessEditingIds[params.data.id])} onChange={(field, value) => params.data && changeAccessRow(params.data, { [field]: value })} /> },
-    { field: "phone_number", headerName: locale === "en" ? "Phone" : "电话", minWidth: 150, cellRenderer: (params: ICellRendererParams<AccessUserRow>) => <AccessTextCell {...params} field="phone_number" editing={Boolean(params.data && accessEditingIds[params.data.id])} onChange={(field, value) => params.data && changeAccessRow(params.data, { [field]: value })} /> },
-    { field: "company_name", headerName: locale === "en" ? "Company" : "公司", minWidth: 170, cellRenderer: (params: ICellRendererParams<AccessUserRow>) => <AccessTextCell {...params} field="company_name" editing={Boolean(params.data && accessEditingIds[params.data.id])} onChange={(field, value) => params.data && changeAccessRow(params.data, { [field]: value })} /> },
-    { field: "site", headerName: locale === "en" ? "Site" : "站点", minWidth: 150, cellRenderer: (params: ICellRendererParams<AccessUserRow>) => <AccessTextCell {...params} field="site" editing={Boolean(params.data && accessEditingIds[params.data.id])} onChange={(field, value) => params.data && changeAccessRow(params.data, { [field]: value })} /> },
+    { field: "first_name", headerName: locale === "en" ? "First name" : "名", minWidth: 130 },
+    { field: "last_name", headerName: locale === "en" ? "Last name" : "姓", minWidth: 130 },
+    { field: "email", headerName: locale === "en" ? "Email" : "电子邮件", minWidth: 230 },
+    { field: "phone_number", headerName: locale === "en" ? "Phone" : "电话", minWidth: 150 },
+    { field: "company_name", headerName: locale === "en" ? "Company" : "公司", minWidth: 170 },
+    { field: "site", headerName: locale === "en" ? "Site" : "站点", minWidth: 150 },
     {
       field: "role_code", headerName: locale === "en" ? "Access role" : "访问角色", minWidth: 160, editable: false,
-      cellRenderer: (params: ICellRendererParams<AccessUserRow>) => params.data ? <select className="admin-grid-select" value={params.data.role_code} aria-label="Access role" onClick={(event) => event.stopPropagation()} onChange={(event) => { changeAccessRow(params.data!, { role_code: event.target.value }); }}>
-        {(access?.roles || []).map((role) => <option key={role.code} value={role.code}>{role.name}</option>)}
-      </select> : null,
+      valueFormatter: (params) => access?.roles.find((role) => role.code === params.value)?.name || params.value || "—",
     },
     {
       field: "is_active", headerName: locale === "en" ? "Active" : "启用", width: 110, editable: false,
-      cellRenderer: (params: ICellRendererParams<AccessUserRow>) => params.data ? <input type="checkbox" checked={params.data.is_active} aria-label={`${params.data.login_name} active`} onClick={(event) => event.stopPropagation()} onChange={(event) => { changeAccessRow(params.data!, { is_active: event.target.checked }); }} /> : null,
+      cellRenderer: (params: ICellRendererParams<AccessUserRow>) => params.data ? <input type="checkbox" checked={params.data.is_active} aria-label={`${params.data.login_name} active`} readOnly /> : null,
     },
     { field: "last_sign_in", headerName: locale === "en" ? "Last sign-in" : "最后登录", minWidth: 190, valueFormatter: (params) => params.value ? new Date(params.value).toLocaleString(locale === "en" ? "en-US" : "zh-CN") : "—" },
     { field: "created_at", headerName: locale === "en" ? "Signed up" : "注册时间", minWidth: 190, valueFormatter: (params) => params.value ? new Date(params.value).toLocaleString(locale === "en" ? "en-US" : "zh-CN") : "—" },
     { colId: "actions", headerName: locale === "en" ? "Actions" : "操作", pinned: "right", width: 132, sortable: false, filter: false, cellRenderer: (params: ICellRendererParams<AccessUserRow>) => params.data ? <div className="grid-row-actions">
-      <button type="button" className="grid-row-action grid-row-action--edit" title="Edit row" aria-label="Edit row" onMouseDown={(event) => event.stopPropagation()} onClick={() => setAccessEditingIds((current) => ({ ...current, [params.data!.id]: !current[params.data!.id] }))}><svg aria-hidden="true" viewBox="0 0 24 24"><path d="m4 16-.8 4.8L8 20 18.8 9.2l-4-4L4 16Zm9.4-9.4 4 4" /></svg></button>
+      <button type="button" className="grid-row-action grid-row-action--edit" title="Edit row" aria-label="Edit row" onMouseDown={(event) => event.stopPropagation()} onClick={() => openAccessDialog("edit", params.data)}><svg aria-hidden="true" viewBox="0 0 24 24"><path d="m4 16-.8 4.8L8 20 18.8 9.2l-4-4L4 16Zm9.4-9.4 4 4" /></svg></button>
       <button type="button" className="grid-row-action grid-row-action--duplicate" title="Copy row" aria-label="Copy row" onMouseDown={(event) => event.stopPropagation()} onClick={() => addAccessRow(params.data)}><svg aria-hidden="true" viewBox="0 0 24 24"><path d="M8 8h11v11H8zM5 16H4a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h11a1 1 0 0 1 1 1v1" /></svg></button>
       <button type="button" className="grid-row-action grid-row-action--delete" title="Delete row" aria-label="Delete row" onMouseDown={(event) => event.stopPropagation()} onClick={() => deleteAccessRow(params.data!)}><svg aria-hidden="true" viewBox="0 0 24 24"><path d="M5 7h14M10 11v6m4-6v6M9 7V4h6v3m-9 0 1 13h8l1-13" /></svg></button>
     </div> : null },
-  ], [access?.roles, accessEditingIds, locale]);
+  ], [access?.roles, locale]);
 
   return <main className="system-config-page">
     <section className="system-config-card">
@@ -373,6 +506,27 @@ export function SystemConfigPage({
         {accessError && <p className="system-config-error" role="alert">{accessError}</p>}
         <div className="system-config-grid-toolbar"><div className="grid-toolbar"><button type="button" className="grid-add-button" aria-label="Add account" title="Add account" onClick={() => addAccessRow()}><svg aria-hidden="true" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14" /></svg></button><button type="button" className="grid-layout-reset-button system-config-save-all" disabled={accessSaving || (!Object.keys(accessDirtyRows).length && !accessDeletedIds.length)} onClick={() => void saveAccessAll()}><img src={saveIcon} alt="" aria-hidden="true" />{accessSaving ? "Saving…" : "Save all"}</button><button type="button" className="grid-layout-reset-button" onClick={() => accessGridApiRef.current?.resetColumnState()}>{locale === "en" ? "Reset grid" : "重置表格"}</button></div></div>
         <div className="system-config-grid grid-frame" aria-busy={accessLoading || accessSaving}><AgGridReact<AccessUserRow> theme={theme === "navy" ? orbitGridNavyTheme : theme === "light" ? orbitGridTheme : theme === "black" ? orbitGridBlackTheme : orbitGridGreenTheme} rowData={access?.users || []} columnDefs={accessColumns} defaultColDef={{ sortable: true, filter: true, floatingFilter: true, resizable: true, suppressHeaderMenuButton: false, enableRowGroup: true }} getRowId={(params) => String(params.data.id)} rowHeight={44} headerHeight={46} floatingFiltersHeight={34} enableBrowserTooltips ensureDomOrder suppressAnimationFrame sideBar={{ toolPanels: [{ id: "columns", labelDefault: "Columns", labelKey: "columns", iconKey: "columns", toolPanel: "agColumnsToolPanel", toolPanelParams: { suppressRowGroups: false, suppressValues: true, suppressPivots: true, suppressPivotMode: true } }], defaultToolPanel: "columns" }} rowGroupPanelShow="always" onGridReady={(event) => { accessGridApiRef.current = event.api; }} /></div>
+        {accessDialog ? <div className="dialog-backdrop grid-edit-backdrop" role="presentation" onMouseDown={(event) => { if (event.target === event.currentTarget) closeAccessDialog(); }}>
+          <section className="dialog-surface grid-edit-dialog access-edit-dialog" role="dialog" aria-modal="true" aria-labelledby="access-edit-title">
+            <header className="grid-edit-dialog__header">
+              <div>
+                <span className="confirm-dialog__eyebrow">ACCESS MANAGEMENT</span>
+                <h2 id="access-edit-title">{accessDialog.mode === "edit" ? (locale === "en" ? "Edit account" : "编辑账户") : accessDialog.mode === "copy" ? (locale === "en" ? "Copy account" : "复制账户") : (locale === "en" ? "Add account" : "新增账户")}</h2>
+              </div>
+              <button type="button" className="grid-edit-dialog__close" aria-label={locale === "en" ? "Close" : "关闭"} onClick={closeAccessDialog} disabled={accessSaving}><svg className="grid-edit-action__icon" aria-hidden="true" viewBox="0 0 24 24" focusable="false"><path d="M6 6l12 12M18 6 6 18" /></svg></button>
+            </header>
+            <div className="grid-edit-dialog__body">
+              {(["login_name", "first_name", "last_name", "email", "phone_number", "company_name", "site"] as const).map((field) => accessDialogInput(field))}
+              <label className="grid-edit-field"><span>{locale === "en" ? "Access role" : "访问角色"}<b className="grid-edit-field__required" aria-label="required">*</b></span><select value={accessDialog.row.role_code} required aria-invalid={Boolean(accessDialogErrors.role_code)} aria-describedby={accessDialogErrors.role_code ? "role_code-error" : undefined} onChange={(event) => updateAccessDialog({ role_code: event.target.value, role_name: access?.roles.find((role) => role.code === event.target.value)?.name || event.target.value })} disabled={accessSaving}>{(access?.roles || []).map((role) => <option key={role.code} value={role.code}>{role.name}</option>)}</select>{accessDialogErrors.role_code ? <small id="role_code-error" className="grid-edit-field__error">{accessDialogErrors.role_code}</small> : null}</label>
+              <label className="grid-edit-field"><span>{locale === "en" ? "Active" : "启用"}</span><input type="checkbox" checked={accessDialog.row.is_active} onChange={(event) => updateAccessDialog({ is_active: event.target.checked })} disabled={accessSaving} /></label>
+            </div>
+            {accessDialogError ? <p className="grid-edit-dialog__error" role="alert">{accessDialogError}</p> : null}
+            <footer className="dialog-actions grid-edit-dialog__actions">
+              <button type="button" className="confirm-dialog__cancel" onClick={closeAccessDialog} disabled={accessSaving}><svg className="grid-edit-action__icon" aria-hidden="true" viewBox="0 0 24 24" focusable="false"><path d="M6 6l12 12M18 6 6 18" /></svg>{locale === "en" ? "Cancel" : "取消"}</button>
+              <button type="button" className="confirm-dialog__confirm" onClick={() => void applyAccessDialog()} disabled={accessSaving}><svg className="grid-edit-action__icon" aria-hidden="true" viewBox="0 0 24 24" focusable="false"><path d="m5 12 4 4L19 6" /></svg>{accessSaving ? (locale === "en" ? "Saving…" : "保存中…") : (locale === "en" ? "Apply" : "应用")}</button>
+            </footer>
+          </section>
+        </div> : null}
       </section> : null}
       {topTab === "customer-relations" ? <nav className="system-config-tabs system-config-tabs--mode" aria-label="Customer Relations configuration" role="tablist">
         <button type="button" role="tab" aria-selected={customerSubTab === "steps"} onClick={() => setCustomerSubTab("steps")}>{translate(locale, "steps")}</button>

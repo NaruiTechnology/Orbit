@@ -1796,6 +1796,7 @@ input:focus-visible {
 }
 
 .grid-edit-dialog__close {
+  display: grid;
   width: 32px;
   height: 32px;
   color: var(--ink-soft);
@@ -1804,6 +1805,7 @@ input:focus-visible {
   cursor: pointer;
   font-size: 22px;
   line-height: 1;
+  place-items: center;
 }
 
 .grid-edit-dialog__body {
@@ -1851,6 +1853,7 @@ input:focus-visible {
 
 .grid-edit-field input:not([type="checkbox"]),
 .grid-edit-field textarea,
+.grid-edit-field select,
 .grid-edit-field output {
   width: 100%;
   min-height: 36px;
@@ -1864,6 +1867,10 @@ input:focus-visible {
 .grid-edit-field textarea {
   min-height: 92px;
   resize: vertical;
+}
+
+.grid-edit-field select {
+  cursor: pointer;
 }
 
 .grid-edit-field--wide textarea:focus {

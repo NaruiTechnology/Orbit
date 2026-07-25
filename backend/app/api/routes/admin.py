@@ -41,6 +41,13 @@ class AccessUserUpdate(BaseModel):
 
     role_code: str = Field(min_length=1, max_length=32)
     is_active: bool
+    login_name: str | None = Field(default=None, min_length=1, max_length=120)
+    first_name: str | None = Field(default=None, max_length=100)
+    last_name: str | None = Field(default=None, max_length=100)
+    email: str | None = Field(default=None, max_length=320)
+    phone_number: str | None = Field(default=None, max_length=40)
+    company_name: str | None = Field(default=None, max_length=160)
+    site: str | None = Field(default=None, max_length=160)
 
 
 class AccessUserCreate(BaseModel):
@@ -110,8 +117,25 @@ def update_access_user(
     if role is None:
         raise HTTPException(status_code=422, detail="access role is not configured")
     updated = connection.execute(
-        "UPDATE orbit_identity.app_user SET is_active = %s WHERE id = %s RETURNING id",
-        (request.is_active, user_id),
+        """UPDATE orbit_identity.app_user
+              SET login_name = COALESCE(%s, login_name),
+                  first_name = COALESCE(%s, first_name),
+                  last_name = COALESCE(%s, last_name),
+                  email = COALESCE(%s, email),
+                  phone_number = COALESCE(%s, phone_number),
+                  company_name = COALESCE(%s, company_name),
+                  site = COALESCE(%s, site),
+                  is_active = %s
+            WHERE id = %s
+        RETURNING id""",
+        (request.login_name.strip() if request.login_name is not None else None,
+         request.first_name.strip() if request.first_name is not None else None,
+         request.last_name.strip() if request.last_name is not None else None,
+         request.email.strip() if request.email is not None else None,
+         request.phone_number.strip() if request.phone_number is not None else None,
+         request.company_name.strip() if request.company_name is not None else None,
+         request.site.strip() if request.site is not None else None,
+         request.is_active, user_id),
     ).fetchone()
     if updated is None:
         raise HTTPException(status_code=404, detail="user not found")
@@ -133,16 +157,15 @@ def create_access_user(
     if role is None:
         raise HTTPException(status_code=422, detail="access role is not configured")
     try:
+        display_name = f"{request.first_name.strip()} {request.last_name.strip()}".strip()
         row = connection.execute(
             """INSERT INTO orbit_identity.app_user
                (login_name, display_name_i18n, first_name, last_name, email, phone_number, company_name, site, is_active)
-               VALUES (%s, jsonb_build_object('en', %s, 'zh_CN', %s, 'zh_HK', %s), %s, %s, %s, %s, %s, %s, %s)
+               VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
                RETURNING id, login_name, first_name, last_name, email, phone_number, company_name, site, is_active, created_at""",
-            (request.login_name.strip(), f"{request.first_name.strip()} {request.last_name.strip()}".strip(),
-             f"{request.first_name.strip()} {request.last_name.strip()}".strip(),
-             f"{request.first_name.strip()} {request.last_name.strip()}".strip(), request.first_name.strip(),
-             request.last_name.strip(), request.email.strip(), request.phone_number.strip(),
-             request.company_name.strip(), request.site.strip(), request.is_active),
+            (request.login_name.strip(), Jsonb({"en": display_name, "zh_CN": display_name, "zh_HK": display_name}),
+             request.first_name.strip(), request.last_name.strip(), request.email.strip(),
+             request.phone_number.strip(), request.company_name.strip(), request.site.strip(), request.is_active),
         ).fetchone()
     except Exception as error:
         raise HTTPException(status_code=409, detail=f"Could not create account: {error}") from error
