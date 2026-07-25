@@ -212,6 +212,7 @@ CREATE INDEX IF NOT EXISTS ix_workflow_record_scope
 CREATE TABLE IF NOT EXISTS orbit_workflow.workflow_step_assignment (
     id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
     workflow_record_id uuid NOT NULL UNIQUE REFERENCES orbit_workflow.workflow_record(id) ON DELETE CASCADE,
+    business_entity varchar(160),
     laboratory_id uuid REFERENCES orbit_identity.laboratory(id) ON DELETE SET NULL,
     phone_number varchar(80) NOT NULL DEFAULT '',
     contact_email varchar(320) NOT NULL DEFAULT '',
@@ -244,7 +245,8 @@ END
 $block$;
 
 ALTER TABLE orbit_workflow.workflow_step_assignment
-    ADD COLUMN IF NOT EXISTS contact_name varchar(200) NOT NULL DEFAULT '';
+    ADD COLUMN IF NOT EXISTS contact_name varchar(200) NOT NULL DEFAULT '',
+    ADD COLUMN IF NOT EXISTS business_entity varchar(160);
 
 -- Runtime/business data shown in DataGrids.  This table is deliberately
 -- separate from workflow_record: the latter is the process graph source used

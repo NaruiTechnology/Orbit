@@ -424,6 +424,11 @@ input:focus-visible {
 .system-config-back:hover { border-color: var(--signal); color: var(--signal); }
 .admin-grid-select { width: 100%; min-height: 28px; padding: 4px 24px 4px 7px; color: var(--ink); background: var(--control-bg); border: 1px solid var(--line); border-radius: 4px; font: inherit; }
 .admin-grid-select:focus { border-color: var(--signal); outline: none; box-shadow: 0 0 0 1px color-mix(in srgb, var(--signal) 25%, transparent); }
+
+/* Empty dropdown prompts are placeholders, not selected data. Keep them muted
+   consistently across grid editors, dialogs, authentication, and templates. */
+select:has(> option:checked[value=""]) { color: var(--ink-soft); }
+select:has(> option:checked[value=""]) option { color: var(--ink); }
 .admin-grid-input { width: 100%; min-height: 28px; padding: 4px 7px; color: var(--ink); background: var(--control-bg); border: 1px solid var(--line); border-radius: 4px; font: inherit; }
 .admin-grid-input:focus { border-color: var(--signal); outline: none; box-shadow: 0 0 0 1px color-mix(in srgb, var(--signal) 25%, transparent); }
 

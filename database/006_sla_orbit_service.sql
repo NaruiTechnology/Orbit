@@ -63,6 +63,9 @@ BEGIN
 END
 $function$;
 
+DROP FUNCTION IF EXISTS orbit_runtime.evaluate_sla_workflow_steps(uuid, timestamptz);
+DROP FUNCTION IF EXISTS orbit_runtime.get_sla_workflow_steps(timestamptz, uuid);
+
 CREATE OR REPLACE FUNCTION orbit_runtime.get_sla_workflow_steps(
     p_as_of timestamptz DEFAULT CURRENT_TIMESTAMP,
     p_workflow_step_id uuid DEFAULT NULL
@@ -85,6 +88,7 @@ RETURNS TABLE (
     sla_violated boolean,
     recipient_email varchar,
     recipient_name varchar,
+    business_entity varchar,
     business_rules jsonb,
     next_record_key varchar
 )
@@ -110,6 +114,7 @@ AS $function$
              + make_interval(days => orbit_workflow.extract_sla_days(r.values_json ->> 'time_limit')::integer),
            NULLIF(assignment.contact_email, ''),
            NULLIF(assignment.contact_name, ''),
+           assignment.business_entity,
            jsonb_build_object(
                'business_alert_rules', COALESCE((
                    SELECT jsonb_agg(to_jsonb(rule) ORDER BY rule.record_order)
@@ -154,6 +159,7 @@ RETURNS TABLE (
     workflow_instance_id uuid,
     workflow_node_instance_id uuid,
     record_key varchar,
+    business_entity varchar,
     sla_days numeric,
     sla_violated boolean,
     next_record_key varchar,
@@ -168,6 +174,7 @@ AS $function$
            s.workflow_instance_id,
            s.workflow_node_instance_id,
            s.record_key,
+           s.business_entity,
            s.sla_days,
            s.sla_violated,
            s.next_record_key,

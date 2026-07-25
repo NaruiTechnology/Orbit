@@ -1163,38 +1163,8 @@
           }
         },
         {
-          "record_key": "order-evaluation-009",
-          "record_order": 8,
-          "source_row": 9,
-          "label_i18n": {
-            "en": "Proceed to Official Order",
-            "zh_CN": "进入正式下单",
-            "zh_HK": "進入正式下單"
-          },
-          "values": {
-            "step_number": 8,
-            "step_name": "进入正式下单",
-            "owner_role": "销售",
-            "system_action": "选择批量/非批量下单→填写正式订单信息→异地订单指定返样地址",
-            "time_limit": "-",
-            "success_condition": "提交成功",
-            "exception_branch": "取消→订单终止",
-            "notes": "正式订单关联评估订单号；异地订单返样地址默认=来源实验室"
-          },
-          "source_cells": {
-            "step_number": "A9",
-            "step_name": "B9",
-            "owner_role": "C9",
-            "system_action": "D9",
-            "time_limit": "E9",
-            "success_condition": "F9",
-            "exception_branch": "G9",
-            "notes": "H9"
-          }
-        },
-        {
           "record_key": "order-evaluation-010",
-          "record_order": 9,
+          "record_order": 8,
           "source_row": 10,
           "label_i18n": {
             "en": "Proceed to Official Order",
@@ -1262,12 +1232,6 @@
         },
         {
           "source": "order-evaluation-008",
-          "target": "order-evaluation-009",
-          "kind": "sequence",
-          "label": null
-        },
-        {
-          "source": "order-evaluation-009",
           "target": "order-evaluation-010",
           "kind": "sequence",
           "label": null

@@ -10,12 +10,14 @@ import saveIcon from "../assets/save-icon.svg";
 import { GEOLOCATION_SITES, normalizeSite } from "../geolocation";
 
 interface Laboratory { id: string; code: string; name: string }
+interface BusinessEntityOption { key: string; name: string }
 interface StepRow {
   id: string;
   record_key: string;
   record_order: number;
   step_name: string;
   sla: string | null;
+  businessEntity: string | null;
   laboratory_id: string | null;
   laboratory_code: string | null;
   laboratory_name: string | null;
@@ -24,7 +26,7 @@ interface StepRow {
   contact_name: string;
   hr_employee_id: string | null;
 }
-interface ConfigResponse { workflow_key: string; workflow_name: string; laboratories: Laboratory[]; steps: StepRow[] }
+interface ConfigResponse { workflow_key: string; workflow_name: string; laboratories: Laboratory[]; businessEntities: BusinessEntityOption[]; steps: StepRow[] }
 interface AccessRole { code: string; name: string }
 interface AccessUserRow {
   id: string;
@@ -65,11 +67,13 @@ function AdminTextCell({
   updateDraft,
   publishDirty,
   locale,
+  readOnly = false,
 }: ICellRendererParams<StepRow> & {
   field: TextCellField;
   updateDraft: (step: StepRow) => void;
   publishDirty: () => void;
   locale: Locale;
+  readOnly?: boolean;
 }) {
   const [draft, setDraft] = useState(String(value ?? ""));
 
@@ -88,6 +92,7 @@ function AdminTextCell({
       className="admin-grid-input"
       value={draft}
       type={field === "contact_email" ? "email" : field === "phone_number" ? "tel" : "text"}
+      readOnly={readOnly}
       placeholder={placeholder}
       aria-label={field === "contact_name" ? "Contact Name" : field}
       onMouseDown={(event) => event.stopPropagation()}
@@ -131,6 +136,8 @@ export function SystemConfigPage({
   const [accessDialogError, setAccessDialogError] = useState("");
   const [accessDialogErrors, setAccessDialogErrors] = useState<Partial<Record<AccessDialogField, string>>>({});
   const [accessSaving, setAccessSaving] = useState(false);
+  const [stepDialog, setStepDialog] = useState<StepRow | null>(null);
+  const [stepDialogError, setStepDialogError] = useState("");
   const [dirtyRows, setDirtyRows] = useState<Record<string, StepRow>>({});
   const dirtyRowsRef = useRef<Record<string, StepRow>>({});
   const gridApiRef = useRef<GridApi<StepRow> | null>(null);
@@ -216,7 +223,7 @@ export function SystemConfigPage({
       const response = await fetch(`/api/v1/admin/workflow-config/${encodeURIComponent(workflowKey)}/steps/${step.id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json", "X-Orbit-Auth": localStorage.getItem("orbit:auth-token") || "" },
-        body: JSON.stringify({ laboratory_id: step.laboratory_id || null, phone_number: step.phone_number, contact_email: step.contact_email, contact_name: step.contact_name, hr_employee_id: step.hr_employee_id || null }),
+        body: JSON.stringify({ businessEntity: step.businessEntity || null, laboratory_id: step.laboratory_id || null, phone_number: step.phone_number, contact_email: step.contact_email, contact_name: step.contact_name, hr_employee_id: step.hr_employee_id || null }),
       });
       if (!response.ok) throw new Error((await response.json().catch(() => ({}))).detail || `HTTP ${response.status}`);
       setConfig((current) => current
@@ -239,10 +246,38 @@ export function SystemConfigPage({
     setSavingAll(false);
   }, [saveStep]);
 
+  function updateStepDialog(patch: Partial<StepRow>) {
+    setStepDialog((current) => current ? { ...current, ...patch } : current);
+  }
+
+  async function applyStepDialog() {
+    if (!stepDialog) return;
+    setStepDialogError("");
+    const saved = await saveStep(stepDialog);
+    if (saved) setStepDialog(null);
+    else setStepDialogError(error || (locale === "en" ? "Could not save this workflow step." : "无法保存此工作流步骤。"));
+  }
+
   const columns = useMemo<ColDef<StepRow>[]>(() => [
     { field: "record_order", headerName: "#", width: 70, pinned: "left", editable: false },
     { field: "step_name", headerName: locale === "en" ? "Workflow step" : "工作流步骤", minWidth: 220, flex: 1, editable: false },
     { field: "sla", headerName: "SLA", minWidth: 120, width: 140, editable: false },
+    {
+      field: "businessEntity", headerName: "Business entity", minWidth: 220, editable: false,
+      cellRenderer: (params: ICellRendererParams<StepRow>) => {
+        const row = params.data;
+        if (!row) return null;
+        return <select className="admin-grid-select" value={row.businessEntity || ""} aria-label="BusinessEntity" disabled onClick={(event) => event.stopPropagation()} onChange={(event) => {
+          event.stopPropagation();
+          const updated = { ...row, businessEntity: event.target.value || null };
+          params.node.setData(updated);
+          markDirty(updated);
+        }}>
+          <option value="">{locale === "en" ? "Select business entity" : "选择业务实体"}</option>
+          {(config?.businessEntities || []).map((entity) => <option key={entity.key} value={entity.name}>{entity.name}</option>)}
+        </select>;
+      },
+    },
     {
       field: "laboratory_id", headerName: locale === "en" ? "Laboratory" : "实验室", minWidth: 210,
       editable: false,
@@ -250,7 +285,7 @@ export function SystemConfigPage({
       cellRenderer: (params: ICellRendererParams<StepRow>) => {
         const row = params.data;
         if (!row) return null;
-        return <select className="admin-grid-select" value={row.laboratory_id || ""} aria-label="Laboratory" onClick={(event) => event.stopPropagation()} onChange={(event) => {
+        return <select className="admin-grid-select" value={row.laboratory_id || ""} aria-label="Laboratory" disabled onClick={(event) => event.stopPropagation()} onChange={(event) => {
           event.stopPropagation();
           const laboratoryId = event.target.value || null;
           const laboratory = config?.laboratories.find((item) => item.id === laboratoryId);
@@ -265,15 +300,15 @@ export function SystemConfigPage({
     },
     {
       field: "phone_number", headerName: locale === "en" ? "Phone Number" : "电话号码", minWidth: 210, editable: false,
-      cellRenderer: (params: ICellRendererParams<StepRow>) => <AdminTextCell {...params} field="phone_number" updateDraft={updateDraft} publishDirty={publishDirty} locale={locale} />,
+      cellRenderer: (params: ICellRendererParams<StepRow>) => <AdminTextCell {...params} field="phone_number" updateDraft={updateDraft} publishDirty={publishDirty} locale={locale} readOnly />,
     },
     {
       field: "contact_email", headerName: locale === "en" ? "Email address" : "电子邮件", minWidth: 250, editable: false,
-      cellRenderer: (params: ICellRendererParams<StepRow>) => <AdminTextCell {...params} field="contact_email" updateDraft={updateDraft} publishDirty={publishDirty} locale={locale} />,
+      cellRenderer: (params: ICellRendererParams<StepRow>) => <AdminTextCell {...params} field="contact_email" updateDraft={updateDraft} publishDirty={publishDirty} locale={locale} readOnly />,
     },
     {
       field: "contact_name", headerName: locale === "en" ? "Contact Name" : "联系人姓名", minWidth: 210, editable: false,
-      cellRenderer: (params: ICellRendererParams<StepRow>) => <AdminTextCell {...params} field="contact_name" updateDraft={updateDraft} publishDirty={publishDirty} locale={locale} />,
+      cellRenderer: (params: ICellRendererParams<StepRow>) => <AdminTextCell {...params} field="contact_name" updateDraft={updateDraft} publishDirty={publishDirty} locale={locale} readOnly />,
     },
     {
       colId: "actions",
@@ -283,16 +318,15 @@ export function SystemConfigPage({
         const row = params.data;
         if (!row) return null;
         return <div className="grid-row-actions">
-          <button type="button" className="grid-row-action grid-row-action--update" aria-label="Update row" title="Update row" disabled={!dirtyRowsRef.current[row.id] || savingId === row.id || savingAll} onMouseDown={(event) => event.stopPropagation()} onClick={(event) => {
+          <button type="button" className="grid-row-action grid-row-action--update" aria-label="Edit workflow step" title="Edit workflow step" disabled={savingId === row.id || savingAll} onMouseDown={(event) => event.stopPropagation()} onClick={(event) => {
             event.stopPropagation();
             const latest = dirtyRowsRef.current[row.id] || row;
-            void saveStep(latest).then((saved) => {
-              if (saved) params.node.setData(latest);
-            });
+            setStepDialogError("");
+            setStepDialog({ ...latest });
           }}>
             <svg aria-hidden="true" viewBox="0 0 24 24"><path d="m5 12 4 4L19 6" /></svg>
           </button>
-          <button type="button" className="grid-row-action grid-row-action--delete" aria-label="Clear assignments" title="Clear assignments" disabled={savingId === row.id || savingAll} onMouseDown={(event) => event.stopPropagation()} onClick={(event) => { event.stopPropagation(); const cleared = { ...row, laboratory_id: null, laboratory_code: null, laboratory_name: null, phone_number: "", contact_email: "", contact_name: "", hr_employee_id: null }; params.node.setData(cleared); markDirty(cleared); }}>
+          <button type="button" className="grid-row-action grid-row-action--delete" aria-label="Clear assignments" title="Clear assignments" disabled={savingId === row.id || savingAll} onMouseDown={(event) => event.stopPropagation()} onClick={(event) => { event.stopPropagation(); const cleared = { ...row, businessEntity: null, laboratory_id: null, laboratory_code: null, laboratory_name: null, phone_number: "", contact_email: "", contact_name: "", hr_employee_id: null }; params.node.setData(cleared); markDirty(cleared); }}>
             <svg aria-hidden="true" viewBox="0 0 24 24"><path d="M5 7h14M10 11v6m4-6v6M9 7V4h6v3m-9 0 1 13h8l1-13" /></svg>
           </button>
         </div>;
@@ -551,8 +585,28 @@ export function SystemConfigPage({
             <span className="system-config-workflow-count">{config?.steps.length || 0} {locale === "en" ? "steps" : "步骤"}</span>
           </header>
           {error && <p className="system-config-error" role="alert">{error}</p>}
-          <div className="system-config-grid-toolbar"><button type="button" className="grid-layout-reset-button" aria-label={locale === "en" ? "Reset grid settings" : "重置表格设置"} title={locale === "en" ? "Reset grid settings" : "重置表格设置"} onClick={resetWorkflowGrid}>{locale === "en" ? "Reset grid" : locale === "zh-HK" ? "重置表格" : "重置表格"}</button><button type="button" className="grid-layout-reset-button system-config-save-all" disabled={!Object.keys(dirtyRows).length || savingAll || Boolean(savingId)} onClick={() => void saveAll()}><img src={saveIcon} alt="" aria-hidden="true" />{savingAll ? "Saving…" : "Save all"}</button></div>
-          <div className="system-config-grid grid-frame" aria-busy={loading}><AgGridReact<StepRow> theme={theme === "navy" ? orbitGridNavyTheme : theme === "light" ? orbitGridTheme : theme === "black" ? orbitGridBlackTheme : orbitGridGreenTheme} rowData={config?.steps || []} columnDefs={columns} defaultColDef={{ sortable: true, filter: true, floatingFilter: true, resizable: true, suppressHeaderMenuButton: false }} stopEditingWhenCellsLoseFocus rowHeight={44} headerHeight={46} floatingFiltersHeight={34} enableBrowserTooltips ensureDomOrder suppressAnimationFrame onGridReady={(event) => { gridApiRef.current = event.api; }} onCellValueChanged={(event) => { if (event.data) markDirty(event.data); }} /></div>
+          <div className="system-config-grid-toolbar"><button type="button" className="grid-layout-reset-button" aria-label={locale === "en" ? "Reset grid settings" : "重置表格设置"} title={locale === "en" ? "Reset grid settings" : "重置表格设置"} onClick={resetWorkflowGrid}>{locale === "en" ? "Reset grid" : locale === "zh-HK" ? "重置表格" : "重置表格"}</button></div>
+          <div className="system-config-grid grid-frame" aria-busy={loading}><AgGridReact<StepRow> key={`${workflowKey}-${locale}-${theme}`} theme={theme === "navy" ? orbitGridNavyTheme : theme === "light" ? orbitGridTheme : theme === "black" ? orbitGridBlackTheme : orbitGridGreenTheme} rowData={config?.steps || []} columnDefs={columns} defaultColDef={{ sortable: true, filter: true, floatingFilter: true, resizable: true, suppressHeaderMenuButton: false }} stopEditingWhenCellsLoseFocus rowHeight={44} headerHeight={46} floatingFiltersHeight={34} enableBrowserTooltips ensureDomOrder suppressAnimationFrame alwaysShowHorizontalScroll onGridReady={(event) => { gridApiRef.current = event.api; }} onCellValueChanged={(event) => { if (event.data) markDirty(event.data); }} /></div>
+          {stepDialog ? <div className="dialog-backdrop grid-edit-backdrop" role="presentation" onMouseDown={(event) => { if (event.target === event.currentTarget) setStepDialog(null); }}>
+            <section className="dialog-surface grid-edit-dialog" role="dialog" aria-modal="true" aria-labelledby="workflow-step-edit-title">
+              <header className="grid-edit-dialog__header">
+                <div>
+                  <span className="confirm-dialog__eyebrow">WORKFLOW STEP</span>
+                  <h2 id="workflow-step-edit-title">{locale === "en" ? "Edit workflow step" : "编辑工作流步骤"}</h2>
+                </div>
+                <button type="button" className="grid-edit-dialog__close" aria-label={locale === "en" ? "Close" : "关闭"} onClick={() => setStepDialog(null)} disabled={Boolean(savingId)}><svg className="grid-edit-action__icon" aria-hidden="true" viewBox="0 0 24 24" focusable="false"><path d="M6 6l12 12M18 6 6 18" /></svg></button>
+              </header>
+              <div className="grid-edit-dialog__body">
+                <label className="grid-edit-field"><span>Business entity</span><select value={stepDialog.businessEntity || ""} onChange={(event) => updateStepDialog({ businessEntity: event.target.value || null })} disabled={Boolean(savingId)}><option value="">{locale === "en" ? "Select business entity" : "选择业务实体"}</option>{(config?.businessEntities || []).map((entity) => <option key={entity.key} value={entity.name}>{entity.name}</option>)}</select></label>
+                <label className="grid-edit-field"><span>{locale === "en" ? "Laboratory" : "实验室"}</span><select value={stepDialog.laboratory_id || ""} onChange={(event) => { const laboratoryId = event.target.value || null; const laboratory = config?.laboratories.find((item) => item.id === laboratoryId); updateStepDialog({ laboratory_id: laboratoryId, laboratory_name: laboratory?.name || null, laboratory_code: laboratory?.code || null }); }} disabled={Boolean(savingId)}><option value="">{locale === "en" ? "Select laboratory" : "选择实验室"}</option>{(config?.laboratories || []).map((laboratory) => <option key={laboratory.id} value={laboratory.id}>{laboratory.name}</option>)}</select></label>
+                <label className="grid-edit-field"><span>{locale === "en" ? "Phone Number" : "电话号码"}</span><input type="tel" value={stepDialog.phone_number} onChange={(event) => updateStepDialog({ phone_number: event.target.value })} disabled={Boolean(savingId)} /></label>
+                <label className="grid-edit-field"><span>{locale === "en" ? "Email address" : "电子邮件"}</span><input type="email" value={stepDialog.contact_email} onChange={(event) => updateStepDialog({ contact_email: event.target.value })} disabled={Boolean(savingId)} /></label>
+                <label className="grid-edit-field"><span>{locale === "en" ? "Contact Name" : "联系人姓名"}</span><input type="text" value={stepDialog.contact_name} onChange={(event) => updateStepDialog({ contact_name: event.target.value })} disabled={Boolean(savingId)} /></label>
+              </div>
+              {stepDialogError ? <p className="grid-edit-dialog__error" role="alert">{stepDialogError}</p> : null}
+              <footer className="dialog-actions grid-edit-dialog__actions"><button type="button" className="confirm-dialog__cancel" onClick={() => setStepDialog(null)} disabled={Boolean(savingId)}>{locale === "en" ? "Cancel" : "取消"}</button><button type="button" className="confirm-dialog__confirm" onClick={() => void applyStepDialog()} disabled={Boolean(savingId)}>{savingId ? (locale === "en" ? "Saving…" : "保存中…") : (locale === "en" ? "Save" : "保存")}</button></footer>
+            </section>
+          </div> : null}
         </div> : <div className="system-config-workflow-empty">{locale === "en" ? "Select a workflow panel to view its steps." : "请选择一个工作流面板查看步骤。"}</div>}
       </section> : null}
     </section>

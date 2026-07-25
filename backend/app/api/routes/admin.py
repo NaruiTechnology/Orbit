@@ -22,11 +22,19 @@ router = APIRouter(prefix="/admin", tags=["admin"])
 class WorkflowStepAssignmentUpdate(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
+    businessEntity: str | None = Field(default=None, max_length=160)
     laboratory_id: UUID | None = None
     phone_number: str = Field(default="", max_length=80)
     contact_email: str = Field(default="", max_length=320)
     contact_name: str = Field(default="", max_length=200)
     hr_employee_id: UUID | None = None
+
+
+_WORKFLOW_BUSINESS_ENTITIES = (
+    "Customer Profile", "Billing Information", "Quotation", "Contract",
+    "Sales Order", "Chip Retention", "Bill", "Payment Collection",
+    "Outsourced Service",
+)
 
 
 class BusinessEntityRecordRequest(BaseModel):
@@ -489,11 +497,19 @@ def workflow_config(
          ORDER BY code
         """
     ).fetchall()
+    business_entities = connection.execute(
+        """
+        SELECT entity_key, name_i18n
+          FROM orbit_sales.business_entity_catalog
+         WHERE is_active
+         ORDER BY display_order
+        """
+    ).fetchall()
     steps = connection.execute(
         """
         SELECT r.id, r.record_key, r.record_order, r.label_i18n,
                sla.sla_i18n, sla.sla,
-               a.laboratory_id, l.code AS laboratory_code, l.name_i18n AS laboratory_name_i18n,
+               a.business_entity, a.laboratory_id, l.code AS laboratory_code, l.name_i18n AS laboratory_name_i18n,
                a.phone_number, a.contact_email, a.contact_name, a.hr_employee_id
           FROM orbit_workflow.workflow_record r
           JOIN orbit_workflow.workflow_definition w ON w.id = r.workflow_id
@@ -517,6 +533,11 @@ def workflow_config(
             {"id": row["id"], "code": row["code"], "name": localized_value(row["name_i18n"], locale)}
             for row in laboratories
         ],
+        "businessEntities": [
+            {"key": row["entity_key"], "name": localized_value(row["name_i18n"], "en")}
+            for row in business_entities
+            if localized_value(row["name_i18n"], "en") in _WORKFLOW_BUSINESS_ENTITIES
+        ],
         "steps": [
             {
                 "id": row["id"],
@@ -524,6 +545,7 @@ def workflow_config(
                 "record_order": row["record_order"],
                 "step_name": localized_value(row["label_i18n"], locale),
                 "sla": localized_value(row["sla_i18n"], locale, row["sla"]) if row["sla"] else None,
+                "businessEntity": row["business_entity"],
                 "laboratory_id": row["laboratory_id"],
                 "laboratory_code": row["laboratory_code"],
                 "laboratory_name": localized_value(row["laboratory_name_i18n"], locale) if row["laboratory_name_i18n"] else None,
@@ -546,10 +568,12 @@ def update_workflow_step(
     connection: Connection[dict[str, Any]] = Depends(get_connection),
 ) -> dict[str, Any]:
     _require_admin(user, connection)
+    if request.businessEntity is not None and request.businessEntity not in _WORKFLOW_BUSINESS_ENTITIES:
+        raise HTTPException(status_code=422, detail="unsupported business entity")
     updated = connection.execute(
         """
         UPDATE orbit_workflow.workflow_step_assignment a
-           SET laboratory_id = %s, phone_number = %s, contact_email = %s,
+           SET business_entity = %s, laboratory_id = %s, phone_number = %s, contact_email = %s,
                contact_name = %s,
                hr_employee_id = %s, updated_by = %s, updated_at = CURRENT_TIMESTAMP
           FROM orbit_workflow.workflow_record r
@@ -558,7 +582,7 @@ def update_workflow_step(
            AND r.id = %s AND w.workflow_key = %s
          RETURNING a.workflow_record_id
         """,
-        (request.laboratory_id, request.phone_number.strip(), request.contact_email.strip(),
+        (request.businessEntity, request.laboratory_id, request.phone_number.strip(), request.contact_email.strip(),
          request.contact_name.strip(), request.hr_employee_id, user.user_id, record_id, workflow_key),
     ).fetchone()
     if updated is None:
