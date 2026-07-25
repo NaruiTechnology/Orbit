@@ -6,6 +6,7 @@ import { useCreateBusinessEntityRecordMutation, useDeleteBusinessEntityRecordMut
 import type { BusinessEntityDescriptor, BusinessEntityRecord } from "../salesTypes";
 import { translate } from "../i18n/translations";
 import { orbitGridBlackTheme, orbitGridGreenTheme, orbitGridNavyTheme, orbitGridTheme } from "./WorkflowGrid";
+import { GEOLOCATION_SITES } from "../geolocation";
 
 type TemplateWidget = "text" | "textarea" | "number" | "date" | "select" | "multiselect";
 
@@ -95,8 +96,38 @@ const customerTemplates: SalesTemplate[] = [
   },
 ];
 
+const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+
 function localized(item: { en: string; zhCN: string; zhHK: string }, locale: Locale): string {
   return locale === "en" ? item.en : locale === "zh-HK" ? item.zhHK : item.zhCN;
+}
+
+function formatApiError(error: unknown): string {
+  const payload = error && typeof error === "object" && "data" in error
+    ? (error as { data?: unknown }).data
+    : error;
+  if (typeof payload === "string" && payload.trim()) return payload;
+  if (payload && typeof payload === "object") {
+    const detail = payload as Record<string, unknown>;
+    for (const key of ["detail", "message", "error"]) {
+      const value = detail[key];
+      if (typeof value === "string" && value.trim()) return value;
+      if (Array.isArray(value)) {
+        const messages = value.map((item) => {
+          if (typeof item === "string") return item;
+          if (item && typeof item === "object" && "msg" in item) return String((item as { msg?: unknown }).msg);
+          return JSON.stringify(item);
+        }).filter(Boolean);
+        if (messages.length) return messages.join("; ");
+      }
+    }
+    try {
+      return JSON.stringify(payload);
+    } catch {
+      return "Could not save this record.";
+    }
+  }
+  return "Could not save this record.";
 }
 
 function optionLabel(item: LocalizedOption, locale: Locale): string {
@@ -129,6 +160,8 @@ function DynamicSalesEntityGrid({ locale, theme }: { locale: Locale; theme: Them
   const [deleteRecord, deleteState] = useDeleteBusinessEntityRecordMutation();
   const detailGridApi = useRef<GridApi<Record<string, unknown>> | null>(null);
   const entities = entitiesQuery.data?.entities || [];
+  const laboratories = entitiesQuery.data?.laboratories || [];
+  const salesOwners = entitiesQuery.data?.sales_owners || [];
   const displayEntities = useMemo<BusinessEntityDescriptor[]>(() => entities.length > 0 ? entities : customerTemplates.map((template, index) => ({
     key: template.key,
     table_name: template.key.replaceAll("-", "_"),
@@ -144,6 +177,13 @@ function DynamicSalesEntityGrid({ locale, theme }: { locale: Locale; theme: Them
   const gridTheme = theme === "navy" ? orbitGridNavyTheme : theme === "light" ? orbitGridTheme : theme === "black" ? orbitGridBlackTheme : orbitGridGreenTheme;
   const detailRows = useMemo(() => (selectedEntity?.records || []).map((record) => ({ id: record.id, version: record.version, ...record.values })), [selectedEntity]);
   const editableColumns = useMemo(() => new Map((selectedEntity?.columns || []).map((column) => [column.key, column])), [selectedEntity]);
+  const isLaboratoryField = (field: TemplateField) => field.key === "laboratory_id" || field.key === "invoice_laboratory";
+  const isSalesOwnerField = (field: TemplateField) => field.key === "sales_owner_id";
+  const laboratoryOptionValue = (field: TemplateField, site: typeof GEOLOCATION_SITES[number]) => {
+    if (field.key !== "laboratory_id") return site.value;
+    const siteIndex = GEOLOCATION_SITES.findIndex((option) => option.id === site.id);
+    return laboratories[siteIndex]?.id || "";
+  };
 
   function openCreate() {
     setEditError("");
@@ -161,14 +201,34 @@ function DynamicSalesEntityGrid({ locale, theme }: { locale: Locale; theme: Them
     setEditing({ mode: "create" });
   }
   async function saveRecord() {
-    const missing = selected.fields.find((field) => field.required && editableColumns.get(field.key)?.editable && String(editValues[field.key] ?? "").trim() === "");
+    const missing = selected.fields.find((field) => field.required && (editableColumns.get(field.key)?.editable || isLaboratoryField(field)) && String(editValues[field.key] ?? "").trim() === "");
     if (missing) { setEditError(locale === "en" ? `${localized(missing, locale)} is required.` : `${localized(missing, locale)}为必填项。`); return; }
     try {
-      const values = Object.fromEntries(Object.entries(editValues).filter(([key]) => editableColumns.get(key)?.editable));
+      const values = Object.fromEntries(Object.entries(editValues)
+        .filter(([key]) => editableColumns.get(key)?.editable || key === "laboratory_id")
+        .filter(([key, value]) => {
+          const field = selected.fields.find((item) => item.key === key);
+          return !field || !["number", "date"].includes(field.widget) || String(value ?? "").trim() !== "";
+        }));
+      if ("competitors" in values) {
+        const rawCompetitors = values.competitors;
+        values.competitors = Array.isArray(rawCompetitors)
+          ? rawCompetitors
+          : String(rawCompetitors ?? "").split(",").map((item) => item.trim()).filter(Boolean);
+      }
+      if (values.sales_owner_id) {
+        const ownerValue = String(values.sales_owner_id);
+        const owner = salesOwners.find((item) => item.id === ownerValue || item.name === ownerValue);
+        if (owner) values.sales_owner_id = owner.id;
+        else if (!UUID_PATTERN.test(ownerValue)) {
+          setEditError(locale === "en" ? "Select a valid Sales owner from the dropdown." : "请从下拉框中选择有效的销售负责人。");
+          return;
+        }
+      }
       if (editing?.mode === "edit" && editing.record) await updateRecord({ entityKey: selected.key, recordId: editing.record.id, version: editing.record.version, values }).unwrap();
       else await createRecord({ entityKey: selected.key, values }).unwrap();
       setEditing(null);
-    } catch (error) { setEditError(typeof error === "object" && error && "data" in error ? String((error as { data?: unknown }).data) : "Could not save this record."); }
+    } catch (error) { setEditError(formatApiError(error)); }
   }
   async function removeRecord(record: BusinessEntityRecord) {
     if (!window.confirm(locale === "en" ? "Delete this record?" : locale === "zh-HK" ? "刪除此記錄？" : "删除此记录？")) return;
@@ -206,10 +266,10 @@ function DynamicSalesEntityGrid({ locale, theme }: { locale: Locale; theme: Them
         <div className="sales-templates__title"><div><h3>{selectedEntity?.name || localized(selected, locale)}</h3></div></div>
         {entitiesQuery.isError ? <p className="system-config-error" role="alert">{locale === "en" ? "Business entity data could not be loaded." : "业务实体数据加载失败。"}</p> : null}
         <div className="sales-templates__grid-toolbar"><div className="grid-toolbar"><button type="button" className="grid-add-button" aria-label={locale === "en" ? "Add record" : locale === "zh-HK" ? "新增記錄" : "新增记录"} title={locale === "en" ? "Add record" : locale === "zh-HK" ? "新增記錄" : "新增记录"} onClick={openCreate}><svg aria-hidden="true" viewBox="0 0 24 24" focusable="false"><path d="M12 5v14M5 12h14" /></svg></button><button type="button" className="grid-layout-reset-button" aria-label={locale === "en" ? "Reset grid layout" : "重置表格布局"} title={locale === "en" ? "Reset grid layout" : "重置表格布局"} onClick={resetGridProfile}>{locale === "en" ? "Reset layout" : locale === "zh-HK" ? "重置布局" : "重置布局"}</button></div><small>{selected.fields.length} {translate(locale, "salesTemplateFields")}</small></div>
-        <div className="sales-templates__grid system-config-grid grid-frame" aria-busy={entitiesQuery.isLoading || deleteState.isLoading}><AgGridReact<Record<string, unknown>> key={`${selected.key}-${locale}-${theme}`} containerStyle={{ width: "100%", height: "100%" }} theme={gridTheme} rowData={detailRows} columnDefs={detailColumns} defaultColDef={{ sortable: true, filter: true, floatingFilter: true, resizable: true, suppressHeaderMenuButton: false }} getRowId={(params) => String(params.data.id)} rowHeight={44} headerHeight={46} floatingFiltersHeight={34} stopEditingWhenCellsLoseFocus enableBrowserTooltips ensureDomOrder suppressAnimationFrame sideBar={{ toolPanels: [{ id: "columns", labelDefault: "Columns", labelKey: "columns", iconKey: "columns", toolPanel: "agColumnsToolPanel", toolPanelParams: { suppressRowGroups: false, suppressValues: true, suppressPivots: true, suppressPivotMode: true } }], defaultToolPanel: "columns" }} rowGroupPanelShow="always" suppressHorizontalScroll={false} alwaysShowHorizontalScroll onGridReady={(event) => { detailGridApi.current = event.api; restoreGridProfile(event.api); }} onColumnMoved={(event) => saveGridProfile(event.api)} onColumnVisible={(event) => saveGridProfile(event.api)} onColumnPinned={(event) => saveGridProfile(event.api)} onColumnResized={(event) => { if (event.finished) saveGridProfile(event.api); }} onColumnRowGroupChanged={(event) => saveGridProfile(event.api)} overlayNoRowsTemplate={`<span class="grid-empty">${locale === "en" ? "No records yet — use + to add one" : locale === "zh-HK" ? "尚無記錄 — 使用 + 新增" : "暂无记录 — 使用 + 新增"}</span>`} /></div>
+        <div className="sales-templates__grid system-config-grid grid-frame" aria-busy={entitiesQuery.isLoading || deleteState.isLoading}><AgGridReact<Record<string, unknown>> key={`${selected.key}-${locale}-${theme}`} containerStyle={{ width: "100%", height: "100%" }} theme={gridTheme} rowData={detailRows} columnDefs={detailColumns} defaultColDef={{ sortable: true, filter: true, floatingFilter: true, resizable: true, suppressHeaderMenuButton: false, enableRowGroup: true }} getRowId={(params) => String(params.data.id)} rowHeight={44} headerHeight={46} floatingFiltersHeight={34} stopEditingWhenCellsLoseFocus enableBrowserTooltips ensureDomOrder suppressAnimationFrame sideBar={{ toolPanels: [{ id: "columns", labelDefault: "Columns", labelKey: "columns", iconKey: "columns", toolPanel: "agColumnsToolPanel", toolPanelParams: { suppressRowGroups: false, suppressValues: true, suppressPivots: true, suppressPivotMode: true } }], defaultToolPanel: "columns" }} rowGroupPanelShow="always" suppressHorizontalScroll={false} alwaysShowHorizontalScroll onGridReady={(event) => { detailGridApi.current = event.api; restoreGridProfile(event.api); }} onColumnMoved={(event) => saveGridProfile(event.api)} onColumnVisible={(event) => saveGridProfile(event.api)} onColumnPinned={(event) => saveGridProfile(event.api)} onColumnResized={(event) => { if (event.finished) saveGridProfile(event.api); }} onColumnRowGroupChanged={(event) => saveGridProfile(event.api)} overlayNoRowsTemplate={`<span class="grid-empty">${locale === "en" ? "No records yet — use + to add one" : locale === "zh-HK" ? "尚無記錄 — 使用 + 新增" : "暂无记录 — 使用 + 新增"}</span>`} /></div>
       </div>
     </div>
-    {editing ? <div className="sales-template-modal__backdrop" role="presentation" onMouseDown={() => setEditing(null)}><div className="sales-template-modal" role="dialog" aria-modal="true" aria-labelledby="business-record-dialog-title" onMouseDown={(event) => event.stopPropagation()}><div className="sales-template-modal__header"><div><h3 id="business-record-dialog-title">{editing.mode === "edit" ? (locale === "en" ? "Edit record" : "编辑记录") : (locale === "en" ? "Add record" : "新增记录")}</h3></div><button type="button" className="modal-close" onClick={() => setEditing(null)} aria-label="Close"><svg aria-hidden="true" viewBox="0 0 24 24"><path d="m7 7 10 10M17 7 7 17" /></svg></button></div><div className="sales-template-modal__body">{selected.fields.map((field) => { const column = editableColumns.get(field.key); const readOnly = !column || !column.editable; return <label key={field.key} className={`sales-template-field ${field.widget === "textarea" ? "sales-template-field--wide" : ""}`}><span>{localized(field, locale)}{field.required && !readOnly ? " *" : ""}</span>{field.widget === "select" ? <select value={String(editValues[field.key] ?? "")} disabled={readOnly} onChange={(event) => setEditValues((current) => ({ ...current, [field.key]: event.target.value }))}><option value="">—</option>{field.options?.map((item) => <option key={item.value} value={item.value}>{optionLabel(item, locale)}</option>)}</select> : field.widget === "textarea" ? <textarea value={String(editValues[field.key] ?? "")} readOnly={readOnly} onChange={(event) => setEditValues((current) => ({ ...current, [field.key]: event.target.value }))} /> : <input type={field.widget === "number" ? "number" : field.widget === "date" ? "date" : "text"} value={String(editValues[field.key] ?? "")} readOnly={readOnly} onChange={(event) => setEditValues((current) => ({ ...current, [field.key]: event.target.value }))} />}</label>; })}</div>{editError ? <p className="system-config-error sales-template-modal__error" role="alert">{editError}</p> : null}<div className="sales-template-modal__footer"><button type="button" className="button button--secondary modal-action-button modal-action-button--cancel" onClick={() => setEditing(null)}><svg aria-hidden="true" viewBox="0 0 24 24"><path d="m7 7 10 10M17 7 7 17" /></svg>{locale === "en" ? "Cancel" : "取消"}</button><button type="button" className="button button--primary modal-action-button" disabled={createState.isLoading || updateState.isLoading} onClick={() => void saveRecord()}><svg aria-hidden="true" viewBox="0 0 24 24"><path d="m5 12 4 4L19 6" /></svg>{createState.isLoading || updateState.isLoading ? "…" : locale === "en" ? "Save record" : "保存记录"}</button></div></div></div> : null}
+    {editing ? <div className="sales-template-modal__backdrop" role="presentation" onMouseDown={() => setEditing(null)}><div className="sales-template-modal" role="dialog" aria-modal="true" aria-labelledby="business-record-dialog-title" onMouseDown={(event) => event.stopPropagation()}><div className="sales-template-modal__header"><div><h3 id="business-record-dialog-title">{editing.mode === "edit" ? (locale === "en" ? "Edit record" : "编辑记录") : (locale === "en" ? "Add record" : "新增记录")}</h3></div><button type="button" className="modal-close" onClick={() => setEditing(null)} aria-label="Close"><svg aria-hidden="true" viewBox="0 0 24 24"><path d="m7 7 10 10M17 7 7 17" /></svg></button></div><div className="sales-template-modal__body">{selected.fields.map((field) => { const laboratoryField = isLaboratoryField(field); const salesOwnerField = isSalesOwnerField(field); const column = editableColumns.get(field.key); const readOnly = (!laboratoryField && !salesOwnerField) && (!column || !column.editable); return <label key={field.key} className={`sales-template-field ${field.widget === "textarea" ? "sales-template-field--wide" : ""}`}><span>{localized(field, locale)}{field.required && !readOnly ? <em aria-label="required">*</em> : null}</span>{laboratoryField ? <select value={String(editValues[field.key] ?? "")} onChange={(event) => setEditValues((current) => ({ ...current, [field.key]: event.target.value }))}><option value="">—</option>{GEOLOCATION_SITES.map((site) => <option key={site.id} value={laboratoryOptionValue(field, site)}>{locale === "en" ? `${site.name} (${site.name_zh})` : site.value}</option>)}</select> : salesOwnerField ? <select value={String(editValues[field.key] ?? "")} onChange={(event) => setEditValues((current) => ({ ...current, [field.key]: event.target.value }))}><option value="">—</option>{salesOwners.map((owner) => <option key={owner.id} value={owner.id}>{owner.name}</option>)}</select> : field.widget === "select" ? <select value={String(editValues[field.key] ?? "")} disabled={readOnly} onChange={(event) => setEditValues((current) => ({ ...current, [field.key]: event.target.value }))}><option value="">—</option>{field.options?.map((item) => <option key={item.value} value={item.value}>{optionLabel(item, locale)}</option>)}</select> : field.widget === "textarea" ? <textarea value={String(editValues[field.key] ?? "")} readOnly={readOnly} onChange={(event) => setEditValues((current) => ({ ...current, [field.key]: event.target.value }))} /> : <input type={field.widget === "number" ? "number" : field.widget === "date" ? "date" : "text"} value={String(editValues[field.key] ?? "")} readOnly={readOnly} onChange={(event) => setEditValues((current) => ({ ...current, [field.key]: event.target.value }))} />}</label>; })}</div>{editError ? <p className="system-config-error sales-template-modal__error" role="alert">{editError}</p> : null}<div className="sales-template-modal__footer"><button type="button" className="button button--secondary modal-action-button modal-action-button--cancel" onClick={() => setEditing(null)}><svg aria-hidden="true" viewBox="0 0 24 24"><path d="m7 7 10 10M17 7 7 17" /></svg>{locale === "en" ? "Cancel" : "取消"}</button><button type="button" className="button button--primary modal-action-button" disabled={createState.isLoading || updateState.isLoading} onClick={() => void saveRecord()}><svg aria-hidden="true" viewBox="0 0 24 24"><path d="m5 12 4 4L19 6" /></svg>{createState.isLoading || updateState.isLoading ? "…" : locale === "en" ? "Save record" : "保存记录"}</button></div></div></div> : null}
   </section>;
 }
 

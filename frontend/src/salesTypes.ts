@@ -252,4 +252,6 @@ export interface BusinessEntityDescriptor {
 
 export interface BusinessEntityResponse {
   entities: BusinessEntityDescriptor[];
+  laboratories: Array<{ id: string; code: string; name: string }>;
+  sales_owners: Array<{ id: string; name: string }>;
 }

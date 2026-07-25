@@ -244,8 +244,11 @@ def _business_entity_table(connection: Connection[dict[str, Any]], entity_key: s
     return table_name, _business_entity_columns(connection, table_name)
 
 
-def _record_values(request_values: dict[str, Any], columns: list[dict[str, Any]], user: SessionInfo) -> dict[str, Any]:
+def _record_values(request_values: dict[str, Any], columns: list[dict[str, Any]], user: SessionInfo, connection: Connection[dict[str, Any]]) -> dict[str, Any]:
     editable = {column["key"]: column for column in columns if column["editable"]}
+    laboratory_column = next((column for column in columns if column["key"] == "laboratory_id"), None)
+    if laboratory_column is not None:
+        editable["laboratory_id"] = laboratory_column
     unknown = sorted(set(request_values) - set(editable))
     if unknown:
         raise HTTPException(status_code=422, detail=f"Unsupported or read-only fields: {', '.join(unknown)}")
@@ -256,6 +259,24 @@ def _record_values(request_values: dict[str, Any], columns: list[dict[str, Any]]
             values[key] = value
     if "sales_owner_id" in editable and "sales_owner_id" not in values:
         values["sales_owner_id"] = user.user_id
+    if "sales_owner_id" in values and values["sales_owner_id"]:
+        owner_value = str(values["sales_owner_id"])
+        try:
+            UUID(owner_value)
+        except ValueError:
+            owner = connection.execute(
+                """
+                SELECT id
+                  FROM orbit_identity.app_user
+                 WHERE is_active
+                   AND (display_name_i18n ->> 'en' = %s OR concat_ws(' ', first_name, last_name) = %s)
+                 LIMIT 1
+                """,
+                (owner_value, owner_value),
+            ).fetchone()
+            if owner is None:
+                raise HTTPException(status_code=422, detail="Sales owner must be selected from the available owners")
+            values["sales_owner_id"] = owner["id"]
     return values
 
 
@@ -276,6 +297,22 @@ def business_entities(
 ) -> dict[str, Any]:
     """Return the database-backed nine-entity catalog and dynamic grid data."""
     _require_admin(user, connection)
+    laboratories = connection.execute(
+        """
+        SELECT id, code, name_i18n
+          FROM orbit_identity.laboratory
+         WHERE is_active
+         ORDER BY code
+        """
+    ).fetchall()
+    sales_owners = connection.execute(
+        """
+        SELECT id, display_name_i18n, first_name, last_name
+          FROM orbit_identity.app_user
+         WHERE is_active
+         ORDER BY first_name, last_name, login_name
+        """
+    ).fetchall()
     catalog = connection.execute(
         """
         SELECT entity_key, table_name, name_i18n, display_order
@@ -291,8 +328,12 @@ def business_entities(
             raise HTTPException(status_code=500, detail=f"Unsupported business entity table: {table_name}")
         columns = _business_entity_columns(connection, table_name)
         selected_columns = [column["key"] for column in columns]
-        if selected_columns:
-            select_sql = sql.SQL(", ").join(sql.Identifier(column) for column in ["id", *selected_columns, "version", "updated_at"])
+        all_columns = _business_entity_columns(connection, table_name, include_system=True)
+        record_columns = [*selected_columns]
+        if any(column["key"] == "laboratory_id" for column in all_columns) and "laboratory_id" not in record_columns:
+            record_columns.append("laboratory_id")
+        if record_columns:
+            select_sql = sql.SQL(", ").join(sql.Identifier(column) for column in ["id", *record_columns, "version", "updated_at"])
             records = connection.execute(
                 sql.SQL("SELECT {} FROM orbit_sales.{} ORDER BY updated_at DESC LIMIT 500").format(
                     select_sql, sql.Identifier(table_name)
@@ -312,7 +353,7 @@ def business_entities(
                 "records": [
                     {
                         "id": record["id"],
-                        "values": {column: record[column] for column in selected_columns},
+                        "values": {column: record[column] for column in record_columns},
                         "version": record["version"],
                         "updated_at": record["updated_at"],
                     }
@@ -320,7 +361,20 @@ def business_entities(
                 ],
             }
         )
-    return {"entities": entities}
+    return {
+        "entities": entities,
+        "laboratories": [
+            {"id": row["id"], "code": row["code"], "name": localized_value(row["name_i18n"], locale)}
+            for row in laboratories
+        ],
+        "sales_owners": [
+            {
+                "id": row["id"],
+                "name": localized_value(row["display_name_i18n"], locale) or f"{row['first_name']} {row['last_name']}".strip(),
+            }
+            for row in sales_owners
+        ],
+    }
 
 
 @router.post("/business-entities/{entity_key}/records")
@@ -333,7 +387,7 @@ def create_business_entity_record(
     _require_admin(user, connection)
     table_name, _public_columns = _business_entity_table(connection, entity_key)
     columns = _business_entity_columns(connection, table_name, include_system=True)
-    values = _record_values(request.values, columns, user)
+    values = _record_values(request.values, columns, user, connection)
     if not values:
         raise HTTPException(status_code=422, detail="At least one editable field is required")
     column_map = {column["key"]: column for column in columns}
@@ -364,8 +418,9 @@ def update_business_entity_record(
     _require_admin(user, connection)
     if request.version is None:
         raise HTTPException(status_code=422, detail="version is required for updates")
-    table_name, columns = _business_entity_table(connection, entity_key)
-    values = _record_values(request.values, columns, user)
+    table_name, _public_columns = _business_entity_table(connection, entity_key)
+    columns = _business_entity_columns(connection, table_name, include_system=True)
+    values = _record_values(request.values, columns, user, connection)
     if not values:
         raise HTTPException(status_code=422, detail="At least one editable field is required")
     column_map = {column["key"]: column for column in columns}

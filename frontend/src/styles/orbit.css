@@ -538,7 +538,7 @@ input:focus-visible {
 .sales-template-field-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(205px, 1fr)); gap: 13px; padding-top: 18px; }
 .sales-template-field { display: flex; flex-direction: column; gap: 7px; min-width: 0; padding: 12px; color: var(--ink-soft); font-size: 10px; font-weight: 700; background: linear-gradient(145deg, color-mix(in srgb, var(--surface-raised) 70%, transparent), color-mix(in srgb, var(--surface) 88%, transparent)); border: 1px solid color-mix(in srgb, var(--line) 78%, transparent); border-radius: 13px; box-shadow: inset 0 1px 0 color-mix(in srgb, var(--paper-bright) 16%, transparent); }
 .sales-template-field > span { min-height: 26px; color: var(--ink); font-size: 11px; line-height: 1.35; }
-.sales-template-field em { color: var(--signal); font-style: normal; }
+.sales-template-field em { color: #dc2626; font-style: normal; font-weight: 900; }
 .sales-template-field input,
 .sales-template-field select,
 .sales-template-field textarea { width: 100%; box-sizing: border-box; min-height: 36px; padding: 8px 10px; color: var(--ink); font: inherit; font-size: 11px; font-weight: 500; background: color-mix(in srgb, var(--control-bg) 80%, transparent); border: 1px solid var(--line); border-radius: 9px; outline: 0; transition: border-color 150ms ease, box-shadow 150ms ease, background 150ms ease; }
@@ -547,6 +547,12 @@ input:focus-visible {
 .sales-template-field input:focus,
 .sales-template-field select:focus,
 .sales-template-field textarea:focus { background: var(--surface); border-color: var(--signal); box-shadow: 0 0 0 3px color-mix(in srgb, var(--signal) 18%, transparent); }
+.sales-template-modal .sales-template-field input,
+.sales-template-modal .sales-template-field select,
+.sales-template-modal .sales-template-field textarea { font-size: 12px; }
+.sales-template-modal .sales-template-field select { appearance: auto; padding-right: 10px; background-image: none; }
+.sales-template-modal .modal-action-button,
+.sales-template-modal .sales-template-modal__save { font-size: 11px; }
 .sales-template-field > small { display: inline-flex; align-self: flex-start; padding: 4px 7px; color: var(--ink-soft); background: color-mix(in srgb, var(--surface-muted) 70%, transparent); border-radius: 999px; font-size: 9px; font-weight: 500; }
 .system-config-grid-toolbar { display: flex; justify-content: flex-end; align-items: center; min-height: 42px; padding: 6px 10px; background: var(--surface); border-bottom: 1px solid var(--line); }
 .system-config-save-all { color: var(--control-active-fg); background: var(--signal); border-color: var(--signal); }
