@@ -431,7 +431,7 @@ input:focus-visible {
 .system-config-tabs button { position: relative; min-width: 0; min-height: 42px; padding: 9px 12px; color: var(--ink-soft); border: 0; border-right: 1px solid color-mix(in srgb, var(--line) 70%, transparent); border-bottom: 3px solid transparent; border-radius: 0; background: linear-gradient(180deg, color-mix(in srgb, var(--surface-raised) 28%, transparent), transparent); font-weight: 700; cursor: pointer; transition: color 140ms ease, border-color 140ms ease, background 140ms ease, box-shadow 140ms ease; }
 .system-config-tabs button:last-child { border-right: 0; }
 .system-config-tabs button:hover { color: var(--paper-bright); background: linear-gradient(180deg, color-mix(in srgb, var(--signal) 22%, transparent), color-mix(in srgb, var(--surface) 20%, transparent)); }
-.system-config-tabs--top { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; padding: 5px; border-radius: 9px; background: linear-gradient(105deg, #0b1930 0%, #17345d 48%, #102342 100%); }
+.system-config-tabs--top { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; padding: 5px; border-radius: 9px; background: linear-gradient(105deg, color-mix(in srgb, var(--forest-deep) 92%, var(--signal) 8%), var(--surface-muted) 48%, var(--surface) 100%); }
 .system-config-tabs--top button { min-height: 44px; font-size: 13px; letter-spacing: .02em; }
 .system-config-tabs--mode { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 5px; padding: 5px; border-radius: 8px; background: linear-gradient(105deg, color-mix(in srgb, var(--forest-deep) 84%, var(--signal) 16%), var(--surface) 55%, var(--surface-raised) 100%); }
 .system-config-tabs--mode button { min-height: 38px; font-size: 11px; letter-spacing: .03em; }
@@ -458,7 +458,10 @@ input:focus-visible {
 .system-config-workflow-count { padding: 6px 10px; color: var(--signal); border: 1px solid var(--line-strong); border-radius: 999px; font-size: 11px; font-weight: 800; }
 .system-config-workflow-empty { display: grid; min-height: 280px; color: var(--ink-soft); place-items: center; }
 .system-config-error { margin: 0; padding: 10px 16px; color: #a51f1f; background: #fff1f1; border-bottom: 1px solid #efb3b3; }
-.system-config-grid { min-height: 420px; height: 100%; }
+.system-config-grid { min-width: 0; min-height: 420px; width: 100%; height: 100%; overflow: hidden; }
+.system-config-grid .ag-root-wrapper,
+.system-config-grid .ag-root,
+.system-config-grid .ag-root-wrapper-body { width: 100%; min-width: 0; }
 .sales-templates { position: relative; min-height: 420px; padding: 12px 16px 16px; overflow: hidden; background: var(--gradient-panel); }
 .sales-templates::before,
 .sales-templates::after { position: absolute; width: 260px; height: 260px; border-radius: 50%; content: ""; pointer-events: none; filter: blur(3px); opacity: .42; }

@@ -469,24 +469,24 @@ export function SystemConfigPage({
   }
 
   const accessColumns = useMemo<ColDef<AccessUserRow>[]>(() => [
-    { field: "login_name", headerName: locale === "en" ? "Login" : "登录名", minWidth: 170, pinned: "left", enableRowGroup: true },
-    { field: "first_name", headerName: locale === "en" ? "First name" : "名", minWidth: 130 },
-    { field: "last_name", headerName: locale === "en" ? "Last name" : "姓", minWidth: 130 },
-    { field: "email", headerName: locale === "en" ? "Email" : "电子邮件", minWidth: 230 },
-    { field: "phone_number", headerName: locale === "en" ? "Phone" : "电话", minWidth: 150 },
-    { field: "company_name", headerName: locale === "en" ? "Company" : "公司", minWidth: 170 },
-    { field: "site", headerName: locale === "en" ? "Site" : "站点", minWidth: 150 },
+    { field: "login_name", headerName: locale === "en" ? "Login" : "登录名", minWidth: 110, flex: 1, pinned: "left", enableRowGroup: true },
+    { field: "first_name", headerName: locale === "en" ? "First name" : "名", minWidth: 95, flex: 1 },
+    { field: "last_name", headerName: locale === "en" ? "Last name" : "姓", minWidth: 95, flex: 1 },
+    { field: "email", headerName: locale === "en" ? "Email" : "电子邮件", minWidth: 150, flex: 1.4 },
+    { field: "phone_number", headerName: locale === "en" ? "Phone" : "电话", minWidth: 110, flex: 1 },
+    { field: "company_name", headerName: locale === "en" ? "Company" : "公司", minWidth: 105, flex: 1 },
+    { field: "site", headerName: locale === "en" ? "Site" : "站点", minWidth: 105, flex: 1 },
     {
-      field: "role_code", headerName: locale === "en" ? "Access role" : "访问角色", minWidth: 160, editable: false,
+      field: "role_code", headerName: locale === "en" ? "Access role" : "访问角色", minWidth: 100, flex: 1, editable: false,
       valueFormatter: (params) => access?.roles.find((role) => role.code === params.value)?.name || params.value || "—",
     },
     {
-      field: "is_active", headerName: locale === "en" ? "Active" : "启用", width: 110, editable: false,
+      field: "is_active", headerName: locale === "en" ? "Active" : "启用", minWidth: 70, flex: 0.7, editable: false,
       cellRenderer: (params: ICellRendererParams<AccessUserRow>) => params.data ? <input type="checkbox" checked={params.data.is_active} aria-label={`${params.data.login_name} active`} readOnly /> : null,
     },
-    { field: "last_sign_in", headerName: locale === "en" ? "Last sign-in" : "最后登录", minWidth: 190, valueFormatter: (params) => params.value ? new Date(params.value).toLocaleString(locale === "en" ? "en-US" : "zh-CN") : "—" },
-    { field: "created_at", headerName: locale === "en" ? "Signed up" : "注册时间", minWidth: 190, valueFormatter: (params) => params.value ? new Date(params.value).toLocaleString(locale === "en" ? "en-US" : "zh-CN") : "—" },
-    { colId: "actions", headerName: locale === "en" ? "Actions" : "操作", pinned: "right", width: 132, sortable: false, filter: false, cellRenderer: (params: ICellRendererParams<AccessUserRow>) => params.data ? <div className="grid-row-actions">
+    { field: "last_sign_in", headerName: locale === "en" ? "Last sign-in" : "最后登录", minWidth: 120, flex: 1.2, valueFormatter: (params) => params.value ? new Date(params.value).toLocaleString(locale === "en" ? "en-US" : "zh-CN") : "—" },
+    { field: "created_at", headerName: locale === "en" ? "Signed up" : "注册时间", minWidth: 120, flex: 1.2, valueFormatter: (params) => params.value ? new Date(params.value).toLocaleString(locale === "en" ? "en-US" : "zh-CN") : "—" },
+    { colId: "actions", headerName: locale === "en" ? "Actions" : "操作", pinned: "right", width: 108, minWidth: 108, maxWidth: 108, sortable: false, filter: false, cellRenderer: (params: ICellRendererParams<AccessUserRow>) => params.data ? <div className="grid-row-actions">
       <button type="button" className="grid-row-action grid-row-action--edit" title="Edit row" aria-label="Edit row" onMouseDown={(event) => event.stopPropagation()} onClick={() => openAccessDialog("edit", params.data)}><svg aria-hidden="true" viewBox="0 0 24 24"><path d="m4 16-.8 4.8L8 20 18.8 9.2l-4-4L4 16Zm9.4-9.4 4 4" /></svg></button>
       <button type="button" className="grid-row-action grid-row-action--duplicate" title="Copy row" aria-label="Copy row" onMouseDown={(event) => event.stopPropagation()} onClick={() => addAccessRow(params.data)}><svg aria-hidden="true" viewBox="0 0 24 24"><path d="M8 8h11v11H8zM5 16H4a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h11a1 1 0 0 1 1 1v1" /></svg></button>
       <button type="button" className="grid-row-action grid-row-action--delete" title="Delete row" aria-label="Delete row" onMouseDown={(event) => event.stopPropagation()} onClick={() => deleteAccessRow(params.data!)}><svg aria-hidden="true" viewBox="0 0 24 24"><path d="M5 7h14M10 11v6m4-6v6M9 7V4h6v3m-9 0 1 13h8l1-13" /></svg></button>
