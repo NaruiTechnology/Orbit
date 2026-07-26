@@ -510,7 +510,7 @@ def workflow_config(
         """
         SELECT r.id, r.record_key, r.record_order, r.label_i18n,
                sla.sla_i18n, sla.sla,
-               a.business_entity, a.sla AS assignment_sla,
+               a.business_entity, a.action, a.sla AS assignment_sla,
                a.laboratory_id, l.code AS laboratory_code, l.name_i18n AS laboratory_name_i18n,
                a.phone_number, a.contact_email, a.contact_name, a.hr_employee_id
           FROM orbit_workflow.workflow_record r
@@ -548,6 +548,7 @@ def workflow_config(
                 "step_name": localized_value(row["label_i18n"], locale),
                 "sla": row["assignment_sla"] or (localized_value(row["sla_i18n"], locale, row["sla"]) if row["sla"] else None),
                 "businessEntity": row["business_entity"],
+                "action": row["action"],
                 "laboratory_id": row["laboratory_id"],
                 "laboratory_code": row["laboratory_code"],
                 "laboratory_name": localized_value(row["laboratory_name_i18n"], locale) if row["laboratory_name_i18n"] else None,
@@ -575,7 +576,13 @@ def update_workflow_step(
     updated = connection.execute(
         """
         UPDATE orbit_workflow.workflow_step_assignment a
-           SET business_entity = %s, sla = %s, laboratory_id = %s, phone_number = %s, contact_email = %s,
+           SET business_entity = %s,
+               action = CASE
+                   WHEN %s IS NULL THEN NULL
+                   WHEN a.action IS NULL THEN false
+                   ELSE a.action
+               END,
+               sla = %s, laboratory_id = %s, phone_number = %s, contact_email = %s,
                contact_name = %s,
                hr_employee_id = %s, updated_by = %s, updated_at = CURRENT_TIMESTAMP
           FROM orbit_workflow.workflow_record r
@@ -584,7 +591,8 @@ def update_workflow_step(
            AND r.id = %s AND w.workflow_key = %s
          RETURNING a.workflow_record_id
         """,
-        (request.businessEntity, request.sla.strip() if request.sla and request.sla.strip() else None,
+        (request.businessEntity, request.businessEntity,
+         request.sla.strip() if request.sla and request.sla.strip() else None,
          request.laboratory_id, request.phone_number.strip(), request.contact_email.strip(),
          request.contact_name.strip(), request.hr_employee_id, user.user_id, record_id, workflow_key),
     ).fetchone()

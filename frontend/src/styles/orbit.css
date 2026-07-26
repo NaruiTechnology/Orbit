@@ -1538,6 +1538,27 @@ select:has(> option:checked[value=""]) option { color: var(--ink); }
   opacity: 0.62;
 }
 
+.workflow-report-dialog {
+  display: flex;
+  flex-direction: column;
+  width: min(880px, 100%);
+  max-height: min(760px, calc(100vh - 40px));
+  padding: 18px;
+}
+.workflow-report-dialog__header { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; }
+.workflow-report-dialog__header h2 { margin: 7px 0 16px; font-family: var(--font-display); font-size: 22px; }
+.workflow-report-record-form { display: grid; grid-template-columns: minmax(220px, .72fr) minmax(0, 1.28fr); gap: 16px; max-height: 560px; overflow-y: auto; padding-right: 4px; }
+.workflow-report-context, .workflow-report-fields { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); align-content: start; gap: 12px; padding: 14px; background: color-mix(in srgb, var(--surface) 80%, var(--signal-soft) 20%); border: 1px solid var(--line); border-radius: 8px; }
+.workflow-report-context h3, .workflow-report-fields h3 { grid-column: 1 / -1; margin: 0 0 2px; color: var(--ink); font-family: var(--font-display); font-size: 16px; }
+.workflow-report-fields label { display: grid; gap: 6px; color: var(--ink-soft); font-size: 10px; font-weight: 800; text-transform: uppercase; }
+.workflow-report-fields input { box-sizing: border-box; width: 100%; min-height: 38px; padding: 8px 10px; color: var(--ink); background: var(--surface); border: 1px solid var(--line-strong); border-radius: 6px; font: inherit; text-transform: none; }
+.workflow-report-context label { display: grid; gap: 6px; color: var(--ink-soft); font-size: 10px; font-weight: 800; text-transform: uppercase; }
+.workflow-report-context input { box-sizing: border-box; width: 100%; min-height: 38px; padding: 8px 10px; color: var(--ink-soft); background: color-mix(in srgb, var(--surface) 76%, var(--line) 24%); border: 1px solid var(--line); border-radius: 6px; font: inherit; text-transform: none; }
+.workflow-report-empty { grid-column: 1 / -1; margin: 0; color: var(--ink-soft); font-size: 12px; }
+.workflow-report-preview { width: 100%; min-height: 500px; flex: 1; background: white; border: 1px solid var(--line-strong); border-radius: 6px; }
+.workflow-report-download { margin-top: 12px; color: var(--signal); font-size: 11px; font-weight: 800; }
+@media (max-width: 760px) { .workflow-report-record-form { grid-template-columns: 1fr; } .workflow-report-context, .workflow-report-fields { grid-template-columns: 1fr; } .workflow-report-preview { min-height: 420px; } }
+
 .confirm-dialog__actions {
   display: flex;
   justify-content: flex-end;
@@ -2117,6 +2138,8 @@ select:has(> option:checked[value=""]) option { color: var(--ink); }
 .workflow-email-button img { display: block; width: 19px; height: 19px; margin: auto; }
 .workflow-check { display: flex; align-items: center; gap: 7px; flex: 1; font-size: 9px; font-weight: 800; }
 .workflow-check input { width: 16px; min-height: 16px; accent-color: var(--signal); }
+.workflow-report-check { display: flex; align-items: center; }
+.workflow-report-check input { width: 16px; min-height: 16px; accent-color: #f0b429; }
 .runtime-status { font-size: 9px; font-weight: 800; text-transform: uppercase; opacity: 0.72; }
 .workflow-actions input::placeholder { color: color-mix(in srgb, var(--ink) 58%, transparent); }
 .workflow-error { display: grid; gap: 3px; padding: 7px; color: #8d2014; background: #ffe1d8; border-left: 3px solid var(--signal); font-size: 9px; }

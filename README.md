@@ -350,6 +350,102 @@ npm run build
 
 The integration test verifies server/client UTF-8, localized reads, mixed-language JSONB persistence with restore, optimistic versions, and workflow instance transitions.
 
+## Workflow Document Generation
+
+Workflow steps with a configured `business_entity` use the nullable
+`action` flag in `orbit_workflow.workflow_step_assignment`:
+
+```text
+NULL   = no business entity/action state established
+false  = a document action is required
+true   = the document action is complete
+```
+
+When a business entity is assigned, stale `NULL` values are backfilled to
+`false`. The current workflow step displays an action checkbox. If its value is
+`false`, Orbit opens the Create document dialog. Leaving the workflow context
+closes the dialog; returning to the same current step evaluates the state again
+and reopens it when required.
+
+### Source, context, and preview
+
+Report generation resolves these three required values:
+
+```text
+customerRelations = customerRelations
+workflow_key      = order-evaluation
+record_key        = order-evaluation-003
+```
+
+The API resolves the step's configured Business entity, reads its allow-listed
+database columns under the user's organization, department, and laboratory
+scope, and adds workflow context such as order number, customer, contact, chip,
+current step, and workflow status.
+
+The preview is XML transformed with XSLT into a themed, print-friendly
+document. It uses context cards and field cards instead of one wide table, A4
+print margins, multiple-page record breaks, and `break-inside: avoid`. Users
+can use the browser print dialog's “Save as PDF” option.
+
+### Persistence table
+
+The final document is saved in:
+
+```text
+orbit_workflow.workflow_step_report
+```
+
+`workflow_record_id` is both the primary key and a foreign key to
+`orbit_workflow.workflow_record(id)`, giving one current document per
+workflow step.
+
+| Column | Purpose |
+| --- | --- |
+| `workflow_record_id` | Step identity; primary/foreign key |
+| `workflow_key` | Stable workflow lookup key |
+| `source_xml` | Generated XML source for audit/re-rendering |
+| `document_html` | Final themed, print-friendly HTML |
+| `content_type` | Currently `text/html` |
+| `created_by` | User who saved the document |
+| `created_at` / `updated_at` | Persistence timestamps |
+
+Saving the document and setting the step action to `true` occur in the same
+transaction. HTML is the canonical stored document because it is searchable,
+browser-native, and printable without a server-side PDF engine. A PDF renderer
+can be added later without changing the step identity or download URL.
+
+### Document endpoints and downloads
+
+| Method | Endpoint | Purpose |
+| --- | --- | --- |
+| `GET` | `/api/v1/GenerateReportTemplate` | Return XML report data with XSLT reference |
+| `GET` | `/api/v1/GenerateReportTemplate/stylesheet.xsl` | Return the XSLT stylesheet |
+| `POST` | `/api/v1/GenerateReportTemplate/save` | Persist XML/HTML and set `action=true` |
+| `GET` | `/api/v1/workflows/{workflow_key}/steps/{record_id}/report` | Open/download saved HTML |
+
+Example preview request:
+
+```text
+GET /api/v1/GenerateReportTemplate?customerRelations=customerRelations&workflow_key=order-evaluation&record_key=order-evaluation-003&theme=navy
+```
+
+The save response contains a stable `download_url`. The UI displays that link
+after saving and opens it in a new browser tab, so the document remains
+available even after the step is no longer current. The download endpoint uses
+the normal workflow `view` permission check.
+
+### Database setup and development fixture
+
+The schema is defined in `database/010_report_templates.sql` and included in
+`scripts/bootstrap_database.py`. For the repeatable, fully populated Sales
+Order fixture used by the UI:
+
+```bash
+.venv/bin/python scripts/seed_mock_data.py
+```
+
+This is development data and should not be used in production.
+
 ## Project Structure
 
 ```text

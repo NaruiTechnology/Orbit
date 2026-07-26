@@ -18,6 +18,7 @@ interface StepRow {
   step_name: string;
   sla: string | null;
   businessEntity: string | null;
+  action: boolean | null;
   laboratory_id: string | null;
   laboratory_code: string | null;
   laboratory_name: string | null;
@@ -227,7 +228,7 @@ export function SystemConfigPage({
       });
       if (!response.ok) throw new Error((await response.json().catch(() => ({}))).detail || `HTTP ${response.status}`);
       setConfig((current) => current
-        ? { ...current, steps: current.steps.map((row) => row.id === step.id ? { ...row, ...step } : row) }
+        ? { ...current, steps: current.steps.map((row) => row.id === step.id ? { ...row, ...step, action: step.businessEntity ? (step.action ?? false) : null } : row) }
         : current);
       const nextDirtyRows = { ...dirtyRowsRef.current };
       delete nextDirtyRows[step.id];

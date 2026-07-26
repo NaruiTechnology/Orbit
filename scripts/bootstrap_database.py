@@ -139,6 +139,7 @@ def _apply_schema_and_seed(skip_catalog: bool) -> dict[str, int] | None:
             "007_workflow_timing_actions.sql",
             "006_sla_orbit_service.sql",
             "009_access_management.sql",
+            "010_report_templates.sql",
         ):
             script_path = PROJECT_ROOT / "database" / script_name
             connection.execute(script_path.read_text(encoding="utf-8"))

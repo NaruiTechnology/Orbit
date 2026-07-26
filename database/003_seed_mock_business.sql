@@ -51,6 +51,40 @@ ON CONFLICT (id) DO UPDATE SET
     notes = EXCLUDED.notes,
     updated_at = CURRENT_TIMESTAMP;
 
+-- Complete Sales Order fixture used by the workflow action/document dialog.
+-- It deliberately fills every business field so the document form exercises
+-- the same populated payload shape as the entity edit dialog.
+INSERT INTO orbit_sales.sales_order (
+    id, order_number, customer_id, project_engineer_id, chip_model, chip_number,
+    outsourced_order_number, project_name, evaluation_time, yield_rate,
+    decap_quantity, has_polyimide, pi_removal_method, package_type,
+    packaged_chip_count, bond_wire_material, wire_separation_method,
+    process_node, line_width, metal_layer_count, fib_modification_area,
+    design_chip_scaling, has_dummy, wire_resistance_requirement,
+    sensitive_device_below_area, dispensing_type, dispensing_count, pcb_count,
+    copper_pillar_removal_count, solder_ball_removal_count, ball_planting_count,
+    special_requirements, importance, fib_failure_count, failure_numbers,
+    test_result, customer_returns_failure_sample, organization_id,
+    department_id, laboratory_id
+)
+SELECT
+    '75000000-0000-0000-0000-000000000001', 'MOCK-ORD-0001', cp.id,
+    '60000000-0000-0000-0000-000000000001', 'HX-PM-2401', 'HX-CHIP-0001',
+    'MOCK-OUT-0001', 'Power Controller Evaluation', CURRENT_TIMESTAMP, 0.985,
+    12, false, 'FIB设备', '正装', 240, '金线', '设备切线', '28nm', '6um', 8,
+    '区域 A / 1.2mm²', '1:1', false, '< 5 ohm', '无敏感器件', '普通胶', 2, 1,
+    0, 0, 0, 'Use the standard evaluation recipe.', '重要', 0, 'N/A',
+    'Fixture result pending confirmation.', false,
+    '10000000-0000-0000-0000-000000000001', NULL, NULL
+  FROM orbit_sales.customer_profile cp
+ WHERE cp.customer_code = 'ION_C_001'
+ON CONFLICT (id) DO UPDATE SET
+    order_number = EXCLUDED.order_number,
+    customer_id = EXCLUDED.customer_id,
+    chip_model = EXCLUDED.chip_model,
+    project_name = EXCLUDED.project_name,
+    updated_at = CURRENT_TIMESTAMP;
+
 INSERT INTO orbit_workflow.workflow_business_record (
     workflow_id, record_key, record_order, label_i18n, values_json,
     source_row, source_cells

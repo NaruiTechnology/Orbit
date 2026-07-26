@@ -114,9 +114,17 @@ export interface TreeNode {
   ContactName: string | null;
   Email: string | null;
   Messages: string[];
+  action: boolean | null;
   sla: string | null;
   is_selected: boolean;
   is_before_selected: boolean;
+}
+
+export interface ReportTemplateSaveResponse {
+  record_id: string;
+  action: true;
+  download_url: string;
+  content_type: string;
 }
 
 export interface TreeEdge {

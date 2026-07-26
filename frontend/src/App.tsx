@@ -40,7 +40,7 @@ import {
   setTheme,
 } from "./features/workflows/workspaceSlice";
 import { translate } from "./i18n/translations";
-import type { WorkflowCommandInput, WorkflowRecord } from "./types";
+import type { ReportTemplateSaveResponse, WorkflowCommandInput, WorkflowRecord } from "./types";
 
 interface PendingConfirmation {
   title: string;
@@ -115,6 +115,15 @@ export function App() {
       locale: workspace.locale,
     }).unwrap();
     await treeQuery.refetch();
+  }
+
+  async function handleSaveReport(result: ReportTemplateSaveResponse): Promise<void> {
+    await treeQuery.refetch();
+    await runtimeQuery.refetch();
+    if (result.download_url) {
+      // Keep the saved URL available to the report dialog while allowing the
+      // action checkbox and workflow tree to refresh from the database.
+    }
   }
 
   function handleNewRecordSaved(record: WorkflowRecord): void {
@@ -459,7 +468,7 @@ export function App() {
         </div>
 
         <WorkflowTreePanel
-          key={`${workspace.selectedWorkflow}:${workspace.locale}`}
+          key={`${workspace.selectedWorkflow}:${workspace.locale}:${deferredSelection.recordId || ""}`}
           locale={workspace.locale}
           tree={treeQuery.data}
           isWorkflow={workflow?.definition_type === "workflow"}
@@ -469,6 +478,8 @@ export function App() {
           onCommand={handleWorkflowCommand}
           messageBusy={appendMessageState.isLoading}
           onSaveMessage={handleSaveWorkflowMessage}
+          onSaveReport={handleSaveReport}
+          theme={workspace.theme}
         />
       </main>}
       <footer className="orbit-footer">

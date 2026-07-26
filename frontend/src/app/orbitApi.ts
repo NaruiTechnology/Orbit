@@ -12,6 +12,7 @@ import type {
   WorkflowRuntimeProjection,
   WorkflowSummary,
   WorkflowTree,
+  ReportTemplateSaveResponse,
 } from "../types";
 import type { BusinessEntityRecord, BusinessEntityResponse } from "../salesTypes";
 
@@ -136,6 +137,23 @@ export const orbitApi = createApi({
         body: { message, locale },
       }),
     }),
+    reportTemplate: builder.query<string, { customerRelations: string; workflowKey: string; recordKey: string; theme?: string }>({
+      query: ({ customerRelations, workflowKey, recordKey, theme }) => ({
+        url: "/GenerateReportTemplate",
+        params: { customerRelations, workflow_key: workflowKey, record_key: recordKey, theme },
+      responseHandler: (response) => response.text(),
+      }),
+    }),
+    reportStylesheet: builder.query<string, void>({
+      query: () => ({ url: "/GenerateReportTemplate/stylesheet.xsl", responseHandler: (response) => response.text() }),
+    }),
+    saveReportTemplate: builder.mutation<ReportTemplateSaveResponse, { customerRelations: string; workflowKey: string; recordKey: string; theme?: string }>({
+      query: ({ customerRelations, workflowKey, recordKey, theme }) => ({
+        url: "/GenerateReportTemplate/save",
+        method: "POST",
+        body: { customerRelations, workflow_key: workflowKey, record_key: recordKey, theme },
+      }),
+    }),
     updateRecord: builder.mutation<WorkflowRecord, RecordUpdate>({
       query: ({ workflowKey, recordId, values, version, locale }) => ({
         url: `/workflows/${workflowKey}/records/${recordId}`,
@@ -190,3 +208,6 @@ export const useDeleteRecordMutation = orbitApi.endpoints.deleteRecord.useMutati
 export const useGetWorkflowRuntimeQuery = orbitApi.endpoints.workflowRuntime.useQuery;
 export const useWorkflowCommandMutation = orbitApi.endpoints.workflowCommand.useMutation;
 export const useAppendWorkflowStepMessageMutation = orbitApi.endpoints.appendWorkflowStepMessage.useMutation;
+export const useGetReportTemplateQuery = orbitApi.endpoints.reportTemplate.useLazyQuery;
+export const useGetReportStylesheetQuery = orbitApi.endpoints.reportStylesheet.useLazyQuery;
+export const useSaveReportTemplateMutation = orbitApi.endpoints.saveReportTemplate.useMutation;
