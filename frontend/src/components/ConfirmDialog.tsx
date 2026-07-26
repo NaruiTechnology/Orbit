@@ -31,9 +31,15 @@ export function ConfirmDialog({
         <p>{message}</p>
         <div className="dialog-actions confirm-dialog__actions">
           <button type="button" className="confirm-dialog__cancel" disabled={busy} onClick={onCancel}>
+            <svg className="grid-edit-action__icon" aria-hidden="true" viewBox="0 0 24 24" focusable="false">
+              <path d="M6 6l12 12M18 6 6 18" />
+            </svg>
             {cancelLabel}
           </button>
           <button type="button" className="confirm-dialog__confirm" disabled={busy} onClick={onConfirm}>
+            <svg className="grid-edit-action__icon" aria-hidden="true" viewBox="0 0 24 24" focusable="false">
+              <path d="M5 7h14M10 11v6m4-6v6M9 7V4h6v3m-9 0 1 13h8l1-13" />
+            </svg>
             {busy ? "…" : confirmLabel}
           </button>
         </div>
