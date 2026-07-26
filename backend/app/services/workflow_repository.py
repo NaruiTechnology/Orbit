@@ -911,6 +911,26 @@ def create_record(
                 status_code=409,
                 detail="An identical order already exists; change at least one field before saving",
             )
+        orphan_runtime_ids = connection.execute(
+            """
+            SELECT i.id
+              FROM orbit_runtime.workflow_instance i
+              JOIN orbit_workflow.workflow_definition w ON w.id = i.workflow_id
+             WHERE w.workflow_key = %s
+               AND i.organization_id = %s
+               AND i.business_key = %s
+               AND NOT EXISTS (
+                   SELECT 1
+                     FROM orbit_sales.customer_order existing_order
+                    WHERE existing_order.id::text = i.context_json ->> 'order_id'
+               )
+            """,
+            (workflow_key, user.scope.organization_id, order_number),
+        ).fetchall()
+        for runtime_row in orphan_runtime_ids:
+            WorkflowRuntimeService(connection).delete_record(
+                runtime_row["id"], workflow_key, user.scope.organization_id
+            )
         try:
             created = connection.execute(
                 """
@@ -953,7 +973,8 @@ def create_record(
         except Exception as error:
             if getattr(error, "sqlstate", None) == "23505":
                 raise HTTPException(
-                    status_code=409, detail="Order number already exists"
+                    status_code=409,
+                    detail="A record with this order number already exists. Enter a different order number.",
                 ) from error
             raise
         # Creating an order completes the first intake step. Keep this
@@ -969,17 +990,25 @@ def create_record(
         ).fetchone()
         if workflow is not None:
             runtime = WorkflowRuntimeService(connection)
-            instance = runtime.start(
-                workflow_id=workflow["id"],
-                workflow_key=workflow_key,
-                business_key=order_number,
-                context={"order_id": str(created["id"]), "order_number": order_number},
-                organization_id=user.scope.organization_id,
-                department_id=user.scope.department_id,
-                laboratory_id=user.scope.laboratory_id,
-                started_by=user.user_id,
-                catalog_version=workflow["catalog_version"],
-            )
+            try:
+                instance = runtime.start(
+                    workflow_id=workflow["id"],
+                    workflow_key=workflow_key,
+                    business_key=order_number,
+                    context={"order_id": str(created["id"]), "order_number": order_number},
+                    organization_id=user.scope.organization_id,
+                    department_id=user.scope.department_id,
+                    laboratory_id=user.scope.laboratory_id,
+                    started_by=user.user_id,
+                    catalog_version=workflow["catalog_version"],
+                )
+            except Exception as error:
+                if getattr(error, "sqlstate", None) == "23505":
+                    raise HTTPException(
+                        status_code=409,
+                        detail="A stale workflow instance still uses this order number. Delete the orphaned workflow instance before recreating the order.",
+                    ) from error
+                raise
             runtime.transition(
                 instance_id=instance["id"],
                 expected_version=instance["version"],
@@ -1088,6 +1117,30 @@ def delete_record(
     require_workflow_access(connection, user.user_id, workflow_key, "edit")
     definition = get_workflow(connection, user, workflow_key, "en")
     if _is_customer_relations_workflow(definition):
+        order = connection.execute(
+            """
+            SELECT id, order_number
+              FROM orbit_sales.customer_order
+             WHERE id = %s AND organization_id = %s
+            """,
+            (record_id, user.scope.organization_id),
+        ).fetchone()
+        if order is None:
+            raise HTTPException(status_code=404, detail="Customer order not found")
+        runtime_ids = connection.execute(
+            """
+            SELECT i.id
+              FROM orbit_runtime.workflow_instance i
+              JOIN orbit_workflow.workflow_definition w ON w.id = i.workflow_id
+             WHERE w.workflow_key = %s
+               AND i.organization_id = %s
+               AND (
+                   i.context_json ->> 'order_id' = %s
+                   OR i.business_key = %s
+               )
+            """,
+            (workflow_key, user.scope.organization_id, str(record_id), order["order_number"]),
+        ).fetchall()
         deleted = connection.execute(
             """
             DELETE FROM orbit_sales.customer_order
@@ -1098,6 +1151,10 @@ def delete_record(
         ).fetchone()
         if deleted is None:
             raise HTTPException(status_code=404, detail="Customer order not found")
+        for runtime_row in runtime_ids:
+            WorkflowRuntimeService(connection).delete_record(
+                runtime_row["id"], workflow_key, user.scope.organization_id
+            )
         return
     if _is_runtime_workflow(definition):
         deleted_id = WorkflowRuntimeService(connection).delete_record(
@@ -1234,6 +1291,12 @@ def get_tree(
             # parallel request. Keep the tree aligned with that instance's
             # deterministic first step until the projection is available.
             selected_step_key = rows[0]["record_key"]
+
+    # Action starts incomplete for every business-entity step. Do not expose
+    # the legacy shared assignment flag, which can contain stale true data
+    # from another order.
+    for row in rows:
+        row["assigned_action"] = False if row["assigned_business_entity"] else None
 
     selected_order = next(
         (

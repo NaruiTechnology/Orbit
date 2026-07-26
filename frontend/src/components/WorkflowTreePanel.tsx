@@ -58,6 +58,7 @@ export function WorkflowTreePanel({
   const [mailComposeBody, setMailComposeBody] = useState("");
   const [messageDialogOpen, setMessageDialogOpen] = useState(false);
   const [reportDialogOpen, setReportDialogOpen] = useState(false);
+  const [savedReportContext, setSavedReportContext] = useState<string | null>(null);
   const reportContextRef = useRef<string | null>(null);
   const currentNode = runtime?.nodes.find(
     (node) => node.record_key === runtime.instance.current_record_key,
@@ -65,9 +66,16 @@ export function WorkflowTreePanel({
   const currentTreeNode = tree?.nodes.find(
     (node) => node.record_key === runtime?.instance.current_record_key,
   );
+  const lastTreeNode = tree?.nodes[tree.nodes.length - 1];
+  const isLastWorkflowStep = Boolean(
+    currentTreeNode && lastTreeNode?.record_key === currentTreeNode.record_key,
+  );
   const runtimeByKey = new Map((runtime?.nodes || []).map((node) => [node.record_key, node]));
 
   const reportContextKey = `${tree?.workflow_key || ""}:${runtime?.instance.id || ""}:${currentNode?.record_key || ""}`;
+  const reportActionCompleted = Boolean(
+    currentTreeNode?.action === true || savedReportContext === reportContextKey,
+  );
   useEffect(() => {
     if (!currentNode || !currentTreeNode) {
       setReportDialogOpen(false);
@@ -76,11 +84,13 @@ export function WorkflowTreePanel({
     }
     if (!reportContextKey || reportContextRef.current === reportContextKey) return;
     reportContextRef.current = reportContextKey;
+    setSavedReportContext(null);
     setReportDialogOpen(false);
     if (
       currentNode?.record_key === currentTreeNode?.record_key &&
       currentTreeNode.business_entity &&
-      currentTreeNode.action === false
+      currentTreeNode.action !== true &&
+      savedReportContext !== reportContextKey
     ) {
       setReportDialogOpen(true);
     }
@@ -206,20 +216,20 @@ export function WorkflowTreePanel({
                             <input
                               type="checkbox"
                               checked={runtimeNode.status === "completed"}
-                              disabled={commandBusy || runtimeNode.status === "completed" || currentTreeNode?.action !== null}
+                              disabled={commandBusy || runtimeNode.status === "completed" || (!isLastWorkflowStep && currentTreeNode?.action !== null && !reportActionCompleted)}
                               onChange={() => void send("submit")}
                             />
                             <span>{translate(locale, "submit")}</span>
                           </label>
                           {currentTreeNode?.business_entity && currentTreeNode.action !== null ? (
-                            <label className={`workflow-report-check ${currentTreeNode.action === false ? "workflow-report-check--pending" : ""}`} title={translate(locale, "actionReport")}>
+                            <label className={`workflow-report-check ${!reportActionCompleted ? "workflow-report-check--pending" : ""}`} title={translate(locale, "actionReport")}>
                               <input
                                 type="checkbox"
-                                checked={currentTreeNode.action === true}
-                                disabled={commandBusy || currentTreeNode.action === true}
+                                checked={reportActionCompleted}
+                                disabled={commandBusy || reportActionCompleted}
                                 onChange={() => setReportDialogOpen(true)}
                               />
-                              {currentTreeNode.action === false ? <span className="workflow-report-check__required" aria-hidden="true">*</span> : null}
+                              {!reportActionCompleted ? <span className="workflow-report-check__required" aria-hidden="true">*</span> : null}
                             </label>
                           ) : null}
                           <button
@@ -309,6 +319,7 @@ export function WorkflowTreePanel({
           onClose={() => setReportDialogOpen(false)}
           onSaved={async (result) => {
             await onSaveReport?.(result);
+            setSavedReportContext(reportContextKey);
             setReportDialogOpen(false);
           }}
           theme={theme}

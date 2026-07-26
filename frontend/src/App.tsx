@@ -299,6 +299,9 @@ export function App() {
         });
         dispatch(selectCell({ recordId: null, cellKey: null }));
         setRecordsRevision((current) => current + 1);
+        const refreshed = await recordsQuery.refetch();
+        const firstRemaining = refreshed.data?.items[0];
+        dispatch(selectCell({ recordId: firstRemaining?.id || null, cellKey: null }));
       },
     });
   }
@@ -336,6 +339,16 @@ export function App() {
   const hasBlockingError =
     workflowsQuery.isError || workflowQuery.isError || recordsQuery.isError;
   const workflow = workflowQuery.data;
+  const selectedTree = treeQuery.data?.selected_record_id === deferredSelection.recordId
+    ? treeQuery.data
+    : undefined;
+  const runtimeOrderId = runtimeQuery.data?.instance.context?.order_id;
+  const selectedRuntime = runtimeQuery.data && deferredSelection.recordId && (
+    runtimeQuery.data.instance.id === deferredSelection.recordId
+    || runtimeOrderId === deferredSelection.recordId
+  )
+    ? runtimeQuery.data
+    : undefined;
 
   return (
     <div className="orbit-shell">
@@ -470,10 +483,10 @@ export function App() {
         <WorkflowTreePanel
           key={`${workspace.selectedWorkflow}:${workspace.locale}:${deferredSelection.recordId || ""}`}
           locale={workspace.locale}
-          tree={treeQuery.data}
+          tree={selectedTree}
           isWorkflow={workflow?.definition_type === "workflow"}
           loading={treeQuery.isLoading || treeQuery.isFetching}
-          runtime={runtimeQuery.data}
+          runtime={selectedRuntime}
           commandBusy={workflowCommandState.isLoading}
           onCommand={handleWorkflowCommand}
           messageBusy={appendMessageState.isLoading}

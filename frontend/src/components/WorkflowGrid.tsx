@@ -141,6 +141,18 @@ function displayValue(value: unknown, locale: Locale): string {
   return String(value);
 }
 
+function formatSaveError(reason: unknown): string {
+  if (reason instanceof Error) return reason.message;
+  if (reason && typeof reason === "object") {
+    const error = reason as { data?: unknown; error?: unknown };
+    if (error.data && typeof error.data === "object" && "detail" in error.data) {
+      return String(error.data.detail);
+    }
+    if (typeof error.error === "string") return error.error;
+  }
+  return "Unable to save the record. Please review the values and try again.";
+}
+
 const OPTIONAL_ORDER_FIELDS = new Set([
   "evaluation_result",
   "status",
@@ -362,7 +374,7 @@ export function WorkflowGrid({
       }
       setEditingRecord(null);
     } catch (reason) {
-      setEditError(reason instanceof Error ? reason.message : String(reason));
+      setEditError(formatSaveError(reason));
     } finally {
       setEditBusy(false);
     }
