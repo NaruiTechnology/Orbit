@@ -1293,6 +1293,89 @@ select:has(> option:checked[value=""]) option { color: var(--ink); }
   letter-spacing: 0.04em;
 }
 
+.business-entity-header {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-width: max-content;
+}
+
+.business-entity-help-button {
+  display: inline-grid;
+  width: 16px;
+  height: 16px;
+  padding: 0;
+  color: var(--signal);
+  background: transparent;
+  border: 1px solid color-mix(in srgb, var(--signal) 70%, transparent);
+  border-radius: 50%;
+  cursor: pointer;
+  font: inherit;
+  font-size: 10px;
+  font-weight: 900;
+  line-height: 1;
+  place-items: center;
+}
+
+.business-entity-help-button:hover,
+.business-entity-help-button:focus-visible {
+  color: var(--paper-bright);
+  background: var(--signal);
+  outline: none;
+}
+
+.business-entity-help-popover {
+  position: absolute;
+  z-index: 1000;
+  top: calc(100% + 10px);
+  left: 0;
+  width: min(320px, 38vw);
+  padding: 12px;
+  color: var(--ink);
+  background: var(--gradient-surface);
+  border: 1px solid var(--line-strong);
+  border-radius: 8px;
+  box-shadow: 4px 6px 16px rgba(0, 0, 0, 0.28);
+  font-size: 11px;
+  font-weight: 500;
+  line-height: 1.45;
+  white-space: normal;
+}
+
+.business-entity-help-popover::before {
+  position: absolute;
+  top: -6px;
+  left: 7px;
+  width: 10px;
+  height: 10px;
+  content: "";
+  background: var(--gradient-surface);
+  border-top: 1px solid var(--line-strong);
+  border-left: 1px solid var(--line-strong);
+  transform: rotate(45deg);
+}
+
+.business-entity-help-popover strong {
+  display: block;
+  margin-bottom: 6px;
+  color: var(--signal);
+  font-size: 12px;
+}
+
+.business-entity-help-popover p {
+  margin: 5px 0 0;
+  color: var(--ink-soft);
+}
+
+.system-config-grid .ag-header,
+.system-config-grid .ag-header-viewport,
+.system-config-grid .ag-header-row,
+.system-config-grid .ag-header-cell:has(.business-entity-header),
+.system-config-grid .ag-header-cell:has(.business-entity-header) .ag-header-cell-comp-wrapper {
+  overflow: visible;
+}
+
 .grid-frame .ag-header-group-cell,
 .grid-frame .ag-header-group-cell-label {
   color: var(--control-active-fg);

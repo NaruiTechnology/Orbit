@@ -28,6 +28,32 @@ interface StepRow {
   hr_employee_id: string | null;
 }
 interface ConfigResponse { workflow_key: string; workflow_name: string; laboratories: Laboratory[]; businessEntities: BusinessEntityOption[]; steps: StepRow[] }
+
+function BusinessEntityHeader({ locale }: { locale: Locale }) {
+  const [open, setOpen] = useState(false);
+  return (
+    <div className="business-entity-header">
+      <span>{translate(locale, "businessEntityHeader")}</span>
+      <button
+        type="button"
+        className="business-entity-help-button"
+        aria-label={translate(locale, "businessEntityHelpTitle")}
+        aria-expanded={open}
+        title={translate(locale, "businessEntityHelpTitle")}
+        onClick={(event) => { event.stopPropagation(); setOpen((current) => !current); }}
+      >?
+      </button>
+      {open ? (
+        <div className="business-entity-help-popover" role="tooltip" onClick={(event) => event.stopPropagation()}>
+          <strong>{translate(locale, "businessEntityHelpTitle")}</strong>
+          <p>{translate(locale, "businessEntityHelpBody")}</p>
+          <p>{translate(locale, "businessEntityHelpSteps")}</p>
+          <p>{translate(locale, "businessEntityHelpEntities")}</p>
+        </div>
+      ) : null}
+    </div>
+  );
+}
 interface AccessRole { code: string; name: string }
 interface AccessUserRow {
   id: string;
@@ -264,7 +290,8 @@ export function SystemConfigPage({
     { field: "step_name", headerName: locale === "en" ? "Workflow step" : "工作流步骤", minWidth: 220, flex: 1, editable: false },
     { field: "sla", headerName: "SLA", minWidth: 120, width: 140, editable: false },
     {
-      field: "businessEntity", headerName: "Business entity", minWidth: 220, editable: false,
+      field: "businessEntity", headerName: translate(locale, "businessEntityHeader"), minWidth: 220, editable: false,
+      headerComponent: () => <BusinessEntityHeader locale={locale} />,
       cellRenderer: (params: ICellRendererParams<StepRow>) => {
         const row = params.data;
         if (!row) return null;
