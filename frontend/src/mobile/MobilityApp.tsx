@@ -11,13 +11,19 @@ import {
   useGetSessionQuery,
   useGetWorkflowQuery,
   useGetWorkflowTreeQuery,
+  useGetWorkflowRuntimeQuery,
   useGetWorkflowsQuery,
   useUpdateRecordMutation,
+  useWorkflowCommandMutation,
+  useAppendWorkflowStepMessageMutation,
 } from "../app/orbitApi";
 import { useAppSelector } from "../app/store";
 import { AuthDialog } from "../components/AuthDialog";
+import { MailComposeDialog } from "../components/MailComposeDialog";
 import { WorkflowCascade } from "../components/WorkflowCascade";
-import type { Locale, SessionInfo, WorkflowDetail, WorkflowRecord, WorkflowSummary, WorkflowTree } from "../types";
+import { WorkflowMessageDialog } from "../components/WorkflowMessageDialog";
+import { WorkflowReportDialog } from "../components/WorkflowReportDialog";
+import type { Locale, SessionInfo, ThemeMode, WorkflowCommandInput, WorkflowDetail, WorkflowRecord, WorkflowRuntimeProjection, WorkflowSummary, WorkflowTree } from "../types";
 
 type MobilityRoute = "home" | "workflows" | "account";
 
@@ -187,6 +193,7 @@ function WorkflowList({ workflows, text }: { workflows: WorkflowSummary[]; text:
   const [editorValues, setEditorValues] = useState<Record<string, unknown>>({});
   const [actionError, setActionError] = useState<string | null>(null);
   const locale = useAppSelector((state) => state.workspace.locale);
+  const theme = useAppSelector((state) => state.workspace.theme);
   const catalogWorkflows = useMemo(() => workflows.filter((workflow) =>
     !workflow.is_master && workflow.definition_type === "workflow" &&
     (selectedGroup === "hr" ? workflow.group_key === "hr" : workflow.group_key !== "hr"),
@@ -210,15 +217,31 @@ function WorkflowList({ workflows, text }: { workflows: WorkflowSummary[]; text:
     recordId: selectedRecordId,
     cellKey: null,
   }, { skip: !selectedWorkflowKey || !selectedRecordId });
+  const runtimeQuery = useGetWorkflowRuntimeQuery({ instanceId: selectedRecordId || "", workflowKey: selectedWorkflowKey || "" }, { skip: !selectedWorkflowKey || !selectedRecordId });
   const [createRecord, createState] = useCreateRecordMutation();
   const [updateRecord, updateState] = useUpdateRecordMutation();
   const [deleteRecord, deleteState] = useDeleteRecordMutation();
+  const [sendWorkflowCommand, commandState] = useWorkflowCommandMutation();
+  const [appendWorkflowStepMessage, messageState] = useAppendWorkflowStepMessageMutation();
   const selectedRecord = useMemo(
     () => recordsQuery.data?.items.find((record) => (record.tree_record_id || record.id) === selectedRecordId),
     [recordsQuery.data?.items, selectedRecordId],
   );
   const editableColumns = workflowQuery.data?.columns.filter((column) => column.editable) || [];
   const actionBusy = createState.isLoading || updateState.isLoading || deleteState.isLoading;
+
+  async function handleWorkflowCommand(command: WorkflowCommandInput): Promise<void> {
+    const instanceId = runtimeQuery.data?.instance.id || selectedRecordId;
+    if (!instanceId) return;
+    await sendWorkflowCommand({ instanceId, ...command }).unwrap();
+    await Promise.all([runtimeQuery.refetch(), treeQuery.refetch()]);
+  }
+
+  async function handleSaveWorkflowMessage(recordId: string, message: string): Promise<void> {
+    if (!selectedWorkflowKey) return;
+    await appendWorkflowStepMessage({ workflowKey: selectedWorkflowKey, recordId, message, locale }).unwrap();
+    await treeQuery.refetch();
+  }
 
   function startEditor(mode: "insert" | "edit") {
     if (mode === "edit" && !selectedRecord) return;
@@ -316,7 +339,7 @@ function WorkflowList({ workflows, text }: { workflows: WorkflowSummary[]; text:
         <WorkflowRecordsGrid detail={workflowQuery.data} records={recordsQuery.data?.items || []} loading={recordsQuery.isLoading} selectedRecordId={selectedRecordId} onSelect={(record) => setSelectedRecordId(record.tree_record_id || record.id)} text={text} />
       </section>
     ) : null}
-    {selectedWorkflowKey && selectedRecordId ? <WorkflowSteps tree={treeQuery.data} loading={treeQuery.isLoading} text={text} /> : null}
+    {selectedWorkflowKey && selectedRecordId ? <WorkflowSteps tree={treeQuery.data} runtime={runtimeQuery.data} loading={treeQuery.isLoading || runtimeQuery.isLoading} text={text} locale={locale} theme={"navy"} commandBusy={commandState.isLoading} messageBusy={messageState.isLoading} onCommand={handleWorkflowCommand} onSaveMessage={handleSaveWorkflowMessage} onRefresh={async () => { await Promise.all([runtimeQuery.refetch(), treeQuery.refetch()]); }} /> : null}
   </div>;
 }
 
@@ -350,16 +373,39 @@ function WorkflowRecordsGrid({ detail, records, loading, selectedRecordId, onSel
   </div>;
 }
 
-function WorkflowSteps({ tree, loading, text }: { tree: WorkflowTree | undefined; loading: boolean; text: MobilityCopy }) {
+function WorkflowSteps({ tree, runtime, loading, text, locale, theme, commandBusy, messageBusy, onCommand, onSaveMessage, onRefresh }: { tree: WorkflowTree | undefined; runtime: WorkflowRuntimeProjection | undefined; loading: boolean; text: MobilityCopy; locale: Locale; theme: ThemeMode; commandBusy: boolean; messageBusy: boolean; onCommand: (command: WorkflowCommandInput) => Promise<void>; onSaveMessage: (recordId: string, message: string) => Promise<void>; onRefresh: () => Promise<void> }) {
+  const [reportOpen, setReportOpen] = useState(false);
+  const [messageOpen, setMessageOpen] = useState(false);
+  const [mailOpen, setMailOpen] = useState(false);
+  const [mailBody, setMailBody] = useState("");
   const explicitCurrentIndex = tree?.nodes.findIndex((node) => node.is_selected) ?? -1;
   const currentIndex = explicitCurrentIndex >= 0 ? explicitCurrentIndex : tree?.nodes.length ? 0 : -1;
+  const currentTreeNode = tree?.nodes[currentIndex];
+  const currentRuntimeNode = runtime?.nodes.find((node) => node.record_key === currentTreeNode?.record_key);
+  const showActions = Boolean(currentTreeNode && currentRuntimeNode && currentRuntimeNode.record_key === runtime?.instance.current_record_key);
+  async function send(command: string): Promise<void> {
+    if (!currentRuntimeNode || !runtime) return;
+    await onCommand({ command, nodeKey: currentRuntimeNode.record_key, version: runtime.instance.version });
+  }
   return <section className="mobility-card mobility-steps-card" aria-busy={loading}>
     <div className="mobility-card__heading"><div><span className="mobility-kicker">{text.steps}</span><h2>{tree?.workflow_name || text.steps}</h2></div><span className="mobility-grid-count">{tree?.nodes.length || 0}</span></div>
     {loading ? <p className="mobility-empty">{text.loading}</p> : tree?.nodes.length ? <ol className="mobility-steps-list">{tree.nodes.map((node, index) => {
       const isCurrent = index === currentIndex;
       const isComplete = explicitCurrentIndex >= 0 ? node.is_before_selected : index < currentIndex;
-      return <li key={node.record_key} className={isCurrent ? "is-current" : isComplete ? "is-complete" : ""}><span>{String(node.order).padStart(2, "0")}</span><div><strong>{node.label}</strong><small>{isCurrent ? text.current : isComplete ? text.completed : text.upcoming}{node.owner_role ? ` · ${node.owner_role}` : ""}</small></div></li>;
+      return <li key={node.record_key} className={isCurrent ? "is-current" : isComplete ? "is-complete" : ""}><span>{String(node.order).padStart(2, "0")}</span><div><strong>{node.label}</strong><small>{isCurrent ? text.current : isComplete ? text.completed : text.upcoming}{node.owner_role ? ` · ${node.owner_role}` : ""}</small>{isCurrent && showActions ? <div className="mobility-workflow-actions">
+        <label className="mobility-workflow-check"><input type="checkbox" checked={currentRuntimeNode?.status === "completed"} disabled={commandBusy || currentRuntimeNode?.status === "completed" || currentTreeNode?.action !== null} onChange={() => void send("submit")} /><span>{locale === "en" ? "Done" : "完成"}</span></label>
+        {currentTreeNode?.business_entity && currentTreeNode.action !== null ? <label className="mobility-workflow-action-check" title={locale === "en" ? "Action document" : "动作文档"}><input type="checkbox" checked={currentTreeNode.action === true} disabled={commandBusy || currentTreeNode.action === true} onChange={() => setReportOpen(true)} />{currentTreeNode.action === false ? <b aria-hidden="true">*</b> : null}</label> : null}
+        <button type="button" className="mobility-workflow-icon" title={locale === "en" ? "Add message" : "添加消息"} aria-label={locale === "en" ? "Add message" : "添加消息"} disabled={commandBusy || messageBusy} onClick={() => setMessageOpen(true)}>✎</button>
+        <button type="button" className="mobility-workflow-icon" title={locale === "en" ? "Email" : "电子邮件"} aria-label={locale === "en" ? "Email" : "电子邮件"} disabled={commandBusy} onClick={() => { setMailBody(""); setMailOpen(true); }}>✉</button>
+        <button type="button" className="mobility-workflow-icon" title={locale === "en" ? "Contact" : "联系人"} aria-label={locale === "en" ? "Contact" : "联系人"} disabled={commandBusy} onClick={() => { setMailBody(currentTreeNode?.ContactName?.trim() ? `DEAR ${currentTreeNode.ContactName.trim()}` : "DEAR"); setMailOpen(true); }}>♙</button>
+        <button type="button" className="mobility-workflow-about" disabled={commandBusy} onClick={() => void send("abort")}>{locale === "en" ? "About" : "关于"}</button>
+      </div> : null}</div></li>;
     })}</ol> : <p className="mobility-empty">{text.noSteps}</p>}
+    {currentTreeNode && currentRuntimeNode ? <>
+      {mailOpen ? <MailComposeDialog locale={locale} defaultTo={currentTreeNode.Email || ""} defaultBody={mailBody} defaultSubject={`${locale === "en" ? "Email" : "电子邮件"} · ${currentTreeNode.record_key}`} onClose={() => setMailOpen(false)} /> : null}
+      {messageOpen ? <WorkflowMessageDialog locale={locale} messages={currentTreeNode.Messages || []} busy={messageBusy} onSave={(message) => onSaveMessage(currentTreeNode.record_key, message)} onClose={() => setMessageOpen(false)} /> : null}
+      <WorkflowReportDialog open={reportOpen} locale={locale} workflowKey={tree?.workflow_key || ""} recordKey={currentTreeNode.record_key} theme={theme} onClose={() => setReportOpen(false)} onSaved={async () => { setReportOpen(false); await onRefresh(); }} />
+    </> : null}
   </section>;
 }
 

@@ -21,9 +21,10 @@ AUTH_TOKEN_TTL = timedelta(days=1)
 _auth_tokens: dict[str, tuple[str, datetime]] = {}
 
 
-def issue_auth_token(login_name: str) -> str:
+def issue_auth_token(login_name: str, lifetime_days: int = 1) -> str:
     token = secrets.token_urlsafe(32)
-    _auth_tokens[token] = (login_name, datetime.now(timezone.utc) + AUTH_TOKEN_TTL)
+    safe_days = max(1, min(int(lifetime_days), 3650))
+    _auth_tokens[token] = (login_name, datetime.now(timezone.utc) + timedelta(days=safe_days))
     return token
 
 

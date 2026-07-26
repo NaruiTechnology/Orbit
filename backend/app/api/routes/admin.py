@@ -57,6 +57,7 @@ class AccessUserUpdate(BaseModel):
     phone_number: str | None = Field(default=None, max_length=40)
     company_name: str | None = Field(default=None, max_length=160)
     site: str | None = Field(default=None, max_length=160)
+    session_lifetime_limit_days: int = Field(default=1, ge=1, le=3650)
 
 
 class AccessUserCreate(BaseModel):
@@ -71,6 +72,7 @@ class AccessUserCreate(BaseModel):
     site: str = Field(default="Beijing(北京)", max_length=160)
     role_code: str = Field(default="user", min_length=1, max_length=32)
     is_active: bool = True
+    session_lifetime_limit_days: int = Field(default=1, ge=1, le=3650)
 
 
 def _require_admin(user: SessionInfo, connection: Connection[dict[str, Any]]) -> None:
@@ -93,7 +95,7 @@ def access_management(
     rows = connection.execute(
         """SELECT u.id, u.login_name, u.first_name, u.last_name, u.email,
                   u.phone_number, u.company_name, u.site, u.is_active,
-                  u.created_at, MAX(s.login_time) AS last_sign_in,
+                  u.created_at, u.session_lifetime_limit_days, MAX(s.login_time) AS last_sign_in,
                   COALESCE(MAX(r.code) FILTER (WHERE r.code IN ('audit','admin','super_user','user')), 'user') AS role_code,
                   COALESCE((array_agg(r.name_i18n ORDER BY r.code) FILTER (WHERE r.code IN ('audit','admin','super_user','user')))[1], '{"en":"User"}'::jsonb) AS role_name_i18n
              FROM orbit_identity.app_user u
@@ -134,7 +136,8 @@ def update_access_user(
                   phone_number = COALESCE(%s, phone_number),
                   company_name = COALESCE(%s, company_name),
                   site = COALESCE(%s, site),
-                  is_active = %s
+                  is_active = %s,
+                  session_lifetime_limit_days = %s
             WHERE id = %s
         RETURNING id""",
         (request.login_name.strip() if request.login_name is not None else None,
@@ -144,7 +147,7 @@ def update_access_user(
          request.phone_number.strip() if request.phone_number is not None else None,
          request.company_name.strip() if request.company_name is not None else None,
          request.site.strip() if request.site is not None else None,
-         request.is_active, user_id),
+         request.is_active, request.session_lifetime_limit_days, user_id),
     ).fetchone()
     if updated is None:
         raise HTTPException(status_code=404, detail="user not found")
@@ -169,12 +172,12 @@ def create_access_user(
         display_name = f"{request.first_name.strip()} {request.last_name.strip()}".strip()
         row = connection.execute(
             """INSERT INTO orbit_identity.app_user
-               (login_name, display_name_i18n, first_name, last_name, email, phone_number, company_name, site, is_active)
-               VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
-               RETURNING id, login_name, first_name, last_name, email, phone_number, company_name, site, is_active, created_at""",
+               (login_name, display_name_i18n, first_name, last_name, email, phone_number, company_name, site, is_active, session_lifetime_limit_days)
+               VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+               RETURNING id, login_name, first_name, last_name, email, phone_number, company_name, site, is_active, session_lifetime_limit_days, created_at""",
             (request.login_name.strip(), Jsonb({"en": display_name, "zh_CN": display_name, "zh_HK": display_name}),
              request.first_name.strip(), request.last_name.strip(), request.email.strip(),
-             request.phone_number.strip(), request.company_name.strip(), request.site.strip(), request.is_active),
+             request.phone_number.strip(), request.company_name.strip(), request.site.strip(), request.is_active, request.session_lifetime_limit_days),
         ).fetchone()
     except Exception as error:
         raise HTTPException(status_code=409, detail=f"Could not create account: {error}") from error

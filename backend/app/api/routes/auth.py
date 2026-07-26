@@ -208,7 +208,8 @@ def verify_sms(
     if request.code.strip() != challenge["code"]:
         raise HTTPException(status_code=401, detail="verification code is invalid")
     row = challenge["user"]
-    token = issue_auth_token(row["login_name"])
+    session_lifetime_days = max(1, min(int(row.get("session_lifetime_limit_days") or 1), 3650))
+    token = issue_auth_token(row["login_name"], session_lifetime_days)
     connection.execute(
         """INSERT INTO orbit_identity.auth_session
            (user_id, login_name, client_machine_name, site, expires_at, session_token_hash)
@@ -217,7 +218,7 @@ def verify_sms(
             row["id"],
             row["login_name"],
             request.site.strip(),
-            datetime.now(timezone.utc) + timedelta(days=1),
+            datetime.now(timezone.utc) + timedelta(days=session_lifetime_days),
             token_digest(token),
         ),
     )

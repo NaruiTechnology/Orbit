@@ -67,6 +67,7 @@ interface AccessUserRow {
   is_active: boolean;
   created_at: string;
   last_sign_in: string | null;
+  session_lifetime_limit_days: number;
   role_code: string;
   role_name: string;
   isDraft?: boolean;
@@ -74,7 +75,7 @@ interface AccessUserRow {
 interface AccessResponse { roles: AccessRole[]; users: AccessUserRow[] }
 type AccessDialogMode = "add" | "edit" | "copy";
 interface AccessDialogState { mode: AccessDialogMode; row: AccessUserRow }
-type AccessDialogField = "login_name" | "first_name" | "last_name" | "email" | "phone_number" | "company_name" | "site" | "role_code";
+type AccessDialogField = "login_name" | "first_name" | "last_name" | "email" | "phone_number" | "company_name" | "site" | "role_code" | "session_lifetime_limit_days";
 
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
 const PHONE_PATTERNS: Record<string, RegExp> = {
@@ -370,7 +371,7 @@ export function SystemConfigPage({
 
   function newAccessDraft(source?: AccessUserRow): AccessUserRow {
     const id = `draft-${crypto.randomUUID()}`;
-    return { id, login_name: source ? `${source.login_name}-copy` : "", first_name: source?.first_name || "", last_name: source?.last_name || "", email: source?.email || "user@ionbeamtech.com", phone_number: source?.phone_number || "", company_name: source?.company_name || "", site: source?.site || "Beijing(北京)", is_active: true, created_at: "", last_sign_in: null, role_code: source?.role_code || "user", role_name: source?.role_name || "User", isDraft: true };
+    return { id, login_name: source ? `${source.login_name}-copy` : "", first_name: source?.first_name || "", last_name: source?.last_name || "", email: source?.email || "user@ionbeamtech.com", phone_number: source?.phone_number || "", company_name: source?.company_name || "", site: source?.site || "Beijing(北京)", is_active: true, created_at: "", last_sign_in: null, session_lifetime_limit_days: source?.session_lifetime_limit_days || 1, role_code: source?.role_code || "user", role_name: source?.role_name || "User", isDraft: true };
   }
 
   function openAccessDialog(mode: AccessDialogMode, source?: AccessUserRow) {
@@ -403,6 +404,9 @@ export function SystemConfigPage({
     if (row.phone_number.trim() && phonePattern && !phonePattern.test(row.phone_number.replace(/[\s()-]/g, ""))) {
       errors.phone_number = locale === "en" ? `Enter a valid ${country} phone number.` : `请输入有效的${country}电话号码。`;
     }
+    if (!Number.isInteger(row.session_lifetime_limit_days) || row.session_lifetime_limit_days < 1 || row.session_lifetime_limit_days > 3650) {
+      errors.session_lifetime_limit_days = locale === "en" ? "Enter a session duration from 1 to 3650 days." : "请输入 1 到 3650 天的会话期限。";
+    }
     return errors;
   }
 
@@ -429,6 +433,7 @@ export function SystemConfigPage({
         site: row.site,
         role_code: row.role_code,
         is_active: row.is_active,
+        session_lifetime_limit_days: row.session_lifetime_limit_days,
       };
       const isNew = accessDialog.mode !== "edit" || row.isDraft;
       const response = await fetch(
@@ -486,8 +491,8 @@ export function SystemConfigPage({
   }
 
   function accessDialogLabel(field: string) {
-    const labels: Record<string, string> = { login_name: "Login", first_name: "First name", last_name: "Last name", email: "Email", phone_number: "Phone", company_name: "Company", site: "Site" };
-    return locale === "en" ? labels[field] : ({ login_name: "登录名", first_name: "名", last_name: "姓", email: "电子邮件", phone_number: "电话", company_name: "公司", site: "站点" }[field] || labels[field]);
+    const labels: Record<string, string> = { login_name: "Login", first_name: "First name", last_name: "Last name", email: "Email", phone_number: "Phone", company_name: "Company", site: "Site", session_lifetime_limit_days: "Session expire (days)" };
+    return locale === "en" ? labels[field] : ({ login_name: "登录名", first_name: "名", last_name: "姓", email: "电子邮件", phone_number: "电话", company_name: "公司", site: "站点", session_lifetime_limit_days: "会话期限（天）" }[field] || labels[field]);
   }
 
   function accessDialogInput(field: Exclude<AccessDialogField, "role_code">) {
@@ -496,9 +501,9 @@ export function SystemConfigPage({
     const readOnly = field === "login_name" && accessDialog.mode === "edit";
     return <label key={field} className="grid-edit-field">
       <span>{accessDialogLabel(field)}<b className="grid-edit-field__required" aria-label="required">*</b></span>
-      {field === "site" ? <select value={normalizeSite(value)} aria-invalid={Boolean(accessDialogErrors[field])} aria-describedby={accessDialogErrors[field] ? `${field}-error` : undefined} onChange={(event) => updateAccessDialog({ site: event.target.value })} disabled={accessSaving}>
+      {field === "site" ? <select value={normalizeSite(value as string)} aria-invalid={Boolean(accessDialogErrors[field])} aria-describedby={accessDialogErrors[field] ? `${field}-error` : undefined} onChange={(event) => updateAccessDialog({ site: event.target.value })} disabled={accessSaving}>
         {GEOLOCATION_SITES.map((site) => <option key={site.id} value={site.value}>{locale === "en" ? `${site.name} (${site.name_zh})` : site.value}</option>)}
-      </select> : <input type={field === "email" ? "email" : field === "phone_number" ? "tel" : "text"} value={value} readOnly={readOnly} required aria-invalid={Boolean(accessDialogErrors[field])} aria-describedby={accessDialogErrors[field] ? `${field}-error` : undefined} onChange={(event) => updateAccessDialog({ [field]: event.target.value })} disabled={accessSaving} />}
+      </select> : <input type={field === "email" ? "email" : field === "phone_number" ? "tel" : field === "session_lifetime_limit_days" ? "number" : "text"} value={value} min={field === "session_lifetime_limit_days" ? 1 : undefined} max={field === "session_lifetime_limit_days" ? 3650 : undefined} readOnly={readOnly} required={field !== "session_lifetime_limit_days"} aria-invalid={Boolean(accessDialogErrors[field])} aria-describedby={accessDialogErrors[field] ? `${field}-error` : undefined} onChange={(event) => updateAccessDialog({ [field]: field === "session_lifetime_limit_days" ? Number(event.target.value) : event.target.value })} disabled={accessSaving} />}
       {accessDialogErrors[field] ? <small id={`${field}-error`} className="grid-edit-field__error">{accessDialogErrors[field]}</small> : null}
     </label>;
   }
@@ -519,7 +524,7 @@ export function SystemConfigPage({
         if (!response.ok) throw new Error((await response.json().catch(() => ({}))).detail || `HTTP ${response.status}`);
       }
       for (const row of Object.values(accessDirtyRows)) {
-        const body = { login_name: row.login_name, first_name: row.first_name, last_name: row.last_name, email: row.email, phone_number: row.phone_number, company_name: row.company_name, site: row.site, role_code: row.role_code, is_active: row.is_active };
+        const body = { login_name: row.login_name, first_name: row.first_name, last_name: row.last_name, email: row.email, phone_number: row.phone_number, company_name: row.company_name, site: row.site, role_code: row.role_code, is_active: row.is_active, session_lifetime_limit_days: row.session_lifetime_limit_days };
         const response = await fetch(row.isDraft ? "/api/v1/admin/access-management/users" : `/api/v1/admin/access-management/users/${row.id}`, { method: row.isDraft ? "POST" : "PATCH", headers: { "Content-Type": "application/json", "X-Orbit-Auth": localStorage.getItem("orbit:auth-token") || "" }, body: JSON.stringify(row.isDraft ? body : { ...body, login_name: row.login_name, first_name: row.first_name, last_name: row.last_name, email: row.email, phone_number: row.phone_number, company_name: row.company_name, site: row.site }) });
         if (!response.ok) throw new Error((await response.json().catch(() => ({}))).detail || `HTTP ${response.status}`);
       }
@@ -578,8 +583,9 @@ export function SystemConfigPage({
               <button type="button" className="grid-edit-dialog__close" aria-label={locale === "en" ? "Close" : "关闭"} onClick={closeAccessDialog} disabled={accessSaving}><svg className="grid-edit-action__icon" aria-hidden="true" viewBox="0 0 24 24" focusable="false"><path d="M6 6l12 12M18 6 6 18" /></svg></button>
             </header>
             <div className="grid-edit-dialog__body">
-              {(["login_name", "first_name", "last_name", "email", "phone_number", "company_name", "site"] as const).map((field) => accessDialogInput(field))}
+              {(["login_name", "first_name", "last_name", "email", "phone_number", "company_name", "site", "session_lifetime_limit_days"] as const).map((field) => accessDialogInput(field))}
               <label className="grid-edit-field"><span>{locale === "en" ? "Access role" : "访问角色"}<b className="grid-edit-field__required" aria-label="required">*</b></span><select value={accessDialog.row.role_code} required aria-invalid={Boolean(accessDialogErrors.role_code)} aria-describedby={accessDialogErrors.role_code ? "role_code-error" : undefined} onChange={(event) => updateAccessDialog({ role_code: event.target.value, role_name: access?.roles.find((role) => role.code === event.target.value)?.name || event.target.value })} disabled={accessSaving}>{(access?.roles || []).map((role) => <option key={role.code} value={role.code}>{role.name}</option>)}</select>{accessDialogErrors.role_code ? <small id="role_code-error" className="grid-edit-field__error">{accessDialogErrors.role_code}</small> : null}</label>
+              <label className="grid-edit-field"><span>{locale === "en" ? "Last sign-in" : "最后登录"}</span><input value={accessDialog.row.last_sign_in ? new Date(accessDialog.row.last_sign_in).toLocaleString(locale === "en" ? "en-US" : "zh-CN") : "—"} readOnly /></label>
               <label className="grid-edit-field"><span>{locale === "en" ? "Active" : "启用"}</span><input type="checkbox" checked={accessDialog.row.is_active} onChange={(event) => updateAccessDialog({ is_active: event.target.checked })} disabled={accessSaving} /></label>
             </div>
             {accessDialogError ? <p className="grid-edit-dialog__error" role="alert">{accessDialogError}</p> : null}
