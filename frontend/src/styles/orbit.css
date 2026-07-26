@@ -2864,6 +2864,13 @@ select:has(> option:checked[value=""]) option { color: var(--ink); }
   background: linear-gradient(135deg, var(--control-active-bg), var(--forest));
 }
 
+:root[data-theme="navy"] .cascade__tabs button.is-active,
+:root[data-theme="navy"] .cascade__tabs button[aria-selected="true"],
+:root[data-theme="navy"] .cascade__lane--workflows button.is-active,
+:root[data-theme="navy"] .cascade__lane--workflows button[aria-selected="true"] {
+  box-shadow: inset 4px 0 0 #f06a3b;
+}
+
 @media (max-width: 900px) {
   .cascade {
     grid-template-columns: 1fr;
