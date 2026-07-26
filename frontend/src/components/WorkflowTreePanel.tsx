@@ -77,7 +77,11 @@ export function WorkflowTreePanel({
     if (!reportContextKey || reportContextRef.current === reportContextKey) return;
     reportContextRef.current = reportContextKey;
     setReportDialogOpen(false);
-    if (currentNode?.record_key === currentTreeNode?.record_key && currentTreeNode?.action === false) {
+    if (
+      currentNode?.record_key === currentTreeNode?.record_key &&
+      currentTreeNode.business_entity &&
+      currentTreeNode.action === false
+    ) {
       setReportDialogOpen(true);
     }
   }, [reportContextKey, currentNode, currentTreeNode]);
@@ -202,19 +206,22 @@ export function WorkflowTreePanel({
                             <input
                               type="checkbox"
                               checked={runtimeNode.status === "completed"}
-                              disabled={commandBusy || runtimeNode.status === "completed"}
+                              disabled={commandBusy || runtimeNode.status === "completed" || currentTreeNode?.action !== null}
                               onChange={() => void send("submit")}
                             />
                             <span>{translate(locale, "submit")}</span>
                           </label>
-                          <label className="workflow-report-check" title={translate(locale, "actionReport")}>
-                            <input
-                              type="checkbox"
-                              checked={currentTreeNode?.action === true}
-                              disabled={commandBusy || currentTreeNode?.action === true}
-                              onChange={() => setReportDialogOpen(true)}
-                            />
-                          </label>
+                          {currentTreeNode?.business_entity && currentTreeNode.action !== null ? (
+                            <label className={`workflow-report-check ${currentTreeNode.action === false ? "workflow-report-check--pending" : ""}`} title={translate(locale, "actionReport")}>
+                              <input
+                                type="checkbox"
+                                checked={currentTreeNode.action === true}
+                                disabled={commandBusy || currentTreeNode.action === true}
+                                onChange={() => setReportDialogOpen(true)}
+                              />
+                              {currentTreeNode.action === false ? <span className="workflow-report-check__required" aria-hidden="true">*</span> : null}
+                            </label>
+                          ) : null}
                           <button
                             type="button"
                             className="workflow-email-button"

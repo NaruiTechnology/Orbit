@@ -1156,6 +1156,7 @@ def get_tree(
         SELECT r.id, r.record_key, r.record_order, r.label_i18n, r.values_json,
                assignment.contact_name AS assigned_contact_name,
                assignment.contact_email AS assigned_contact_email,
+               assignment.business_entity AS assigned_business_entity,
                assignment.action AS assigned_action,
                assignment.sla AS assigned_sla,
                sla.sla_i18n,
@@ -1268,6 +1269,7 @@ def get_tree(
                 row["values_json"], "Email", "email", "联系人邮箱"
             )),
             Messages=_step_messages(row["values_json"]),
+            business_entity=row["assigned_business_entity"],
             action=row["assigned_action"],
             sla=_localized_step_value(row["assigned_sla"], locale) or localized_value(row["sla_i18n"], locale, row["sla"]),
             is_selected=(

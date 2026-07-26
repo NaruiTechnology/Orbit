@@ -114,6 +114,7 @@ export interface TreeNode {
   ContactName: string | null;
   Email: string | null;
   Messages: string[];
+  business_entity: string | null;
   action: boolean | null;
   sla: string | null;
   is_selected: boolean;

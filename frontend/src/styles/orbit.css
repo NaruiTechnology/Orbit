@@ -2138,8 +2138,21 @@ select:has(> option:checked[value=""]) option { color: var(--ink); }
 .workflow-email-button img { display: block; width: 19px; height: 19px; margin: auto; }
 .workflow-check { display: flex; align-items: center; gap: 7px; flex: 1; font-size: 9px; font-weight: 800; }
 .workflow-check input { width: 16px; min-height: 16px; accent-color: var(--signal); }
-.workflow-report-check { display: flex; align-items: center; }
+.workflow-report-check {
+  display: flex;
+  align-items: center;
+  position: relative;
+}
 .workflow-report-check input { width: 16px; min-height: 16px; accent-color: #f0b429; }
+.workflow-node__body .workflow-report-check__required {
+  position: absolute;
+  top: -6px;
+  right: -5px;
+  color: #ff0000 !important;
+  font-size: 15px;
+  font-weight: 900;
+  line-height: 1;
+}
 .runtime-status { font-size: 9px; font-weight: 800; text-transform: uppercase; opacity: 0.72; }
 .workflow-actions input::placeholder { color: color-mix(in srgb, var(--ink) 58%, transparent); }
 .workflow-error { display: grid; gap: 3px; padding: 7px; color: #8d2014; background: #ffe1d8; border-left: 3px solid var(--signal); font-size: 9px; }
