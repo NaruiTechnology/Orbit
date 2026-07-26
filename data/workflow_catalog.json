@@ -6635,38 +6635,6 @@
             "notes": "I14",
             "guidance": "J14"
           }
-        },
-        {
-          "record_key": "cross-laboratory-orders-016",
-          "record_order": 13,
-          "source_row": 16,
-          "label_i18n": {
-            "en": "9个实验室：北京、上海、深圳、西安、无锡、杭州、成都、天津、泰兴",
-            "zh_CN": "9个实验室：北京、上海、深圳、西安、无锡、杭州、成都、天津、泰兴",
-            "zh_HK": "9个實驗室：北京、上海、深圳、西安、无锡、杭州、成都、天津、泰兴"
-          },
-          "values": {
-            "step_number": "9个实验室：北京、上海、深圳、西安、无锡、杭州、成都、天津、泰兴"
-          },
-          "source_cells": {
-            "step_number": "A16"
-          }
-        },
-        {
-          "record_key": "cross-laboratory-orders-017",
-          "record_order": 14,
-          "source_row": 17,
-          "label_i18n": {
-            "en": "核心逻辑：来源销售下单 → 目标实验室技术执行 → 样品寄回来源地址 → 费用确认单关联来源客户 → 订单自动转回来源销售 → 回访/对账/开票/回款闭环在来源销售端完成",
-            "zh_CN": "核心逻辑：来源销售下单 → 目标实验室技术执行 → 样品寄回来源地址 → 费用确认单关联来源客户 → 订单自动转回来源销售 → 回访/对账/开票/回款闭环在来源销售端完成",
-            "zh_HK": "核心逻辑：来源銷售下單 → 目标實驗室技術執行 → 樣品寄回来源地址 → 費用確認單关联来源客戶 → 訂單自动轉回来源銷售 → 回訪/對賬/開票/回款闭环在来源銷售端完成"
-          },
-          "values": {
-            "step_number": "核心逻辑：来源销售下单 → 目标实验室技术执行 → 样品寄回来源地址 → 费用确认单关联来源客户 → 订单自动转回来源销售 → 回访/对账/开票/回款闭环在来源销售端完成"
-          },
-          "source_cells": {
-            "step_number": "A17"
-          }
         }
       ],
       "edges": [
@@ -6735,18 +6703,6 @@
           "target": "cross-laboratory-orders-014",
           "kind": "explicit",
           "label": "订单转单回原销售"
-        },
-        {
-          "source": "cross-laboratory-orders-014",
-          "target": "cross-laboratory-orders-016",
-          "kind": "explicit",
-          "label": "回访"
-        },
-        {
-          "source": "cross-laboratory-orders-016",
-          "target": "cross-laboratory-orders-017",
-          "kind": "sequence",
-          "label": null
         }
       ]
     },
