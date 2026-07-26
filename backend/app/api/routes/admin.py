@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from datetime import datetime
 from typing import Any
 from uuid import UUID
 
@@ -58,6 +59,7 @@ class AccessUserUpdate(BaseModel):
     company_name: str | None = Field(default=None, max_length=160)
     site: str | None = Field(default=None, max_length=160)
     session_lifetime_limit_days: int = Field(default=1, ge=1, le=3650)
+    last_sign_in: datetime | None = None
 
 
 class AccessUserCreate(BaseModel):
@@ -95,7 +97,8 @@ def access_management(
     rows = connection.execute(
         """SELECT u.id, u.login_name, u.first_name, u.last_name, u.email,
                   u.phone_number, u.company_name, u.site, u.is_active,
-                  u.created_at, u.session_lifetime_limit_days, MAX(s.login_time) AS last_sign_in,
+                  u.created_at, u.session_lifetime_limit_days,
+                  COALESCE(MAX(s.login_time), u.created_at) AS last_sign_in,
                   COALESCE(MAX(r.code) FILTER (WHERE r.code IN ('audit','admin','super_user','user')), 'user') AS role_code,
                   COALESCE((array_agg(r.name_i18n ORDER BY r.code) FILTER (WHERE r.code IN ('audit','admin','super_user','user')))[1], '{"en":"User"}'::jsonb) AS role_name_i18n
              FROM orbit_identity.app_user u
@@ -151,6 +154,18 @@ def update_access_user(
     ).fetchone()
     if updated is None:
         raise HTTPException(status_code=404, detail="user not found")
+    if request.last_sign_in is not None:
+        connection.execute(
+            """UPDATE orbit_identity.auth_session
+                  SET login_time = %s
+                WHERE id = (
+                    SELECT id FROM orbit_identity.auth_session
+                     WHERE user_id = %s
+                     ORDER BY login_time DESC
+                     LIMIT 1
+                )""",
+            (request.last_sign_in, user_id),
+        )
     connection.execute("DELETE FROM orbit_identity.user_role WHERE user_id = %s", (user_id,))
     connection.execute("INSERT INTO orbit_identity.user_role (user_id, role_id) VALUES (%s, %s)", (user_id, role["id"]))
     return {"ok": True, "user_id": user_id, "role_code": request.role_code, "is_active": request.is_active}
@@ -581,7 +596,7 @@ def update_workflow_step(
         UPDATE orbit_workflow.workflow_step_assignment a
            SET business_entity = %s,
                action = CASE
-                   WHEN %s IS NULL THEN NULL
+                   WHEN %s::varchar IS NULL THEN NULL
                    WHEN a.action IS NULL THEN false
                    ELSE a.action
                END,

@@ -86,6 +86,31 @@ const COUNTRY_BY_SITE: Record<string, string> = {
   "Xian(西安)": "CN", "Chengdu(成都)": "CN", "Hangzhou(杭州)": "CN", "Tianjing(天津)": "CN", "Taixin(泰兴)": "CN",
 };
 
+function toDateTimeLocal(value: string | null): string {
+  if (!value) return "";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "";
+  const pad = (part: number) => String(part).padStart(2, "0");
+  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}`;
+}
+
+function formatDateTimeDisplay(value: unknown): string {
+  if (value === null || value === undefined || value === "") return "—";
+  const raw = value instanceof Date ? value.toISOString() : String(value).trim();
+  if (!raw) return "—";
+  const normalized = /^\d{4}-\d{2}-\d{2}$/.test(raw) ? `${raw}T00:00:00` : raw;
+  const date = new Date(normalized);
+  if (Number.isNaN(date.getTime())) return "—";
+  const pad = (part: number) => String(part).padStart(2, "0");
+  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())} ${pad(date.getHours())}:${pad(date.getMinutes())}:${pad(date.getSeconds())}`;
+}
+
+function fromDateTimeLocal(value: string): string | null {
+  if (!value) return null;
+  const date = new Date(value);
+  return Number.isNaN(date.getTime()) ? null : date.toISOString();
+}
+
 type TextCellField = "phone_number" | "contact_email" | "contact_name";
 
 function AdminTextCell({
@@ -274,6 +299,23 @@ export function SystemConfigPage({
     setSavingAll(false);
   }, [saveStep]);
 
+  const clearStepAssignments = useCallback(async (row: StepRow, setGridRow: (step: StepRow) => void) => {
+    const current = dirtyRowsRef.current[row.id] || row;
+    const cleared: StepRow = {
+      ...current,
+      businessEntity: null,
+      laboratory_id: null,
+      laboratory_code: null,
+      laboratory_name: null,
+      phone_number: "",
+      contact_email: "",
+      contact_name: "",
+      hr_employee_id: null,
+    };
+    setGridRow(cleared);
+    await saveStep(cleared);
+  }, [saveStep]);
+
   function updateStepDialog(patch: Partial<StepRow>) {
     setStepDialog((current) => current ? { ...current, ...patch } : current);
   }
@@ -355,13 +397,13 @@ export function SystemConfigPage({
           }}>
             <svg aria-hidden="true" viewBox="0 0 24 24"><path d="m5 12 4 4L19 6" /></svg>
           </button>
-          <button type="button" className="grid-row-action grid-row-action--delete" aria-label="Clear assignments" title="Clear assignments" disabled={savingId === row.id || savingAll} onMouseDown={(event) => event.stopPropagation()} onClick={(event) => { event.stopPropagation(); const cleared = { ...row, businessEntity: null, laboratory_id: null, laboratory_code: null, laboratory_name: null, phone_number: "", contact_email: "", contact_name: "", hr_employee_id: null }; params.node.setData(cleared); markDirty(cleared); }}>
+          <button type="button" className="grid-row-action grid-row-action--delete" aria-label="Clear assignments" title="Clear assignments" disabled={savingId === row.id || savingAll} onMouseDown={(event) => event.stopPropagation()} onClick={(event) => { event.stopPropagation(); void clearStepAssignments(row, (cleared) => params.node.setData(cleared)); }}>
             <svg aria-hidden="true" viewBox="0 0 24 24"><path d="M5 7h14M10 11v6m4-6v6M9 7V4h6v3m-9 0 1 13h8l1-13" /></svg>
           </button>
         </div>;
       },
     },
-  ], [config?.laboratories, locale, markDirty, publishDirty, saveStep, savingAll, savingId, updateDraft]);
+  ], [clearStepAssignments, config?.laboratories, locale, markDirty, publishDirty, saveStep, savingAll, savingId, updateDraft]);
 
   function changeAccessRow(row: AccessUserRow, patch: Partial<AccessUserRow>) {
     const next = { ...row, ...patch };
@@ -434,6 +476,7 @@ export function SystemConfigPage({
         role_code: row.role_code,
         is_active: row.is_active,
         session_lifetime_limit_days: row.session_lifetime_limit_days,
+        last_sign_in: row.last_sign_in,
       };
       const isNew = accessDialog.mode !== "edit" || row.isDraft;
       const response = await fetch(
@@ -446,7 +489,7 @@ export function SystemConfigPage({
             "Content-Type": "application/json",
             "X-Orbit-Auth": localStorage.getItem("orbit:auth-token") || "",
           },
-          body: JSON.stringify(body),
+          body: JSON.stringify(isNew ? { ...body, last_sign_in: undefined } : body),
         },
       );
       if (!response.ok) {
@@ -524,8 +567,8 @@ export function SystemConfigPage({
         if (!response.ok) throw new Error((await response.json().catch(() => ({}))).detail || `HTTP ${response.status}`);
       }
       for (const row of Object.values(accessDirtyRows)) {
-        const body = { login_name: row.login_name, first_name: row.first_name, last_name: row.last_name, email: row.email, phone_number: row.phone_number, company_name: row.company_name, site: row.site, role_code: row.role_code, is_active: row.is_active, session_lifetime_limit_days: row.session_lifetime_limit_days };
-        const response = await fetch(row.isDraft ? "/api/v1/admin/access-management/users" : `/api/v1/admin/access-management/users/${row.id}`, { method: row.isDraft ? "POST" : "PATCH", headers: { "Content-Type": "application/json", "X-Orbit-Auth": localStorage.getItem("orbit:auth-token") || "" }, body: JSON.stringify(row.isDraft ? body : { ...body, login_name: row.login_name, first_name: row.first_name, last_name: row.last_name, email: row.email, phone_number: row.phone_number, company_name: row.company_name, site: row.site }) });
+        const body = { login_name: row.login_name, first_name: row.first_name, last_name: row.last_name, email: row.email, phone_number: row.phone_number, company_name: row.company_name, site: row.site, role_code: row.role_code, is_active: row.is_active, session_lifetime_limit_days: row.session_lifetime_limit_days, last_sign_in: row.last_sign_in };
+        const response = await fetch(row.isDraft ? "/api/v1/admin/access-management/users" : `/api/v1/admin/access-management/users/${row.id}`, { method: row.isDraft ? "POST" : "PATCH", headers: { "Content-Type": "application/json", "X-Orbit-Auth": localStorage.getItem("orbit:auth-token") || "" }, body: JSON.stringify(row.isDraft ? { ...body, last_sign_in: undefined } : body) });
         if (!response.ok) throw new Error((await response.json().catch(() => ({}))).detail || `HTTP ${response.status}`);
       }
       const refreshed = await fetch(`/api/v1/admin/access-management?locale=${locale}`, { headers: { "X-Orbit-Auth": localStorage.getItem("orbit:auth-token") || "" } });
@@ -551,7 +594,7 @@ export function SystemConfigPage({
       field: "is_active", headerName: locale === "en" ? "Active" : "启用", minWidth: 70, flex: 0.7, editable: false,
       cellRenderer: (params: ICellRendererParams<AccessUserRow>) => params.data ? <input type="checkbox" checked={params.data.is_active} aria-label={`${params.data.login_name} active`} readOnly /> : null,
     },
-    { field: "last_sign_in", headerName: locale === "en" ? "Last sign-in" : "最后登录", minWidth: 120, flex: 1.2, valueFormatter: (params) => params.value ? new Date(params.value).toLocaleString(locale === "en" ? "en-US" : "zh-CN") : "—" },
+    { field: "last_sign_in", headerName: locale === "en" ? "Last sign-in" : "最后登录", minWidth: 170, flex: 1.4, valueFormatter: (params) => formatDateTimeDisplay(params.value || null) },
     { field: "created_at", headerName: locale === "en" ? "Signed up" : "注册时间", minWidth: 120, flex: 1.2, valueFormatter: (params) => params.value ? new Date(params.value).toLocaleString(locale === "en" ? "en-US" : "zh-CN") : "—" },
     { colId: "actions", headerName: locale === "en" ? "Actions" : "操作", pinned: "right", width: 108, minWidth: 108, maxWidth: 108, sortable: false, filter: false, cellRenderer: (params: ICellRendererParams<AccessUserRow>) => params.data ? <div className="grid-row-actions">
       <button type="button" className="grid-row-action grid-row-action--edit" title="Edit row" aria-label="Edit row" onMouseDown={(event) => event.stopPropagation()} onClick={() => openAccessDialog("edit", params.data)}><svg aria-hidden="true" viewBox="0 0 24 24"><path d="m4 16-.8 4.8L8 20 18.8 9.2l-4-4L4 16Zm9.4-9.4 4 4" /></svg></button>
@@ -585,7 +628,7 @@ export function SystemConfigPage({
             <div className="grid-edit-dialog__body">
               {(["login_name", "first_name", "last_name", "email", "phone_number", "company_name", "site", "session_lifetime_limit_days"] as const).map((field) => accessDialogInput(field))}
               <label className="grid-edit-field"><span>{locale === "en" ? "Access role" : "访问角色"}<b className="grid-edit-field__required" aria-label="required">*</b></span><select value={accessDialog.row.role_code} required aria-invalid={Boolean(accessDialogErrors.role_code)} aria-describedby={accessDialogErrors.role_code ? "role_code-error" : undefined} onChange={(event) => updateAccessDialog({ role_code: event.target.value, role_name: access?.roles.find((role) => role.code === event.target.value)?.name || event.target.value })} disabled={accessSaving}>{(access?.roles || []).map((role) => <option key={role.code} value={role.code}>{role.name}</option>)}</select>{accessDialogErrors.role_code ? <small id="role_code-error" className="grid-edit-field__error">{accessDialogErrors.role_code}</small> : null}</label>
-              <label className="grid-edit-field"><span>{locale === "en" ? "Last sign-in" : "最后登录"}</span><input value={accessDialog.row.last_sign_in ? new Date(accessDialog.row.last_sign_in).toLocaleString(locale === "en" ? "en-US" : "zh-CN") : "—"} readOnly /></label>
+              <label className="grid-edit-field"><span>{locale === "en" ? "Last sign-in" : "最后登录"}</span><input type="datetime-local" value={toDateTimeLocal(accessDialog.row.last_sign_in)} onChange={(event) => updateAccessDialog({ last_sign_in: fromDateTimeLocal(event.target.value) })} disabled={accessSaving} /></label>
               <label className="grid-edit-field"><span>{locale === "en" ? "Active" : "启用"}</span><input type="checkbox" checked={accessDialog.row.is_active} onChange={(event) => updateAccessDialog({ is_active: event.target.checked })} disabled={accessSaving} /></label>
             </div>
             {accessDialogError ? <p className="grid-edit-dialog__error" role="alert">{accessDialogError}</p> : null}
