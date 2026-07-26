@@ -444,7 +444,7 @@ select:has(> option:checked[value=""]) option { color: var(--ink); }
 .system-config-tabs--mode button { border: 1px solid var(--line); border-radius: 5px; }
 .system-config-tabs--sub { grid-template-columns: repeat(7, minmax(110px, 1fr)); padding: 5px; overflow-x: auto; background: var(--forest-deep); border-top: 1px solid var(--line-strong); }
 .system-config-tabs--sub button { min-height: 58px; padding: 8px 10px; color: var(--ink); font-size: 12px; line-height: 1.25; }
-.system-config-tabs button[aria-selected="true"] { color: var(--control-active-fg); border-bottom-color: var(--signal); background: linear-gradient(135deg, color-mix(in srgb, var(--control-active-bg) 92%, var(--signal) 8%), var(--forest) 72%, color-mix(in srgb, var(--forest) 76%, var(--signal) 24%)); box-shadow: inset 0 1px 0 color-mix(in srgb, var(--paper-bright) 18%, transparent), 0 4px 12px color-mix(in srgb, var(--forest-deep) 20%, transparent); }
+.system-config-tabs button[aria-selected="true"] { color: var(--control-active-fg); border-bottom-color: var(--signal); background: linear-gradient(135deg, color-mix(in srgb, var(--control-active-bg) 92%, var(--signal) 8%), var(--forest) 72%, color-mix(in srgb, var(--forest) 76%, var(--signal) 24%)); box-shadow: inset 4px 0 0 var(--system-config-active-shadow, var(--signal)), inset 0 1px 0 color-mix(in srgb, var(--paper-bright) 18%, transparent), 0 4px 12px color-mix(in srgb, var(--forest-deep) 20%, transparent); }
 .system-config-tabs--sub { gap: 7px; padding: 5px; overflow-x: auto; background: var(--forest-deep); border-top: 1px solid var(--line-strong); }
 .system-config-tabs--sub button { min-height: 58px; padding: 8px 10px; color: var(--ink); border: 1px solid var(--line); border-bottom-width: 1px; border-radius: 4px; background: var(--gradient-card); font-size: 12px; line-height: 1.25; }
 .system-config-tabs--sub button:hover { color: var(--ink); border-color: var(--signal); background: var(--gradient-card); }
@@ -453,6 +453,7 @@ select:has(> option:checked[value=""]) option { color: var(--ink); }
 .system-config-tabs--mode button[aria-selected="true"] { border-color: var(--signal); }
 :root[data-theme="navy"] .system-config-tabs--top button[aria-selected="true"],
 :root[data-theme="navy"] .system-config-tabs--mode button[aria-selected="true"] { border-bottom-color: #f06a3b; }
+:root[data-theme="navy"] .system-config-tabs button[aria-selected="true"] { --system-config-active-shadow: #f06a3b; }
 :root[data-theme="navy"] .system-config-tabs--sub button[aria-selected="true"] { border-color: #f06a3b; box-shadow: inset 4px 0 0 #f06a3b; }
 .system-config-workflow-panel { display: grid; min-height: 0; flex: 1 1 auto; grid-template-rows: auto minmax(0, 1fr); background: var(--surface); }
 .system-config-access-panel { grid-template-rows: auto auto minmax(0, 1fr); }
