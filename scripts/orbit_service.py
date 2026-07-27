@@ -27,8 +27,8 @@ def main() -> int:
     )
     args = parser.parse_args()
     settings = _read_config(PROJECT_ROOT / args.config)
-    lock_path = Path(settings.get("lock_file", "/tmp/orbit_service.lock"))
-    last_run_path = Path(settings.get("last_run_file", "/tmp/orbit_service.last-run"))
+    lock_path = _runtime_path(settings.get("lock_file"), "orbit_service.lock")
+    last_run_path = _runtime_path(settings.get("last_run_file"), "orbit_service.last-run")
     interval_minutes = max(1, int(settings.get("interval_minutes", 60)))
     run_on_start = bool(settings.get("run_on_start", True))
     print(
@@ -84,6 +84,14 @@ def main() -> int:
 
 def _read_config(path: Path) -> dict[str, object]:
     return json.loads(path.read_text(encoding="utf-8"))
+
+
+def _runtime_path(value: object, filename: str) -> Path:
+    if value:
+        return Path(os.path.expandvars(os.path.expanduser(str(value))))
+    if sys.platform == "win32":
+        return Path(os.environ.get("LOCALAPPDATA", Path.home())) / "OrbitAutomation" / filename
+    return Path("/tmp") / filename
 
 
 def _too_soon(path: Path, interval_minutes: int) -> bool:

@@ -1,74 +1,45 @@
-# Orbit DistributionDeploy
+# Orbit DistributionDeploy (Windows)
 
-This package creates a self-contained Orbit handoff archive. It preserves
-Python source, excludes ignored development files, and contains the JSON
-manifest needed to deploy on Ubuntu 24.04 or newer.
+This package creates a self-contained Orbit handoff archive for Windows 10/11
+with PowerShell. It preserves Python source and excludes ignored development
+files.
 
-Build the distribution from the Orbit root:
+Build and verify the handoff from the Orbit root:
 
-```bash
-cd /home/vboxuser/Project/OrbitAutomation/Orbit
-python3 build_distribution.py
+```powershell
+Set-Location C:\path\to\Orbit
+python build_distribution.py
+tar -tf DeployWorkspace_v*.zip | Select-String 'dist_app.zip|DistributionDeploy.json'
 ```
 
-Or use the package entry point:
-
-```bash
-python3 DeployWorkSpace/Development/DistributionDeploy/distributionDeployApp.py \
-  -j DeployWorkSpace/Development/DistributionDeploy/Json/DistributionDeploy.json
-```
-
-The builder walks the Orbit root recursively, preserves `.py` source files,
-produces no `.pyc` files, honors `.gitignore`, and checks that the deployment
-manifest and database states are present. It creates an embedded
-`DeployWorkSpace/Development/DistributionDeploy/dist_app.zip`, then creates a
-timestamped `DeployWorkspace_v<version>_<MMDDYY_HHMM>.zip` containing the
-handoff package and embedded distribution.
-
-## Reliable handoff and deployment
-
-Build and verify the handoff on the developer host:
-
-```bash
-cd /home/vboxuser/Project/OrbitAutomation/Orbit
-python3 build_distribution.py
-unzip -l DeployWorkspace_v*.zip | grep -E 'dist_app.zip|DistributionDeploy.json'
-```
-
-Copy the timestamped `DeployWorkspace_*.zip` to the Ubuntu target. Extract it
+Copy the timestamped `DeployWorkspace_*.zip` to the Windows target. Extract it
 to a staging directory, then run the workflow from its extracted package:
 
-```bash
-mkdir -p "$HOME/orbit-handoff"
-unzip -o DeployWorkspace_v*.zip -d "$HOME/orbit-handoff"
-cd "$HOME/orbit-handoff/DeployWorkSpace/Development/DistributionDeploy"
-python3 distributionDeployApp.py
+```powershell
+$handoff = Join-Path $env:USERPROFILE 'orbit-handoff'
+Expand-Archive (Get-ChildItem DeployWorkspace_v*.zip | Select-Object -Last 1) $handoff -Force
+Set-Location $handoff\DeployWorkSpace\Development\DistributionDeploy
+python distributionDeployApp.py
 ```
 
-The workflow creates or updates `~/OrbitAutomation`, unpacks the source
-distribution there, creates `.venv`, installs Python and frontend dependencies,
-installs the Orbit SLA worker in the target user's crontab, starts the local
-PostgreSQL/API/frontend services, and waits for both HTTP endpoints to become
-healthy. The worker reads `config/orbit_service.json` and is invoked every
-minute by cron; its default effective interval is one hour. Use
-`-r /path/to/deploy-root` to select another
-target directory, or `--production` to enable production manifest overrides.
+The workflow creates or updates `%USERPROFILE%\OrbitAutomation`, unpacks the
+source distribution there, creates `.venv`, installs Python and frontend
+dependencies, registers the Orbit SLA worker in Windows Task Scheduler, starts
+the local PostgreSQL/API/frontend services, and waits for both HTTP endpoints
+to become healthy. The worker reads `config\orbit_service.json` and is
+scheduled every minute; its default effective interval is one hour.
 
 The final startup actions run from the deployed Orbit root in this order:
 
-```bash
-./scripts/start_local_postgres.sh
-.venv/bin/python scripts/check_database.py --timeout 10
-.venv/bin/python scripts/bootstrap_database.py
-.venv/bin/python scripts/run_api.py --reload
+```powershell
+.\scripts\start_local_postgres.ps1
+.\.venv\Scripts\python.exe scripts\check_database.py --timeout 10
+.\.venv\Scripts\python.exe scripts\bootstrap_database.py
+.\.venv\Scripts\python.exe scripts\run_api.py --reload
 npm --prefix frontend run dev -- --host 127.0.0.1
 ```
 
 The API and frontend commands are launched as detached services, followed by
-health checks for both endpoints. For a manual start from an already unpacked
-deployment, include `./` when starting PostgreSQL; omitting it causes
-`command not found` in a normal Ubuntu shell.
-
-Do not run the workflow from inside the final deploy directory: the staging
-copy is the source of `dist_app.zip`, while the deploy root is the directory
-where the extracted application is executed.
+health checks for both endpoints. Do not run the workflow from inside the
+final deploy directory: the staging copy is the source of `dist_app.zip`,
+while the deploy root is where the extracted application is executed.

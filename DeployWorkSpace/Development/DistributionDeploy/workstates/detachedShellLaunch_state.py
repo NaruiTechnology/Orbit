@@ -16,8 +16,9 @@ class detachedShellLaunch_state(distributionDeploy_state):
         if not command:
             self.success = True
             return True
-        log_path = Path(data.get("log", f"/tmp/orbit-{self.action_name}.log")).expanduser()
-        pid_path = Path(data.get("pid", f"/tmp/orbit-{self.action_name}.pid")).expanduser()
+        default_dir = Path(os.environ.get("LOCALAPPDATA", Path.home())) / "OrbitAutomation" if os.name == "nt" else Path("/tmp")
+        log_path = Path(data.get("log", default_dir / f"orbit-{self.action_name}.log")).expanduser()
+        pid_path = Path(data.get("pid", default_dir / f"orbit-{self.action_name}.pid")).expanduser()
         if not log_path.is_absolute():
             log_path = self.thread.deploy_root / log_path
         if not pid_path.is_absolute():
@@ -26,9 +27,15 @@ class detachedShellLaunch_state(distributionDeploy_state):
         environment = os.environ.copy()
         environment.update(self.thread.environment)
         handle = log_path.open("ab")
+        launch = command
+        creationflags = 0
+        if os.name == "nt":
+            launch = ["powershell.exe", "-NoProfile", "-ExecutionPolicy", "Bypass", "-Command", command]
+            creationflags = subprocess.CREATE_NEW_PROCESS_GROUP | subprocess.DETACHED_PROCESS
         process = subprocess.Popen(
-            command, cwd=self.thread.deploy_root, shell=True, env=environment,
-            stdout=handle, stderr=subprocess.STDOUT, start_new_session=True,
+            launch, cwd=self.thread.deploy_root, shell=os.name != "nt", env=environment,
+            stdout=handle, stderr=subprocess.STDOUT, start_new_session=os.name != "nt",
+            creationflags=creationflags,
         )
         pid_path.write_text(str(process.pid), encoding="utf-8")
         handle.close()

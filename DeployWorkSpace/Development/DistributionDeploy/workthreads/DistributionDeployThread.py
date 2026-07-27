@@ -17,7 +17,7 @@ class DistributionDeployThread:
         self.source_root = self.manifest_path.parents[4]
         self.config = json.loads(self.manifest_path.read_text(encoding="utf-8"))
         deploy_root = self.config.get("Deployment", {}).get("DeployRoot", "~/OrbitAutomation")
-        self.deploy_root = Path(os.path.expanduser(deploy_root)).resolve()
+        self.deploy_root = Path(os.path.expandvars(os.path.expanduser(deploy_root))).resolve()
         self.environment: dict[str, str] = {}
 
     def working_directory(self, action_name: str) -> Path:

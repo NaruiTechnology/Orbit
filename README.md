@@ -17,6 +17,32 @@ The dedicated PostgreSQL 17 cluster is stored at `/home/vboxuser/Project/OrbitAu
 
 ## Quick Start
 
+## Windows Quick Start (`development-win`)
+
+Install Python 3.13+, Node.js LTS, and PostgreSQL 17 client/server tools. Add
+the PostgreSQL `bin` directory (the directory containing `pg_config.exe`) to
+`PATH`, then run these commands from PowerShell in the `Orbit` directory:
+
+```powershell
+python -m venv .venv
+.\.venv\Scripts\python.exe -m pip install -r requirements.txt
+npm install --prefix frontend
+.\.venv\Scripts\python.exe scripts\install_orbit_service_task.py
+.\scripts\start_local_postgres.ps1
+.\.venv\Scripts\python.exe scripts\check_database.py --timeout 10
+.\.venv\Scripts\python.exe scripts\bootstrap_database.py
+```
+
+Start the API and frontend in separate PowerShell windows:
+
+```powershell
+.\.venv\Scripts\python.exe scripts\run_api.py --reload
+npm run dev
+```
+
+Use `.\scripts\stop_local_postgres.ps1` to stop the dedicated database.
+Windows runtime locks and logs are stored below `%LOCALAPPDATA%\OrbitAutomation`.
+
 Dependencies have been installed into `.venv` and `frontend/node_modules` in this workspace.
 
 For a fresh checkout:

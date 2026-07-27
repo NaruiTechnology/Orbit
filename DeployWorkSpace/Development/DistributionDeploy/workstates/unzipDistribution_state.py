@@ -1,4 +1,4 @@
-import subprocess
+import zipfile
 
 from .distributionDeploy_state import distributionDeploy_state
 
@@ -10,10 +10,7 @@ class unzipDistribution_state(distributionDeploy_state):
         if not archives:
             self.success = False
             return False
-        result = subprocess.run(
-            ["unzip", "-o", str(archives[-1]), "-d", str(self.thread.deploy_root)],
-            cwd=self.thread.source_root,
-            check=False,
-        )
-        self.success = result.returncode == 0
+        with zipfile.ZipFile(archives[-1]) as archive:
+            archive.extractall(self.thread.deploy_root)
+        self.success = True
         return self.success

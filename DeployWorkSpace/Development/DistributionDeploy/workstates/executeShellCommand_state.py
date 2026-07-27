@@ -16,10 +16,12 @@ class executeShellCommand_state(distributionDeploy_state):
             return True
         environment = os.environ.copy()
         environment.update(self.thread.environment)
+        if os.name == "nt":
+            command = ["powershell.exe", "-NoProfile", "-ExecutionPolicy", "Bypass", "-Command", command]
         result = subprocess.run(
             command,
             cwd=self.thread.working_directory(self.action_name),
-            shell=True,
+            shell=os.name != "nt",
             check=False,
             env=environment,
         )
