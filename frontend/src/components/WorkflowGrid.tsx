@@ -168,6 +168,7 @@ function isRequiredOrderField(workflowKey: string | undefined, column: ColumnDef
 interface RowActionRendererProps {
   data: WorkflowRecord | undefined;
   canEdit: boolean;
+  canDuplicate: boolean;
   locale: Locale;
   onEdit: (record: WorkflowRecord) => void;
   onDuplicate: (record: WorkflowRecord) => void;
@@ -177,6 +178,7 @@ interface RowActionRendererProps {
 function RowActionRenderer({
   data,
   canEdit,
+  canDuplicate,
   locale,
   onEdit,
   onDuplicate,
@@ -207,7 +209,7 @@ function RowActionRenderer({
         className="grid-row-action grid-row-action--duplicate"
         aria-label={locale === "en" ? "Duplicate row" : "复制行"}
         title={locale === "en" ? "Duplicate row" : "复制行"}
-        disabled={!canEdit}
+        disabled={!canDuplicate}
         onMouseDown={(event) => event.stopPropagation()}
         onClick={(event) => {
           event.stopPropagation();
@@ -445,6 +447,7 @@ export function WorkflowGrid({
         <RowActionRenderer
           data={parameters.data}
           canEdit={Boolean(workflow?.access.can_edit)}
+          canDuplicate={Boolean(workflow?.access.can_edit) && (workflow?.key === "order-evaluation" || workflow?.group_key === "hr")}
           locale={locale}
           onEdit={openEditDialog}
           onDuplicate={openDuplicateDialog}
