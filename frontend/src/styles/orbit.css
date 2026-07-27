@@ -1302,6 +1302,17 @@ select:has(> option:checked[value=""]) option { color: var(--ink); }
   min-width: max-content;
 }
 
+.grid-edit-field > .business-entity-header {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  color: var(--ink-soft);
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
 .business-entity-help-button {
   display: inline-grid;
   width: 16px;

@@ -3,7 +3,7 @@ import { AgGridReact } from "ag-grid-react";
 import { type ColDef, type GridApi, type ICellRendererParams } from "ag-grid-community";
 
 import type { Locale, ThemeMode, WorkflowSummary } from "../types";
-import { translate } from "../i18n/translations";
+import { translate, type TranslationKey } from "../i18n/translations";
 import { orbitGridBlackTheme, orbitGridGreenTheme, orbitGridNavyTheme, orbitGridTheme } from "./WorkflowGrid";
 import { SalesTemplatesPage } from "./SalesTemplatesPage";
 import saveIcon from "../assets/save-icon.svg";
@@ -30,30 +30,43 @@ interface StepRow {
 }
 interface ConfigResponse { workflow_key: string; workflow_name: string; laboratories: Laboratory[]; businessEntities: BusinessEntityOption[]; steps: StepRow[] }
 
-function BusinessEntityHeader({ locale }: { locale: Locale }) {
+function HelpLabel({ locale, label, titleKey, bodyKey, detailKeys = [] }: {
+  locale: Locale;
+  label: string;
+  titleKey: TranslationKey;
+  bodyKey: TranslationKey;
+  detailKeys?: TranslationKey[];
+}) {
   const [open, setOpen] = useState(false);
   return (
     <div className="business-entity-header">
-      <span>{translate(locale, "businessEntityHeader")}</span>
+      <span>{label}</span>
       <button
         type="button"
         className="business-entity-help-button"
-        aria-label={translate(locale, "businessEntityHelpTitle")}
+        aria-label={translate(locale, titleKey)}
         aria-expanded={open}
-        title={translate(locale, "businessEntityHelpTitle")}
+        title={translate(locale, titleKey)}
         onClick={(event) => { event.stopPropagation(); setOpen((current) => !current); }}
       >?
       </button>
       {open ? (
         <div className="business-entity-help-popover" role="tooltip" onClick={(event) => event.stopPropagation()}>
-          <strong>{translate(locale, "businessEntityHelpTitle")}</strong>
-          <p>{translate(locale, "businessEntityHelpBody")}</p>
-          <p>{translate(locale, "businessEntityHelpSteps")}</p>
-          <p>{translate(locale, "businessEntityHelpEntities")}</p>
+          <strong>{translate(locale, titleKey)}</strong>
+          <p>{translate(locale, bodyKey)}</p>
+          {detailKeys.map((key) => <p key={key}>{translate(locale, key)}</p>)}
         </div>
       ) : null}
     </div>
   );
+}
+
+function BusinessEntityHeader({ locale }: { locale: Locale }) {
+  return <HelpLabel locale={locale} label={translate(locale, "businessEntityHeader")} titleKey="businessEntityHelpTitle" bodyKey="businessEntityHelpBody" detailKeys={["businessEntityHelpSteps", "businessEntityHelpEntities"]} />;
+}
+
+function DecisionActionHeader({ locale }: { locale: Locale }) {
+  return <HelpLabel locale={locale} label={translate(locale, "decisionActionHelpTitle")} titleKey="decisionActionHelpTitle" bodyKey="decisionActionHelpBody" />;
 }
 interface AccessRole { code: string; name: string }
 interface AccessUserRow {
@@ -335,6 +348,7 @@ export function SystemConfigPage({
     { field: "sla", headerName: "SLA", minWidth: 120, width: 140, editable: false },
     {
       field: "decisionAction", headerName: locale === "en" ? "Decision action" : "决策动作", width: 150, minWidth: 150,
+      headerComponent: () => <DecisionActionHeader locale={locale} />,
       editable: false, sortable: true, filter: true,
       cellRenderer: (params: ICellRendererParams<StepRow>) => {
         const row = params.data;
@@ -685,12 +699,12 @@ export function SystemConfigPage({
               </header>
               <div className="grid-edit-dialog__body">
                 <label className="grid-edit-field"><span>SLA</span><input type="text" value={stepDialog.sla || ""} placeholder="—" onChange={(event) => updateStepDialog({ sla: event.target.value || null })} disabled={Boolean(savingId)} /></label>
-                <label className="grid-edit-field"><span>Business entity</span><select value={stepDialog.businessEntity || ""} onChange={(event) => updateStepDialog({ businessEntity: event.target.value || null })} disabled={Boolean(savingId)}><option value="">{locale === "en" ? "Select business entity" : "选择业务实体"}</option>{(config?.businessEntities || []).map((entity) => <option key={entity.key} value={entity.name}>{entity.name}</option>)}</select></label>
+                <label className="grid-edit-field"><HelpLabel locale={locale} label={locale === "en" ? "Business entity" : "业务实体"} titleKey="businessEntityHelpTitle" bodyKey="businessEntityHelpBody" detailKeys={["businessEntityHelpSteps", "businessEntityHelpEntities"]} /><select value={stepDialog.businessEntity || ""} onChange={(event) => updateStepDialog({ businessEntity: event.target.value || null })} disabled={Boolean(savingId)}><option value="">{locale === "en" ? "Select business entity" : "选择业务实体"}</option>{(config?.businessEntities || []).map((entity) => <option key={entity.key} value={entity.name}>{entity.name}</option>)}</select></label>
                 <label className="grid-edit-field"><span>{locale === "en" ? "Laboratory" : "实验室"}</span><select value={stepDialog.laboratory_id || ""} onChange={(event) => { const laboratoryId = event.target.value || null; const laboratory = config?.laboratories.find((item) => item.id === laboratoryId); updateStepDialog({ laboratory_id: laboratoryId, laboratory_name: laboratory?.name || null, laboratory_code: laboratory?.code || null }); }} disabled={Boolean(savingId)}><option value="">{locale === "en" ? "Select laboratory" : "选择实验室"}</option>{(config?.laboratories || []).map((laboratory) => <option key={laboratory.id} value={laboratory.id}>{laboratory.name}</option>)}</select></label>
                 <label className="grid-edit-field"><span>{locale === "en" ? "Phone Number" : "电话号码"}</span><input type="tel" value={stepDialog.phone_number} onChange={(event) => updateStepDialog({ phone_number: event.target.value })} disabled={Boolean(savingId)} /></label>
                 <label className="grid-edit-field"><span>{locale === "en" ? "Email address" : "电子邮件"}</span><input type="email" value={stepDialog.contact_email} onChange={(event) => updateStepDialog({ contact_email: event.target.value })} disabled={Boolean(savingId)} /></label>
                 <label className="grid-edit-field"><span>{locale === "en" ? "Contact Name" : "联系人姓名"}</span><input type="text" value={stepDialog.contact_name} onChange={(event) => updateStepDialog({ contact_name: event.target.value })} disabled={Boolean(savingId)} /></label>
-                <label className="grid-edit-field"><span>{locale === "en" ? "Decision action" : "决策动作"}</span><input className="system-config-decision-checkbox system-config-decision-checkbox--dialog" type="checkbox" checked={stepDialog.decisionAction} onChange={(event) => updateStepDialog({ decisionAction: event.target.checked })} disabled={Boolean(savingId)} /></label>
+                <label className="grid-edit-field"><HelpLabel locale={locale} label={locale === "en" ? "Decision action" : "决策动作"} titleKey="decisionActionHelpTitle" bodyKey="decisionActionHelpBody" /><input className="system-config-decision-checkbox system-config-decision-checkbox--dialog" type="checkbox" checked={stepDialog.decisionAction} onChange={(event) => updateStepDialog({ decisionAction: event.target.checked })} disabled={Boolean(savingId)} /></label>
               </div>
               {stepDialogError ? <p className="grid-edit-dialog__error" role="alert">{stepDialogError}</p> : null}
               <footer className="dialog-actions grid-edit-dialog__actions"><button type="button" className="confirm-dialog__cancel" onClick={() => setStepDialog(null)} disabled={Boolean(savingId)}><svg className="grid-edit-action__icon" aria-hidden="true" viewBox="0 0 24 24" focusable="false"><path d="M6 6l12 12M18 6 6 18" /></svg>{locale === "en" ? "Cancel" : "取消"}</button><button type="button" className="confirm-dialog__confirm" onClick={() => void applyStepDialog()} disabled={Boolean(savingId)}><svg className="grid-edit-action__icon" aria-hidden="true" viewBox="0 0 24 24" focusable="false"><path d="m5 12 4 4L19 6" /></svg>{savingId ? (locale === "en" ? "Saving…" : "保存中…") : (locale === "en" ? "Save" : "保存")}</button></footer>
