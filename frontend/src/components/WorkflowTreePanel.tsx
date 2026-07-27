@@ -69,14 +69,20 @@ export function WorkflowTreePanel({
   const [reportDialogOpen, setReportDialogOpen] = useState(false);
   const [decisionDialogOpen, setDecisionDialogOpen] = useState(false);
   const decisionContextRef = useRef<string | null>(null);
+  const suppressNextDecisionDialogRef = useRef(false);
   const [savedReportContext, setSavedReportContext] = useState<string | null>(null);
   const reportContextRef = useRef<string | null>(null);
-  const currentNode = runtime?.nodes.find(
+  const runtimeCurrentNode = runtime?.nodes.find(
     (node) => node.record_key === runtime.instance.current_record_key,
   );
-  const currentTreeNode = tree?.nodes.find(
+  const runtimeCurrentTreeNode = tree?.nodes.find(
     (node) => node.record_key === runtime?.instance.current_record_key,
   );
+  const selectedTreeNode = tree?.nodes.find((node) => node.is_selected) || runtimeCurrentTreeNode;
+  const currentTreeNode = selectedTreeNode;
+  const currentNode = runtime?.nodes.find(
+    (node) => node.record_key === selectedTreeNode?.record_key,
+  ) || runtimeCurrentNode;
   const lastTreeNode = tree?.nodes[tree.nodes.length - 1];
   const isLastWorkflowStep = Boolean(
     currentTreeNode && lastTreeNode?.record_key === currentTreeNode.record_key,
@@ -117,6 +123,10 @@ export function WorkflowTreePanel({
     const contextKey = `${runtime?.instance.id || ""}:${currentNode.record_key}`;
     if (decisionContextRef.current === contextKey) return;
     decisionContextRef.current = contextKey;
+    if (suppressNextDecisionDialogRef.current) {
+      suppressNextDecisionDialogRef.current = false;
+      return;
+    }
     setDecisionDialogOpen(true);
   }, [runtime?.instance.id, currentNode?.record_key, currentNode?.status, currentTreeNode?.record_key, decisionRequired, documentActionRequired, reportActionCompleted, currentRecord, onDecisionGoto]);
 
@@ -174,11 +184,17 @@ export function WorkflowTreePanel({
                 (runtimeNode.status === "active" || runtimeNode.status === "waiting"),
               );
               const isCurrent = Boolean(
-                runtimeNode &&
-                runtimeNode.record_key === runtime?.instance.current_record_key &&
-                (runtimeNode.status === "active" || runtimeNode.status === "waiting"),
+                runtimeNode && (node.is_selected || (
+                  !tree?.nodes.some((item) => item.is_selected) &&
+                  runtimeNode.record_key === runtime?.instance.current_record_key &&
+                  (runtimeNode.status === "active" || runtimeNode.status === "waiting")
+                )),
               );
-              const state = runtime
+              const state = node.is_selected
+                ? "current"
+                : node.is_before_selected
+                  ? "complete"
+                  : runtime
                 ? warning
                   ? "warning"
                   : runtimeNode?.status === "completed"
@@ -362,6 +378,7 @@ export function WorkflowTreePanel({
           catalogs={decisionCatalogs}
           onClose={() => setDecisionDialogOpen(false)}
           onGoto={(workflowKey, stepKey) => {
+            suppressNextDecisionDialogRef.current = true;
             setDecisionDialogOpen(false);
             onDecisionGoto(workflowKey, stepKey);
           }}

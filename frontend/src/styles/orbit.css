@@ -2565,6 +2565,18 @@ select:has(> option:checked[value=""]) option { color: var(--ink); }
   color: var(--ink-soft);
 }
 
+.workflow-node--selected .workflow-node__body {
+  color: var(--ink);
+  background: color-mix(in srgb, var(--signal-soft) 48%, var(--surface-raised) 52%);
+  border-color: color-mix(in srgb, var(--signal) 72%, var(--line));
+  box-shadow: 1px 1px 0 color-mix(in srgb, var(--signal) 52%, transparent);
+}
+
+.workflow-node--selected .workflow-node__body small,
+.workflow-node--selected .workflow-node__body span {
+  color: var(--ink-soft);
+}
+
 .workflow-node--warning .workflow-node__rail::before,
 .workflow-node--warning:not(:last-child) .workflow-node__rail::after {
   background: #facc15;
