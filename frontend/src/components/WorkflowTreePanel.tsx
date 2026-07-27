@@ -74,7 +74,7 @@ export function WorkflowTreePanel({
 
   const reportContextKey = `${tree?.workflow_key || ""}:${runtime?.instance.id || ""}:${currentNode?.record_key || ""}`;
   const reportActionCompleted = Boolean(
-    currentTreeNode?.action === true || savedReportContext === reportContextKey,
+    currentTreeNode?.DocumentAction === true || savedReportContext === reportContextKey,
   );
   useEffect(() => {
     if (!currentNode || !currentTreeNode) {
@@ -89,7 +89,7 @@ export function WorkflowTreePanel({
     if (
       currentNode?.record_key === currentTreeNode?.record_key &&
       currentTreeNode.business_entity &&
-      currentTreeNode.action !== true &&
+      currentTreeNode.DocumentAction !== true &&
       savedReportContext !== reportContextKey
     ) {
       setReportDialogOpen(true);
@@ -216,12 +216,12 @@ export function WorkflowTreePanel({
                             <input
                               type="checkbox"
                               checked={runtimeNode.status === "completed"}
-                              disabled={commandBusy || runtimeNode.status === "completed" || (!isLastWorkflowStep && currentTreeNode?.action !== null && !reportActionCompleted)}
+                              disabled={commandBusy || runtimeNode.status === "completed" || (!isLastWorkflowStep && currentTreeNode?.DocumentAction !== null && !reportActionCompleted)}
                               onChange={() => void send("submit")}
                             />
                             <span>{translate(locale, "submit")}</span>
                           </label>
-                          {currentTreeNode?.business_entity && currentTreeNode.action !== null ? (
+                          {currentTreeNode?.business_entity && currentTreeNode.DocumentAction !== null ? (
                             <label className={`workflow-report-check ${!reportActionCompleted ? "workflow-report-check--pending" : ""}`} title={translate(locale, "actionReport")}>
                               <input
                                 type="checkbox"

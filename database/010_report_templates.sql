@@ -1,12 +1,40 @@
--- Action state and persisted report output for workflow steps.
+-- DocumentAction state and persisted report output for workflow steps.
+-- Preserve the camelCase interface name in PostgreSQL with a quoted identifier.
+DO $block$
+BEGIN
+    IF EXISTS (
+        SELECT 1 FROM information_schema.columns
+         WHERE table_schema = 'orbit_workflow'
+           AND table_name = 'workflow_step_assignment'
+           AND column_name = 'action'
+    ) THEN
+        IF NOT EXISTS (
+            SELECT 1 FROM information_schema.columns
+             WHERE table_schema = 'orbit_workflow'
+               AND table_name = 'workflow_step_assignment'
+               AND column_name = 'documentAction'
+        ) THEN
+            ALTER TABLE orbit_workflow.workflow_step_assignment
+                RENAME COLUMN action TO "documentAction";
+        ELSE
+            UPDATE orbit_workflow.workflow_step_assignment
+               SET "documentAction" = action
+             WHERE "documentAction" IS NULL;
+            ALTER TABLE orbit_workflow.workflow_step_assignment
+                DROP COLUMN action;
+        END IF;
+    END IF;
+END
+$block$;
+
 ALTER TABLE orbit_workflow.workflow_step_assignment
-    ADD COLUMN IF NOT EXISTS action boolean DEFAULT NULL;
+    ADD COLUMN IF NOT EXISTS "documentAction" boolean DEFAULT NULL;
 
 -- Existing configured steps require an action report before they can be
 -- completed. New/unconfigured steps remain NULL until a business entity is set.
 UPDATE orbit_workflow.workflow_step_assignment
-   SET action = false
- WHERE business_entity IS NOT NULL AND action IS NULL;
+   SET "documentAction" = false
+ WHERE business_entity IS NOT NULL AND "documentAction" IS NULL;
 
 CREATE TABLE IF NOT EXISTS orbit_workflow.workflow_step_report (
     workflow_record_id uuid PRIMARY KEY

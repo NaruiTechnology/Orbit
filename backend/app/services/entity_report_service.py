@@ -256,7 +256,7 @@ def persist_entity_report(
     connection.execute(
         """
         UPDATE orbit_workflow.workflow_step_assignment a
-           SET action = true, updated_at = CURRENT_TIMESTAMP, updated_by = %s
+           SET "documentAction" = true, updated_at = CURRENT_TIMESTAMP, updated_by = %s
           FROM orbit_workflow.workflow_record r
          WHERE a.workflow_record_id = r.id
            AND r.id = %s
@@ -265,7 +265,7 @@ def persist_entity_report(
     )
     return {
         "record_id": report["record_id"],
-        "action": True,
+        "DocumentAction": True,
         "download_url": f"/api/v1/workflows/{report['workflow_key']}/steps/{report['record_id']}/report",
         "content_type": "text/html",
     }

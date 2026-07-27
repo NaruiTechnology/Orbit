@@ -134,7 +134,7 @@ class TreeNode(BaseModel):
     Email: str | None = None
     Messages: list[str] = Field(default_factory=list)
     business_entity: str | None = None
-    action: bool | None = None
+    DocumentAction: bool | None = None
     sla: str | None = None
     is_selected: bool
     is_before_selected: bool

@@ -115,7 +115,7 @@ export interface TreeNode {
   Email: string | null;
   Messages: string[];
   business_entity: string | null;
-  action: boolean | null;
+  DocumentAction: boolean | null;
   sla: string | null;
   is_selected: boolean;
   is_before_selected: boolean;
@@ -123,7 +123,7 @@ export interface TreeNode {
 
 export interface ReportTemplateSaveResponse {
   record_id: string;
-  action: true;
+  DocumentAction: true;
   download_url: string;
   content_type: string;
 }

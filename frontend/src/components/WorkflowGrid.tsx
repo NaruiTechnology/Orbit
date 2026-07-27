@@ -271,7 +271,15 @@ export function WorkflowGrid({
   }
 
   useEffect(() => {
-    if (gridApi.current) applySelectedRow(gridApi.current);
+    if (!gridApi.current) return;
+    const firstFrame = window.requestAnimationFrame(() => {
+      if (!gridApi.current) return;
+      applySelectedRow(gridApi.current);
+      window.requestAnimationFrame(() => {
+        if (gridApi.current) applySelectedRow(gridApi.current);
+      });
+    });
+    return () => window.cancelAnimationFrame(firstFrame);
   }, [selectedRecordId, existingRecords]);
 
   function openEditDialog(record: WorkflowRecord) {
@@ -661,6 +669,7 @@ export function WorkflowGrid({
         onGridReady={(event: GridReadyEvent<WorkflowRecord>) => {
           gridApi.current = event.api;
           restoreColumnProfile(event.api);
+          window.requestAnimationFrame(() => applySelectedRow(event.api));
         }}
         onColumnMoved={(event) => saveColumnProfile(event.api)}
         onColumnVisible={(event) => saveColumnProfile(event.api)}

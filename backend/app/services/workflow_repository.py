@@ -1214,7 +1214,7 @@ def get_tree(
                assignment.contact_name AS assigned_contact_name,
                assignment.contact_email AS assigned_contact_email,
                assignment.business_entity AS assigned_business_entity,
-               assignment.action AS assigned_action,
+               assignment."documentAction" AS assigned_document_action,
                assignment.sla AS assigned_sla,
                sla.sla_i18n,
                sla.sla
@@ -1292,11 +1292,11 @@ def get_tree(
             # deterministic first step until the projection is available.
             selected_step_key = rows[0]["record_key"]
 
-    # Action starts incomplete for every business-entity step. Do not expose
+    # DocumentAction starts incomplete for every business-entity step. Do not expose
     # the legacy shared assignment flag, which can contain stale true data
     # from another order.
     for row in rows:
-        row["assigned_action"] = False if row["assigned_business_entity"] else None
+        row["assigned_document_action"] = False if row["assigned_business_entity"] else None
 
     selected_order = next(
         (
@@ -1333,7 +1333,7 @@ def get_tree(
             )),
             Messages=_step_messages(row["values_json"]),
             business_entity=row["assigned_business_entity"],
-            action=row["assigned_action"],
+            DocumentAction=row["assigned_document_action"],
             sla=_localized_step_value(row["assigned_sla"], locale) or localized_value(row["sla_i18n"], locale, row["sla"]),
             is_selected=(
                 row["record_key"] == selected_step_key

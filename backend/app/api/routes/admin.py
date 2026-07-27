@@ -528,7 +528,7 @@ def workflow_config(
         """
         SELECT r.id, r.record_key, r.record_order, r.label_i18n,
                sla.sla_i18n, sla.sla,
-               a.business_entity, a.action, a.sla AS assignment_sla,
+               a.business_entity, a."documentAction" AS document_action, a.sla AS assignment_sla,
                a.laboratory_id, l.code AS laboratory_code, l.name_i18n AS laboratory_name_i18n,
                a.phone_number, a.contact_email, a.contact_name, a.hr_employee_id
           FROM orbit_workflow.workflow_record r
@@ -566,7 +566,7 @@ def workflow_config(
                 "step_name": localized_value(row["label_i18n"], locale),
                 "sla": row["assignment_sla"] or (localized_value(row["sla_i18n"], locale, row["sla"]) if row["sla"] else None),
                 "businessEntity": row["business_entity"],
-                "action": row["action"],
+                "DocumentAction": row["document_action"],
                 "laboratory_id": row["laboratory_id"],
                 "laboratory_code": row["laboratory_code"],
                 "laboratory_name": localized_value(row["laboratory_name_i18n"], locale) if row["laboratory_name_i18n"] else None,
@@ -595,10 +595,10 @@ def update_workflow_step(
         """
         UPDATE orbit_workflow.workflow_step_assignment a
            SET business_entity = %s,
-               action = CASE
+               "documentAction" = CASE
                    WHEN %s::varchar IS NULL THEN NULL
-                   WHEN a.action IS NULL THEN false
-                   ELSE a.action
+                   WHEN a."documentAction" IS NULL THEN false
+                   ELSE a."documentAction"
                END,
                sla = %s, laboratory_id = %s, phone_number = %s, contact_email = %s,
                contact_name = %s,
