@@ -116,6 +116,7 @@ export interface TreeNode {
   Messages: string[];
   business_entity: string | null;
   DocumentAction: boolean | null;
+  decisionAction: boolean;
   sla: string | null;
   is_selected: boolean;
   is_before_selected: boolean;
@@ -143,6 +144,17 @@ export interface WorkflowTree {
   selected_cell_value: unknown;
   nodes: TreeNode[];
   edges: TreeEdge[];
+}
+
+export interface WorkflowDecisionStep {
+  record_key: string;
+  label: string;
+}
+
+export interface WorkflowDecisionCatalog {
+  key: string;
+  name: string;
+  steps: WorkflowDecisionStep[];
 }
 
 export type WorkflowNodeStatus =

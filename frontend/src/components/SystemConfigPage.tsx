@@ -19,6 +19,7 @@ interface StepRow {
   sla: string | null;
   businessEntity: string | null;
   DocumentAction: boolean | null;
+  decisionAction: boolean;
   laboratory_id: string | null;
   laboratory_code: string | null;
   laboratory_name: string | null;
@@ -276,7 +277,7 @@ export function SystemConfigPage({
       const response = await fetch(`/api/v1/admin/workflow-config/${encodeURIComponent(workflowKey)}/steps/${step.id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json", "X-Orbit-Auth": localStorage.getItem("orbit:auth-token") || "" },
-        body: JSON.stringify({ businessEntity: step.businessEntity || null, sla: step.sla || null, laboratory_id: step.laboratory_id || null, phone_number: step.phone_number, contact_email: step.contact_email, contact_name: step.contact_name, hr_employee_id: step.hr_employee_id || null }),
+        body: JSON.stringify({ businessEntity: step.businessEntity || null, decisionAction: step.decisionAction, sla: step.sla || null, laboratory_id: step.laboratory_id || null, phone_number: step.phone_number, contact_email: step.contact_email, contact_name: step.contact_name, hr_employee_id: step.hr_employee_id || null }),
       });
       if (!response.ok) throw new Error((await response.json().catch(() => ({}))).detail || `HTTP ${response.status}`);
       setConfig((current) => current
@@ -332,6 +333,15 @@ export function SystemConfigPage({
     { field: "record_order", headerName: "#", width: 70, pinned: "left", editable: false },
     { field: "step_name", headerName: locale === "en" ? "Workflow step" : "工作流步骤", minWidth: 220, flex: 1, editable: false },
     { field: "sla", headerName: "SLA", minWidth: 120, width: 140, editable: false },
+    {
+      field: "decisionAction", headerName: locale === "en" ? "Decision action" : "决策动作", width: 150, minWidth: 150,
+      editable: false, sortable: true, filter: true,
+      cellRenderer: (params: ICellRendererParams<StepRow>) => {
+        const row = params.data;
+        if (!row) return null;
+        return <input className="system-config-decision-checkbox" type="checkbox" checked={row.decisionAction} aria-label={locale === "en" ? "Decision action" : "决策动作"} aria-readonly="true" disabled onClick={(event) => event.stopPropagation()} />;
+      },
+    },
     {
       field: "businessEntity", headerName: translate(locale, "businessEntityHeader"), minWidth: 220, editable: false,
       headerComponent: () => <BusinessEntityHeader locale={locale} />,
@@ -680,6 +690,7 @@ export function SystemConfigPage({
                 <label className="grid-edit-field"><span>{locale === "en" ? "Phone Number" : "电话号码"}</span><input type="tel" value={stepDialog.phone_number} onChange={(event) => updateStepDialog({ phone_number: event.target.value })} disabled={Boolean(savingId)} /></label>
                 <label className="grid-edit-field"><span>{locale === "en" ? "Email address" : "电子邮件"}</span><input type="email" value={stepDialog.contact_email} onChange={(event) => updateStepDialog({ contact_email: event.target.value })} disabled={Boolean(savingId)} /></label>
                 <label className="grid-edit-field"><span>{locale === "en" ? "Contact Name" : "联系人姓名"}</span><input type="text" value={stepDialog.contact_name} onChange={(event) => updateStepDialog({ contact_name: event.target.value })} disabled={Boolean(savingId)} /></label>
+                <label className="grid-edit-field"><span>{locale === "en" ? "Decision action" : "决策动作"}</span><input className="system-config-decision-checkbox system-config-decision-checkbox--dialog" type="checkbox" checked={stepDialog.decisionAction} onChange={(event) => updateStepDialog({ decisionAction: event.target.checked })} disabled={Boolean(savingId)} /></label>
               </div>
               {stepDialogError ? <p className="grid-edit-dialog__error" role="alert">{stepDialogError}</p> : null}
               <footer className="dialog-actions grid-edit-dialog__actions"><button type="button" className="confirm-dialog__cancel" onClick={() => setStepDialog(null)} disabled={Boolean(savingId)}><svg className="grid-edit-action__icon" aria-hidden="true" viewBox="0 0 24 24" focusable="false"><path d="M6 6l12 12M18 6 6 18" /></svg>{locale === "en" ? "Cancel" : "取消"}</button><button type="button" className="confirm-dialog__confirm" onClick={() => void applyStepDialog()} disabled={Boolean(savingId)}><svg className="grid-edit-action__icon" aria-hidden="true" viewBox="0 0 24 24" focusable="false"><path d="m5 12 4 4L19 6" /></svg>{savingId ? (locale === "en" ? "Saving…" : "保存中…") : (locale === "en" ? "Save" : "保存")}</button></footer>

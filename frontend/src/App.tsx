@@ -10,10 +10,12 @@ import {
 import {
   useGetHealthQuery,
   useGetRecordsQuery,
+  useLazyGetRecordsQuery,
   useGetSessionQuery,
   useGetWorkflowQuery,
   useGetWorkflowTreeQuery,
   useGetWorkflowRuntimeQuery,
+  useGetWorkflowDecisionOptionsQuery,
   useWorkflowCommandMutation,
   useAppendWorkflowStepMessageMutation,
   useGetWorkflowsQuery,
@@ -79,6 +81,7 @@ export function App() {
     locale: workspace.locale,
     recordId: deferredSelection.recordId,
     cellKey: deferredSelection.cellKey,
+    stepKey: deferredSelection.stepKey,
   }, { refetchOnMountOrArgChange: true, skip: !authToken });
   const runtimeQuery = useGetWorkflowRuntimeQuery({
     instanceId: deferredSelection.recordId || "",
@@ -87,9 +90,14 @@ export function App() {
     refetchOnMountOrArgChange: true,
     skip: !authToken || workflowQuery.data?.definition_type !== "workflow" || !deferredSelection.recordId,
   });
+  const decisionOptionsQuery = useGetWorkflowDecisionOptionsQuery({
+    workflowKey: workspace.selectedWorkflow,
+    locale: workspace.locale,
+  }, { skip: !authToken || workflowQuery.data?.definition_type !== "workflow" });
   const [updateRecord] = useUpdateRecordMutation();
   const [createRecord] = useCreateRecordMutation();
   const [deleteRecord] = useDeleteRecordMutation();
+  const [loadDecisionRecords] = useLazyGetRecordsQuery();
   const [sendWorkflowCommand, workflowCommandState] = useWorkflowCommandMutation();
   const [appendWorkflowStepMessage, appendMessageState] = useAppendWorkflowStepMessageMutation();
   const [dirtyRecordIds, setDirtyRecordIds] = useState<Set<string>>(new Set());
@@ -149,6 +157,11 @@ export function App() {
       url.searchParams.set("cell", workspace.selection.cellKey);
     } else {
       url.searchParams.delete("cell");
+    }
+    if (workspace.selection.stepKey) {
+      url.searchParams.set("step", workspace.selection.stepKey);
+    } else {
+      url.searchParams.delete("step");
     }
     window.history.replaceState(
       window.history.state,
@@ -243,11 +256,12 @@ export function App() {
     if (selected) requestWorkflowNavigation(selected.group_key, workflowKey);
   }
 
-  function requestWorkflowNavigation(group: string, workflowKey: string) {
+  function requestWorkflowNavigation(group: string, workflowKey: string, afterCommit?: () => void) {
     const commit = () => {
       setDirtyRecordIds(new Set());
       dispatch(selectGroup(group));
       dispatch(selectWorkflow(workflowKey));
+      afterCommit?.();
     };
     if (dirtyRecordIds.size === 0 || workflowKey === workspace.selectedWorkflow) {
       commit();
@@ -260,6 +274,34 @@ export function App() {
         : "部分记录已编辑。更改已保存，但当前视图仍标记这些记录。确定继续切换吗？",
       confirmLabel: workspace.locale === "en" ? "Continue" : "继续",
       onConfirm: commit,
+    });
+  }
+
+  async function handleDecisionGoto(workflowKey: string, stepKey: string): Promise<void> {
+    const currentRecord = recordsQuery.data?.items.find(
+      (record) => record.id === deferredSelection.recordId || record.tree_record_id === deferredSelection.recordId,
+    );
+    if (!currentRecord) return;
+    const recordKey = String(currentRecord.values.order_number || currentRecord.record_key);
+    const targetPage = await loadDecisionRecords({
+      workflowKey,
+      locale: workspace.locale,
+      search: recordKey,
+      sortBy: "record_order",
+      sortDirection: "asc",
+    }).unwrap();
+    const targetRecord = targetPage.items.find(
+      (record) => record.record_key === recordKey || String(record.values.order_number || "") === recordKey,
+    );
+    if (!targetRecord) return;
+    const targetWorkflow = workflowsQuery.data?.find((workflow) => workflow.key === workflowKey);
+    if (!targetWorkflow) return;
+    requestWorkflowNavigation(targetWorkflow.group_key, workflowKey, () => {
+      dispatch(selectCell({
+        recordId: targetRecord.tree_record_id || targetRecord.id,
+        cellKey: null,
+        stepKey,
+      }));
     });
   }
 
@@ -339,6 +381,9 @@ export function App() {
   const hasBlockingError =
     workflowsQuery.isError || workflowQuery.isError || recordsQuery.isError;
   const workflow = workflowQuery.data;
+  const currentRecord = recordsQuery.data?.items.find(
+    (record) => record.id === deferredSelection.recordId || record.tree_record_id === deferredSelection.recordId,
+  );
   const selectedTree = treeQuery.data?.selected_record_id === deferredSelection.recordId
     ? treeQuery.data
     : undefined;
@@ -492,6 +537,9 @@ export function App() {
           messageBusy={appendMessageState.isLoading}
           onSaveMessage={handleSaveWorkflowMessage}
           onSaveReport={handleSaveReport}
+          currentRecord={currentRecord}
+          decisionCatalogs={decisionOptionsQuery.data || []}
+          onDecisionGoto={(workflowKey, stepKey) => void handleDecisionGoto(workflowKey, stepKey)}
           theme={workspace.theme}
         />
       </main>}

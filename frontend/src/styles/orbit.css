@@ -2027,6 +2027,50 @@ select:has(> option:checked[value=""]) option { color: var(--ink); }
   accent-color: var(--signal);
 }
 
+.system-config-decision-checkbox {
+  appearance: none;
+  width: 18px;
+  height: 18px;
+  margin: 0 auto;
+  display: block;
+  border: 1px solid #6f8caf;
+  border-radius: 3px;
+  background: #0b1a33;
+  cursor: pointer;
+  position: relative;
+}
+
+.system-config-decision-checkbox:checked {
+  border-color: var(--signal);
+  background: var(--signal);
+}
+
+.system-config-decision-checkbox:checked::after {
+  content: "";
+  position: absolute;
+  width: 5px;
+  height: 9px;
+  left: 5px;
+  top: 2px;
+  border: solid #071426;
+  border-width: 0 2px 2px 0;
+  transform: rotate(45deg);
+}
+
+.system-config-decision-checkbox:focus-visible {
+  outline: 2px solid #8fd0ff;
+  outline-offset: 2px;
+}
+
+.system-config-decision-checkbox:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
+.system-config-decision-checkbox--dialog {
+  margin: 4px 0 0;
+}
+
 .grid-edit-dialog__error {
   margin: 0 18px;
   padding: 8px 10px;
@@ -2204,8 +2248,11 @@ select:has(> option:checked[value=""]) option { color: var(--ink); }
 .workflow-action-row {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  gap: 8px;
+  justify-content: flex-start;
+  flex-wrap: wrap;
+  gap: 4px;
+  max-width: 100%;
+  overflow: hidden;
   background: transparent;
   border: 0;
   box-shadow: none;
@@ -2220,7 +2267,7 @@ select:has(> option:checked[value=""]) option { color: var(--ink); }
   box-shadow: none;
 }
 .workflow-email-button img { display: block; width: 19px; height: 19px; margin: auto; }
-.workflow-check { display: flex; align-items: center; gap: 7px; flex: 1; font-size: 9px; font-weight: 800; }
+.workflow-check { display: flex; align-items: center; gap: 5px; min-width: 0; margin-right: auto; font-size: 9px; font-weight: 800; }
 .workflow-check input { width: 16px; min-height: 16px; accent-color: var(--signal); }
 .workflow-report-check {
   display: flex;
@@ -2953,3 +3000,17 @@ select:has(> option:checked[value=""]) option { color: var(--ink); }
     opacity: 1;
   }
 }
+.workflow-decision-dialog { width: min(760px, calc(100vw - 32px)); max-height: min(86vh, 820px); overflow: auto; }
+.workflow-decision-dialog__body { display: grid; gap: 16px; padding: 18px 22px; }
+.workflow-decision-record { border: 1px solid var(--line); border-radius: 10px; padding: 12px; opacity: 0.72; background: color-mix(in srgb, var(--surface) 88%, var(--signal-soft)); }
+.workflow-decision-record--disabled { opacity: 0.48; pointer-events: none; }
+.workflow-decision-record h3 { margin: 0 0 10px; font-size: 13px; }
+.workflow-decision-record__list { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 4px 14px; max-height: 260px; overflow: auto; }
+.workflow-decision-record__item { display: grid; grid-template-columns: minmax(120px, 0.35fr) minmax(0, 1fr); gap: 10px; min-width: 0; padding: 4px 0; border-bottom: 1px solid color-mix(in srgb, var(--line) 55%, transparent); }
+.workflow-decision-record__item:last-child { border-bottom: 0; }
+.workflow-decision-record__item span { color: var(--ink-soft); font-size: 10px; font-weight: 700; text-transform: capitalize; }
+.workflow-decision-record__item b { min-width: 0; color: var(--ink); font-size: 11px; font-weight: 500; overflow-wrap: anywhere; }
+.workflow-decision-record__list span { color: var(--ink-soft); font-size: 10px; font-weight: 700; text-transform: capitalize; }
+.workflow-decision-check { min-width: 24px; }
+.workflow-decision-check input { width: 16px; height: 16px; accent-color: #f0b429; }
+@media (max-width: 680px) { .workflow-decision-record__list { grid-template-columns: 1fr; } }

@@ -30,6 +30,9 @@ $block$;
 ALTER TABLE orbit_workflow.workflow_step_assignment
     ADD COLUMN IF NOT EXISTS "documentAction" boolean DEFAULT NULL;
 
+ALTER TABLE orbit_workflow.workflow_step_assignment
+    ADD COLUMN IF NOT EXISTS "decisionAction" boolean NOT NULL DEFAULT false;
+
 -- Existing configured steps require an action report before they can be
 -- completed. New/unconfigured steps remain NULL until a business entity is set.
 UPDATE orbit_workflow.workflow_step_assignment

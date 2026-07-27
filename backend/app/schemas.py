@@ -65,6 +65,17 @@ class WorkflowSummary(BaseModel):
     access: WorkflowAccess
 
 
+class WorkflowDecisionStep(BaseModel):
+    record_key: str
+    label: str
+
+
+class WorkflowDecisionCatalog(BaseModel):
+    key: str
+    name: str
+    steps: list[WorkflowDecisionStep]
+
+
 class ColumnDefinition(BaseModel):
     key: str
     source_label: str
@@ -135,6 +146,7 @@ class TreeNode(BaseModel):
     Messages: list[str] = Field(default_factory=list)
     business_entity: str | None = None
     DocumentAction: bool | None = None
+    decisionAction: bool = False
     sla: str | None = None
     is_selected: bool
     is_before_selected: bool

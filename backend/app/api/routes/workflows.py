@@ -35,6 +35,7 @@ from app.services.workflow_repository import (
     get_runtime_projection,
     get_tree,
     get_workflow,
+    list_decision_options,
     list_records,
     list_workflows,
     start_instance,
@@ -88,6 +89,16 @@ def workflow_detail(
     connection: Connection[dict[str, Any]] = Depends(get_connection),
 ) -> WorkflowDetail:
     return get_workflow(connection, user, workflow_key, locale)
+
+
+@router.get("/{workflow_key}/decision-options")
+def workflow_decision_options(
+    workflow_key: str,
+    locale: str = Query(default="zh-CN"),
+    user: SessionInfo = Depends(get_current_user),
+    connection: Connection[dict[str, Any]] = Depends(get_connection),
+) -> list[dict[str, Any]]:
+    return [item.model_dump() for item in list_decision_options(connection, user, workflow_key, locale)]
 
 
 @router.get("/{workflow_key}/records", response_model=RecordPage)
@@ -152,6 +163,7 @@ def workflow_tree(
     locale: str = Query(default="zh-CN"),
     selected_record_id: UUID | None = Query(default=None),
     selected_cell_key: str | None = Query(default=None, max_length=100),
+    selected_step_key: str | None = Query(default=None, max_length=140),
     user: SessionInfo = Depends(get_current_user),
     connection: Connection[dict[str, Any]] = Depends(get_connection),
 ) -> WorkflowTree:
@@ -162,6 +174,7 @@ def workflow_tree(
         locale,
         selected_record_id,
         selected_cell_key,
+        selected_step_key,
     )
 
 

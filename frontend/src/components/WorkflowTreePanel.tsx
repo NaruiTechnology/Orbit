@@ -6,6 +6,7 @@ import cogIcon from "../assets/cog-icon.svg";
 import { MailComposeDialog } from "./MailComposeDialog";
 import { WorkflowMessageDialog } from "./WorkflowMessageDialog";
 import { WorkflowReportDialog } from "./WorkflowReportDialog";
+import { WorkflowDecisionDialog } from "./WorkflowDecisionDialog";
 import type {
   Locale,
   ThemeMode,
@@ -13,6 +14,8 @@ import type {
   WorkflowRuntimeProjection,
   WorkflowTree,
   ReportTemplateSaveResponse,
+  WorkflowDecisionCatalog,
+  WorkflowRecord,
 } from "../types";
 import { translate } from "../i18n/translations";
 
@@ -27,6 +30,9 @@ interface WorkflowTreePanelProps {
   onSaveMessage?: (recordId: string, message: string) => Promise<void>;
   messageBusy?: boolean;
   onSaveReport?: (result: ReportTemplateSaveResponse) => Promise<void>;
+  currentRecord?: WorkflowRecord | undefined;
+  decisionCatalogs?: WorkflowDecisionCatalog[];
+  onDecisionGoto?: (workflowKey: string, stepKey: string) => void;
   theme?: ThemeMode;
 }
 
@@ -50,6 +56,9 @@ export function WorkflowTreePanel({
   onSaveMessage,
   messageBusy = false,
   onSaveReport,
+  currentRecord,
+  decisionCatalogs = [],
+  onDecisionGoto,
   theme = "navy",
 }: WorkflowTreePanelProps) {
   const selectedRef = useRef<HTMLLIElement | null>(null);
@@ -58,6 +67,8 @@ export function WorkflowTreePanel({
   const [mailComposeBody, setMailComposeBody] = useState("");
   const [messageDialogOpen, setMessageDialogOpen] = useState(false);
   const [reportDialogOpen, setReportDialogOpen] = useState(false);
+  const [decisionDialogOpen, setDecisionDialogOpen] = useState(false);
+  const decisionContextRef = useRef<string | null>(null);
   const [savedReportContext, setSavedReportContext] = useState<string | null>(null);
   const reportContextRef = useRef<string | null>(null);
   const currentNode = runtime?.nodes.find(
@@ -76,6 +87,10 @@ export function WorkflowTreePanel({
   const reportActionCompleted = Boolean(
     currentTreeNode?.DocumentAction === true || savedReportContext === reportContextKey,
   );
+  const documentActionRequired = Boolean(
+    currentTreeNode?.business_entity && currentTreeNode.DocumentAction !== true,
+  );
+  const decisionRequired = Boolean(currentTreeNode?.decisionAction);
   useEffect(() => {
     if (!currentNode || !currentTreeNode) {
       setReportDialogOpen(false);
@@ -95,6 +110,15 @@ export function WorkflowTreePanel({
       setReportDialogOpen(true);
     }
   }, [reportContextKey, currentNode, currentTreeNode]);
+  useEffect(() => {
+    if (!currentNode || !currentTreeNode || !decisionRequired || !currentRecord || !onDecisionGoto) return;
+    if (currentNode.status !== "active" && currentNode.status !== "waiting") return;
+    if (documentActionRequired && !reportActionCompleted) return;
+    const contextKey = `${runtime?.instance.id || ""}:${currentNode.record_key}`;
+    if (decisionContextRef.current === contextKey) return;
+    decisionContextRef.current = contextKey;
+    setDecisionDialogOpen(true);
+  }, [runtime?.instance.id, currentNode?.record_key, currentNode?.status, currentTreeNode?.record_key, decisionRequired, documentActionRequired, reportActionCompleted, currentRecord, onDecisionGoto]);
 
   async function send(command: string, payload?: Record<string, unknown>) {
     if (!runtime || !onCommand || !currentNode) return;
@@ -232,6 +256,12 @@ export function WorkflowTreePanel({
                               {!reportActionCompleted ? <span className="workflow-report-check__required" aria-hidden="true">*</span> : null}
                             </label>
                           ) : null}
+                          {decisionRequired ? (
+                            <label className="workflow-report-check workflow-decision-check" title={locale === "en" ? "Decision action" : "决策动作"}>
+                              <input type="checkbox" checked={false} onChange={() => setDecisionDialogOpen(true)} />
+                              <span className="workflow-report-check__required" aria-hidden="true">*</span>
+                            </label>
+                          ) : null}
                           <button
                             type="button"
                             className="workflow-email-button"
@@ -323,6 +353,18 @@ export function WorkflowTreePanel({
             setReportDialogOpen(false);
           }}
           theme={theme}
+        />
+      ) : null}
+      {decisionDialogOpen && currentRecord && onDecisionGoto ? (
+        <WorkflowDecisionDialog
+          locale={locale}
+          record={currentRecord}
+          catalogs={decisionCatalogs}
+          onClose={() => setDecisionDialogOpen(false)}
+          onGoto={(workflowKey, stepKey) => {
+            setDecisionDialogOpen(false);
+            onDecisionGoto(workflowKey, stepKey);
+          }}
         />
       ) : null}
     </aside>

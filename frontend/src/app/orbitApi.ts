@@ -12,6 +12,7 @@ import type {
   WorkflowRuntimeProjection,
   WorkflowSummary,
   WorkflowTree,
+  WorkflowDecisionCatalog,
   ReportTemplateSaveResponse,
 } from "../types";
 import type { BusinessEntityRecord, BusinessEntityResponse } from "../salesTypes";
@@ -29,6 +30,7 @@ interface TreeQuery {
   locale: Locale;
   recordId: string | null;
   cellKey: string | null;
+  stepKey: string | null;
 }
 
 interface RecordUpdate {
@@ -105,6 +107,12 @@ export const orbitApi = createApi({
         { type: "Workflow", id: argument.workflowKey },
       ],
     }),
+    workflowDecisionOptions: builder.query<WorkflowDecisionCatalog[], { workflowKey: string; locale: Locale }>({
+      query: ({ workflowKey, locale }) => ({
+        url: `/workflows/${workflowKey}/decision-options`,
+        params: { locale },
+      }),
+    }),
     records: builder.query<RecordPage, RecordQuery>({
       query: ({ workflowKey, locale, search, sortBy, sortDirection }) => ({
         url: `/workflows/${workflowKey}/records`,
@@ -121,12 +129,13 @@ export const orbitApi = createApi({
       ],
     }),
     workflowTree: builder.query<WorkflowTree, TreeQuery>({
-      query: ({ workflowKey, locale, recordId, cellKey }) => ({
+      query: ({ workflowKey, locale, recordId, cellKey, stepKey }) => ({
         url: `/workflows/${workflowKey}/tree`,
         params: {
           locale,
           selected_record_id: recordId || undefined,
           selected_cell_key: cellKey || undefined,
+          selected_step_key: stepKey || undefined,
         },
       }),
     }),
@@ -199,9 +208,11 @@ export const useCreateBusinessEntityRecordMutation = orbitApi.endpoints.createBu
 export const useUpdateBusinessEntityRecordMutation = orbitApi.endpoints.updateBusinessEntityRecord.useMutation;
 export const useDeleteBusinessEntityRecordMutation = orbitApi.endpoints.deleteBusinessEntityRecord.useMutation;
 export const useGetWorkflowQuery = orbitApi.endpoints.workflow.useQuery;
+export const useGetWorkflowDecisionOptionsQuery = orbitApi.endpoints.workflowDecisionOptions.useQuery;
 export const useGetWorkflowTreeQuery = orbitApi.endpoints.workflowTree.useQuery;
 export const useGetWorkflowsQuery = orbitApi.endpoints.workflows.useQuery;
 export const useGetRecordsQuery = orbitApi.endpoints.records.useQuery;
+export const useLazyGetRecordsQuery = orbitApi.endpoints.records.useLazyQuery;
 export const useUpdateRecordMutation = orbitApi.endpoints.updateRecord.useMutation;
 export const useCreateRecordMutation = orbitApi.endpoints.createRecord.useMutation;
 export const useDeleteRecordMutation = orbitApi.endpoints.deleteRecord.useMutation;

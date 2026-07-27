@@ -216,6 +216,7 @@ function WorkflowList({ workflows, text }: { workflows: WorkflowSummary[]; text:
     locale,
     recordId: selectedRecordId,
     cellKey: null,
+    stepKey: null,
   }, { skip: !selectedWorkflowKey || !selectedRecordId });
   const runtimeQuery = useGetWorkflowRuntimeQuery({ instanceId: selectedRecordId || "", workflowKey: selectedWorkflowKey || "" }, { skip: !selectedWorkflowKey || !selectedRecordId });
   const [createRecord, createState] = useCreateRecordMutation();

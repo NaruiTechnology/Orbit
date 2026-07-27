@@ -24,6 +24,8 @@ from app.schemas import (
     WorkflowAccess,
     WorkflowCommandRequest,
     WorkflowDetail,
+    WorkflowDecisionCatalog,
+    WorkflowDecisionStep,
     WorkflowInstance,
     WorkflowNodeRuntime,
     WorkflowRecord,
@@ -240,6 +242,71 @@ def list_workflows(
         )
         for row in rows
     ]
+
+
+def list_decision_options(
+    connection: Connection[dict[str, Any]],
+    user: SessionInfo,
+    workflow_key: str,
+    locale: str,
+) -> list[WorkflowDecisionCatalog]:
+    """Return accessible sibling workflow catalogs and their steps."""
+    require_workflow_access(connection, user.user_id, workflow_key, "view")
+    current = connection.execute(
+        """
+        SELECT group_key
+          FROM orbit_workflow.workflow_definition
+         WHERE workflow_key = %s AND is_active
+        """,
+        (workflow_key,),
+    ).fetchone()
+    if current is None:
+        raise HTTPException(status_code=404, detail="Workflow not found")
+    rows = connection.execute(
+        """
+        SELECT w.workflow_key, w.name_i18n, w.display_order,
+               r.record_key, r.label_i18n, r.record_order
+          FROM orbit_workflow.workflow_definition w
+          JOIN orbit_workflow.workflow_record r ON r.workflow_id = w.id
+         WHERE w.is_active
+           AND w.definition_type = 'workflow'
+           AND NOT w.is_master
+           AND w.group_key = %s
+           AND w.workflow_key <> %s
+           AND EXISTS (
+               SELECT 1
+                 FROM orbit_identity.user_role ur
+                 JOIN orbit_identity.role_workflow_access access
+                   ON access.role_id = ur.role_id
+                WHERE ur.user_id = %s
+                  AND access.can_view
+                  AND (
+                      (access.scope_type = 'global' AND access.scope_key = '*')
+                      OR (access.scope_type = 'group' AND access.scope_key = w.group_key)
+                      OR (access.scope_type = 'workflow' AND access.scope_key = w.workflow_key)
+                  )
+           )
+         ORDER BY w.display_order, r.record_order
+        """,
+        (current["group_key"], workflow_key, user.user_id),
+    ).fetchall()
+    catalogs: dict[str, WorkflowDecisionCatalog] = {}
+    for row in rows:
+        catalog = catalogs.setdefault(
+            row["workflow_key"],
+            WorkflowDecisionCatalog(
+                key=row["workflow_key"],
+                name=localized_value(row["name_i18n"], locale),
+                steps=[],
+            ),
+        )
+        catalog.steps.append(
+            WorkflowDecisionStep(
+                record_key=row["record_key"],
+                label=localized_value(row["label_i18n"], locale),
+            )
+        )
+    return list(catalogs.values())
 
 
 def get_workflow(
@@ -1196,6 +1263,7 @@ def get_tree(
     locale: str,
     selected_record_id: UUID | None,
     selected_cell_key: str | None,
+    requested_step_key: str | None = None,
 ) -> WorkflowTree:
     definition = get_workflow(connection, user, workflow_key, locale)
     if not _is_runtime_workflow(definition):
@@ -1215,6 +1283,7 @@ def get_tree(
                assignment.contact_email AS assigned_contact_email,
                assignment.business_entity AS assigned_business_entity,
                assignment."documentAction" AS assigned_document_action,
+               assignment."decisionAction" AS decision_action,
                assignment.sla AS assigned_sla,
                sla.sla_i18n,
                sla.sla
@@ -1233,7 +1302,7 @@ def get_tree(
         """,
         (workflow_key,),
     ).fetchall()
-    selected_step_key: str | None = None
+    selected_step_key: str | None = requested_step_key
     if selected_record_id is not None and _is_runtime_workflow(definition):
         if _is_customer_relations_workflow(definition):
             runtime_filter = """
@@ -1276,11 +1345,12 @@ def get_tree(
             """,
             runtime_parameters,
         ).fetchone()
-        selected_step_key = (
-            runtime_row["current_record_key"]
-            if runtime_row and runtime_row["current_step_status"] in {"active", "waiting"}
-            else None
-        )
+        if selected_step_key is None:
+            selected_step_key = (
+                runtime_row["current_record_key"]
+                if runtime_row and runtime_row["current_step_status"] in {"active", "waiting"}
+                else None
+            )
         if (
             selected_step_key is None
             and _is_customer_relations_workflow(definition)
@@ -1334,6 +1404,7 @@ def get_tree(
             Messages=_step_messages(row["values_json"]),
             business_entity=row["assigned_business_entity"],
             DocumentAction=row["assigned_document_action"],
+            decisionAction=bool(row["decision_action"]),
             sla=_localized_step_value(row["assigned_sla"], locale) or localized_value(row["sla_i18n"], locale, row["sla"]),
             is_selected=(
                 row["record_key"] == selected_step_key

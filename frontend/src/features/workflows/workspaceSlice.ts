@@ -5,6 +5,7 @@ import type { Locale, ThemeMode } from "../../types";
 interface SelectionState {
   recordId: string | null;
   cellKey: string | null;
+  stepKey: string | null;
 }
 
 interface WorkspaceState {
@@ -24,6 +25,7 @@ const initialUrl = new URL(window.location.href);
 const initialWorkflow = initialUrl.searchParams.get("workflow");
 const initialRecordId = initialUrl.searchParams.get("record");
 const initialCellKey = initialUrl.searchParams.get("cell");
+const initialStepKey = initialUrl.searchParams.get("step");
 
 const initialState: WorkspaceState = {
   locale: savedLocale && ["en", "zh-CN", "zh-HK"].includes(savedLocale)
@@ -37,6 +39,7 @@ const initialState: WorkspaceState = {
   selection: {
     recordId: initialRecordId,
     cellKey: initialRecordId ? initialCellKey : null,
+    stepKey: initialRecordId ? initialStepKey : null,
   },
   search: "",
   sortBy: "record_order",
@@ -60,13 +63,13 @@ const workspaceSlice = createSlice({
     },
     selectWorkflow(state, action: PayloadAction<string>) {
       state.selectedWorkflow = action.payload;
-      state.selection = { recordId: null, cellKey: null };
+      state.selection = { recordId: null, cellKey: null, stepKey: null };
       state.search = "";
       state.sortBy = "record_order";
       state.sortDirection = "asc";
     },
-    selectCell(state, action: PayloadAction<SelectionState>) {
-      state.selection = action.payload;
+    selectCell(state, action: PayloadAction<Omit<SelectionState, "stepKey"> & { stepKey?: string | null }>) {
+      state.selection = { ...action.payload, stepKey: action.payload.stepKey ?? null };
     },
     setSearch(state, action: PayloadAction<string>) {
       state.search = action.payload;
