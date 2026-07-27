@@ -271,7 +271,10 @@ def list_decision_options(
          WHERE w.is_active
            AND w.definition_type = 'workflow'
            AND NOT w.is_master
-           AND w.group_key = %s
+           AND (
+               (%s = 'hr' AND w.group_key = 'hr')
+               OR (%s <> 'hr' AND w.group_key <> 'hr')
+           )
            AND w.workflow_key <> %s
            AND EXISTS (
                SELECT 1
@@ -288,7 +291,7 @@ def list_decision_options(
            )
          ORDER BY w.display_order, r.record_order
         """,
-        (current["group_key"], workflow_key, user.user_id),
+        (current["group_key"], current["group_key"], workflow_key, user.user_id),
     ).fetchall()
     catalogs: dict[str, WorkflowDecisionCatalog] = {}
     for row in rows:
