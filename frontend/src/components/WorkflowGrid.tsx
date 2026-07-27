@@ -165,6 +165,29 @@ function isRequiredOrderField(workflowKey: string | undefined, column: ColumnDef
   return workflowKey === "order-evaluation" && column.editable && !OPTIONAL_ORDER_FIELDS.has(column.key);
 }
 
+function CustomerRelationsActionHeader({ locale }: { locale: Locale }) {
+  const [open, setOpen] = useState(false);
+  return (
+    <div className="business-entity-header">
+      <button
+        type="button"
+        className="business-entity-help-button"
+        aria-label={translate(locale, "customerRelationsActionHelpTitle")}
+        aria-expanded={open}
+        title={translate(locale, "customerRelationsActionHelpTitle")}
+        onClick={(event) => { event.stopPropagation(); setOpen((current) => !current); }}
+      >?
+      </button>
+      {open ? (
+        <div className="business-entity-help-popover" role="tooltip" onClick={(event) => event.stopPropagation()}>
+          <strong>{translate(locale, "customerRelationsActionHelpTitle")}</strong>
+          <p>{translate(locale, "customerRelationsActionHelpBody")}</p>
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
 interface RowActionRendererProps {
   data: WorkflowRecord | undefined;
   canEdit: boolean;
@@ -582,7 +605,8 @@ export function WorkflowGrid({
   return (
     <div className="grid-frame" aria-busy={loading}>
       <div className="grid-toolbar">
-      <button
+      {workflow?.group_key !== "hr" ? <CustomerRelationsActionHeader locale={locale} /> : null}
+      {workflow?.key === "order-evaluation" ? <button
           className="grid-add-button"
           type="button"
           aria-label={locale === "en" ? "Add row" : "新增行"}
@@ -593,7 +617,7 @@ export function WorkflowGrid({
           <svg aria-hidden="true" viewBox="0 0 24 24" focusable="false">
             <path d="M12 5v14M5 12h14" />
           </svg>
-      </button>
+      </button> : null}
         <button
           className="grid-layout-reset-button"
           type="button"

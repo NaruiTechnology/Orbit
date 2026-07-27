@@ -1156,9 +1156,31 @@ select:has(> option:checked[value=""]) option { color: var(--ink); }
 .grid-toolbar {
   display: flex;
   align-self: flex-end;
+  align-items: center;
+  gap: 6px;
   width: max-content;
   justify-content: flex-end;
   padding: 0;
+}
+
+.grid-toolbar .business-entity-help-button {
+  display: inline-grid !important;
+  width: 16px !important;
+  height: 16px !important;
+  margin-right: 5px;
+  background: transparent !important;
+  border: 1px solid color-mix(in srgb, var(--signal) 70%, transparent) !important;
+  border-radius: 50% !important;
+  box-shadow: none !important;
+}
+
+.grid-toolbar .business-entity-help-button:hover,
+.grid-toolbar .business-entity-help-button:focus-visible {
+  color: var(--signal);
+  background: transparent !important;
+  border: 1px solid var(--signal) !important;
+  border-radius: 50% !important;
+  box-shadow: none !important;
 }
 
 .grid-add-button,
@@ -1339,7 +1361,7 @@ select:has(> option:checked[value=""]) option { color: var(--ink); }
 
 .business-entity-help-popover {
   position: absolute;
-  z-index: 1000;
+  z-index: 2000;
   top: calc(100% + 10px);
   left: 0;
   width: min(320px, 38vw);
@@ -1384,7 +1406,17 @@ select:has(> option:checked[value=""]) option { color: var(--ink); }
 .system-config-grid .ag-header-viewport,
 .system-config-grid .ag-header-row,
 .system-config-grid .ag-header-cell:has(.business-entity-header),
-.system-config-grid .ag-header-cell:has(.business-entity-header) .ag-header-cell-comp-wrapper {
+.system-config-grid .ag-header-cell:has(.business-entity-header) .ag-header-cell-comp-wrapper,
+.grid-frame .ag-header-cell:has(.business-entity-header),
+.grid-frame .ag-header-cell:has(.business-entity-header) .ag-header-cell-comp-wrapper {
+  overflow: visible;
+}
+
+.grid-frame:has(.business-entity-header) .ag-header,
+.grid-frame:has(.business-entity-header) .ag-header-viewport,
+.grid-frame:has(.business-entity-header) .ag-header-row {
+  position: relative;
+  z-index: 20;
   overflow: visible;
 }
 
