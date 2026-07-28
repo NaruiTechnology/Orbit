@@ -1,0 +1,77 @@
+{
+  "Header": {
+    "Application": "Orbit Automation Fiber",
+    "Version": "1.0.0",
+    "Description": "Validates, initializes, imports, and launches the Orbit workflow platform."
+  },
+  "Runtime": {
+    "ProjectRoot": "../..",
+    "ApplicationConfig": "config/application.json",
+    "DatabaseConfig": "config/database.json",
+    "WorkflowCatalog": "data/workflow_catalog.json",
+    "ApiModule": "app.main:app",
+    "ApiHost": "127.0.0.1",
+    "ApiPort": 8120,
+    "ApiLog": "/tmp/orbit-api.log",
+    "ApiPid": "/tmp/orbit-api.pid"
+  },
+  "Actions": [
+    {
+      "validateConfiguration": {
+        "skip": false,
+        "transactionComplete": false,
+        "actionData": {},
+        "timeout": 30
+      }
+    },
+    {
+      "bootstrapDatabase": {
+        "skip": true,
+        "transactionComplete": false,
+        "actionData": {
+          "adminHost": "/var/run/postgresql"
+        },
+        "timeout": 180
+      }
+    },
+    {
+      "verifyDatabase": {
+        "skip": false,
+        "transactionComplete": false,
+        "actionData": {
+          "expectedEncoding": "UTF8",
+          "expectedTimezone": "Asia/Shanghai"
+        },
+        "timeout": 30
+      }
+    },
+    {
+      "importWorkflowCatalog": {
+        "skip": false,
+        "transactionComplete": false,
+        "actionData": {},
+        "timeout": 120
+      }
+    },
+    {
+      "processWorkflowTasks": {
+        "skip": true,
+        "transactionComplete": false,
+        "actionData": {
+          "limit": 20
+        },
+        "timeout": 120
+      }
+    },
+    {
+      "launchApi": {
+        "skip": true,
+        "transactionComplete": false,
+        "actionData": {
+          "reload": false
+        },
+        "timeout": 30
+      }
+    }
+  ]
+}

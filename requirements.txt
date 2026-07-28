@@ -1,0 +1,3 @@
+# Python runtime and development dependencies are canonical in pyproject.toml.
+-e .[dev]
+

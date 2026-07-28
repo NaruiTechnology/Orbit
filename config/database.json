@@ -1,0 +1,19 @@
+{
+  "Provider": "PostgreSQL",
+  "DatabaseName": "OrbitAutomation",
+  "AdminDatabaseName": "postgres",
+  "AdminUser": "postgres",
+  "AdminPassword": "orbit_admin_change_me",
+  "Schema": "orbit_workflow",
+  "Host": "127.0.0.1",
+  "Port": 55432,
+  "User": "orbit_app",
+  "Password": "orbit_dev_change_me",
+  "ConnectionString": "",
+  "SslMode": "disable",
+  "ClientEncoding": "UTF8",
+  "Timezone": "Asia/Shanghai",
+  "CommandTimeoutSeconds": 30,
+  "PoolSize": 10,
+  "MaxOverflow": 20
+}

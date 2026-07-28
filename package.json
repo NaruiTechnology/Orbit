@@ -1,0 +1,13 @@
+{
+  "name": "orbit-automation",
+  "private": true,
+  "version": "0.1.0",
+  "scripts": {
+    "dev": "npm --prefix frontend run dev",
+    "dev:mobility": "npm --prefix frontend run dev:mobility",
+    "build": "npm --prefix frontend run build",
+    "build:mobility": "npm --prefix frontend run build:mobility",
+    "preview": "npm --prefix frontend run preview",
+    "typecheck": "npm --prefix frontend run typecheck"
+  }
+}

@@ -1,0 +1,48 @@
+{
+  "Header": {
+    "Application": "Orbit Automation Distribution Deploy",
+    "TargetEnv": "Ubuntu 24.04 or newer",
+    "Version": "1.0.0",
+    "Description": "Orbit deployment workflow aligned with the Iobeam DeployWorkSpace manifest, excluding Glasgow actions."
+  },
+  "Deployment": {
+    "SourceRoot": ".",
+    "DistDir": "DeployWorkSpace/Development/DistributionDeploy/dist_app",
+    "DistZip": "DeployWorkSpace/Development/DistributionDeploy/dist_app.zip",
+    "DeployRoot": "~/OrbitAutomation",
+    "VenvDir": ".venv",
+    "ApiHost": "127.0.0.1",
+    "ApiPort": 8120,
+    "FrontendHost": "127.0.0.1",
+    "FrontendPort": 5274,
+    "DatabaseHost": "127.0.0.1",
+    "DatabasePort": 55432,
+    "DatabaseName": "OrbitAutomation",
+    "DatabaseUser": "orbit_app"
+  },
+  "DistributionRules": {
+    "PreservePythonSource": true,
+    "CompilePython": false,
+    "IncludeIgnoredFiles": false,
+    "ExcludedWorkflowFamilies": ["Glasgow"]
+  },
+  "Actions": [
+    {"createDeployFolder": {"skip": false, "transactionComplete": false, "actionData": {"command": "mkdir -p \"$HOME/OrbitAutomation\""}, "timeout": 30}},
+    {"unzipDistribution": {"skip": false, "transactionComplete": false, "actionData": {"command": "unzip -o \"DeployWorkSpace/Development/DistributionDeploy/dist_app*.zip\" -d \"$HOME/OrbitAutomation\""}, "timeout": 120}},
+    {"setupVirtualEnv": {"skip": false, "transactionComplete": false, "actionData": {"command": "python3 -m venv .venv && .venv/bin/python -m pip install --upgrade pip"}, "timeout": 300}},
+    {"installPipRequirements": {"skip": false, "transactionComplete": false, "actionData": {"command": ".venv/bin/python -m pip install -r requirements.txt"}, "timeout": 600}},
+    {"installNodeJS": {"skip": false, "transactionComplete": false, "actionData": {"command": "command -v node >/dev/null || (command -v apt-get >/dev/null && sudo apt-get update && sudo apt-get install -y nodejs npm)"}, "timeout": 600}},
+    {"installUuidRuntime": {"skip": false, "transactionComplete": false, "actionData": {"command": "command -v uuidgen >/dev/null || (command -v apt-get >/dev/null && sudo apt-get update && sudo apt-get install -y uuid-runtime)"}, "timeout": 180}},
+    {"installToolchain": {"skip": false, "transactionComplete": false, "actionData": {"command": "missing=\"\"; for tool in gcc unzip; do command -v \"$tool\" >/dev/null 2>&1 || missing=1; done; python3 -c 'import ensurepip' >/dev/null 2>&1 || missing=1; if [ -n \"$missing\" ]; then command -v apt-get >/dev/null && sudo apt-get update && sudo apt-get install -y build-essential python3-dev python3-venv unzip || exit 1; fi"}, "timeout": 900}},
+    {"installOrbitServiceCron": {"skip": false, "transactionComplete": false, "actionData": {"command": ".venv/bin/python scripts/install_orbit_service_cron.py"}, "timeout": 60}},
+    {"installPostgreSQL": {"skip": false, "transactionComplete": false, "actionData": {"command": "./scripts/start_local_postgres.sh"}, "timeout": 300}},
+    {"verifyDatabase": {"skip": false, "transactionComplete": false, "actionData": {"command": ".venv/bin/python scripts/check_database.py --timeout 10"}, "timeout": 30}},
+    {"setupIobeamAdminDb": {"skip": false, "transactionComplete": false, "actionData": {"command": ".venv/bin/python scripts/bootstrap_database.py"}, "timeout": 600}},
+    {"exportEnv": {"skip": false, "transactionComplete": false, "actionData": {"exports": {"ORBIT_API_HOST": "127.0.0.1", "ORBIT_API_PORT": "8120", "ORBIT_FRONTEND_HOST": "127.0.0.1", "ORBIT_FRONTEND_PORT": "5274"}}}},
+    {"setupIonbeamWeb": {"skip": false, "transactionComplete": false, "actionData": {"command": "npm --prefix frontend ci"}, "timeout": 600}},
+    {"launchIonbeamWebBackend": {"skip": false, "transactionComplete": false, "actionData": {"command": ".venv/bin/python scripts/run_api.py --reload", "host": "127.0.0.1", "port": 8120, "log": "/tmp/orbit-api.log", "pid": "/tmp/orbit-api.pid"}, "timeout": 60}},
+    {"launchIonbeamWebFrontend": {"skip": false, "transactionComplete": false, "actionData": {"command": "npm --prefix frontend run dev -- --host 127.0.0.1", "host": "127.0.0.1", "port": 5274, "log": "/tmp/orbit-frontend.log", "pid": "/tmp/orbit-frontend.pid"}, "timeout": 60}},
+    {"verifyIonbeamWeb": {"skip": false, "transactionComplete": false, "actionData": {"healthUrl": "http://127.0.0.1:8120/api/v1/health", "frontendUrl": "http://127.0.0.1:5274"}, "timeout": 60}},
+    {"launchUI": {"skip": false, "transactionComplete": false, "actionData": {"url": "http://127.0.0.1:5274"}, "timeout": 60}}
+  ]
+}
