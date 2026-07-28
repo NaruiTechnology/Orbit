@@ -7,6 +7,7 @@ import { MailComposeDialog } from "./MailComposeDialog";
 import { WorkflowMessageDialog } from "./WorkflowMessageDialog";
 import { WorkflowReportDialog } from "./WorkflowReportDialog";
 import { WorkflowDecisionDialog } from "./WorkflowDecisionDialog";
+import { WorkflowReasonDialog } from "./WorkflowReasonDialog";
 import type {
   Locale,
   ThemeMode,
@@ -68,6 +69,9 @@ export function WorkflowTreePanel({
   const [messageDialogOpen, setMessageDialogOpen] = useState(false);
   const [reportDialogOpen, setReportDialogOpen] = useState(false);
   const [decisionDialogOpen, setDecisionDialogOpen] = useState(false);
+  const [reasonDialogOpen, setReasonDialogOpen] = useState(false);
+  const [abortReason, setAbortReason] = useState("");
+  const [abortHelpOpen, setAbortHelpOpen] = useState(false);
   const decisionContextRef = useRef<string | null>(null);
   const suppressNextDecisionDialogRef = useRef(false);
   const [savedReportContext, setSavedReportContext] = useState<string | null>(null);
@@ -130,8 +134,13 @@ export function WorkflowTreePanel({
     setDecisionDialogOpen(true);
   }, [runtime?.instance.id, currentNode?.record_key, currentNode?.status, currentTreeNode?.record_key, decisionRequired, documentActionRequired, reportActionCompleted, currentRecord, onDecisionGoto]);
 
-  async function send(command: string, payload?: Record<string, unknown>) {
+  async function send(command: string, payload?: Record<string, unknown>, reason?: string) {
     if (!runtime || !onCommand || !currentNode) return;
+    if (command === "abort" && reason === undefined) {
+      setAbortReason("");
+      setReasonDialogOpen(true);
+      return;
+    }
     const commandInput: WorkflowCommandInput = {
       command,
       nodeKey: currentNode.record_key,
@@ -139,9 +148,8 @@ export function WorkflowTreePanel({
     };
     if (payload) commandInput.payload = payload;
     if (command === "abort") {
-      const abortReason = window.prompt(translate(locale, "reason"));
-      if (!abortReason?.trim()) return;
-      commandInput.reason = abortReason.trim();
+      if (!reason?.trim()) return;
+      commandInput.reason = reason.trim();
     }
     try {
       setCommandError(null);
@@ -149,6 +157,11 @@ export function WorkflowTreePanel({
     } catch (error) {
       setCommandError(formatCommandError(error));
     }
+  }
+
+  async function confirmAbort(): Promise<void> {
+    setReasonDialogOpen(false);
+    await send("abort", undefined, abortReason);
   }
 
   useEffect(() => {
@@ -190,9 +203,10 @@ export function WorkflowTreePanel({
                   (runtimeNode.status === "active" || runtimeNode.status === "waiting")
                 )),
               );
+              const runtimeCancelled = runtime?.instance.status === "cancelled";
               const state = node.is_selected
                 ? "current"
-                : node.is_before_selected
+                : !runtimeCancelled && node.is_before_selected
                   ? "complete"
                   : runtime
                 ? warning
@@ -209,7 +223,7 @@ export function WorkflowTreePanel({
                     : "upcoming";
               return (
                 <li
-                  className={`workflow-node workflow-node--${state}`}
+                  className={`workflow-node workflow-node--${state}${abortHelpOpen && isCurrent ? " workflow-node--help-open" : ""}`}
                   key={node.record_key}
                   ref={node.is_selected ? selectedRef : undefined}
                 >
@@ -315,14 +329,36 @@ export function WorkflowTreePanel({
                           >
                             <img src={peopleIcon} alt="" aria-hidden="true" />
                           </button>
-                          <button
-                            type="button"
-                            className="workflow-abort"
-                            disabled={commandBusy}
-                            onClick={() => void send("abort")}
+                          <span
+                            className="workflow-abort-group"
+                            onMouseEnter={() => setAbortHelpOpen(true)}
+                            onMouseLeave={() => setAbortHelpOpen(false)}
                           >
-                            {translate(locale, "abort")}
-                          </button>
+                            <button
+                              type="button"
+                              className="workflow-abort"
+                              disabled={commandBusy}
+                              onClick={() => void send("abort")}
+                            >
+                              {translate(locale, "abort")}
+                            </button>
+                            <button
+                              type="button"
+                              className="workflow-action-help"
+                              aria-label={translate(locale, "abortHelpTitle")}
+                              aria-expanded={abortHelpOpen}
+                              onFocus={() => setAbortHelpOpen(true)}
+                              onBlur={() => setAbortHelpOpen(false)}
+                            >
+                              ?
+                            </button>
+                            {abortHelpOpen ? (
+                              <div className="business-entity-help-popover workflow-abort-help-popover" role="tooltip" onClick={(event) => event.stopPropagation()}>
+                                <strong>{translate(locale, "abortHelpTitle")}</strong>
+                                <p>{translate(locale, "abortHelpBody")}</p>
+                              </div>
+                            ) : null}
+                          </span>
                         </div>
                         {(runtimeNode.status === "failed" || runtimeNode.status === "blocked") ? (
                           <button type="button" disabled={commandBusy} onClick={() => void send("resubmit")}>
@@ -382,6 +418,15 @@ export function WorkflowTreePanel({
             setDecisionDialogOpen(false);
             onDecisionGoto(workflowKey, stepKey);
           }}
+        />
+      ) : null}
+      {reasonDialogOpen ? (
+        <WorkflowReasonDialog
+          locale={locale}
+          value={abortReason}
+          onChange={setAbortReason}
+          onClose={() => setReasonDialogOpen(false)}
+          onConfirm={() => void confirmAbort()}
         />
       ) : null}
     </aside>

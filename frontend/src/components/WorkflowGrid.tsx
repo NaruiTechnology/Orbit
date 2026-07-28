@@ -168,19 +168,22 @@ function isRequiredOrderField(workflowKey: string | undefined, column: ColumnDef
 function CustomerRelationsActionHeader({ locale }: { locale: Locale }) {
   const [open, setOpen] = useState(false);
   return (
-    <div className="business-entity-header">
+    <div
+      className="business-entity-header"
+      onMouseEnter={() => setOpen(true)}
+      onMouseLeave={() => setOpen(false)}
+    >
       <button
         type="button"
         className="business-entity-help-button"
         aria-label={translate(locale, "customerRelationsActionHelpTitle")}
         aria-expanded={open}
-        title={translate(locale, "customerRelationsActionHelpTitle")}
-        onClick={(event) => { event.stopPropagation(); setOpen((current) => !current); }}
+        onFocus={() => setOpen(true)}
+        onBlur={() => setOpen(false)}
       >?
       </button>
       {open ? (
         <div className="business-entity-help-popover" role="tooltip" onClick={(event) => event.stopPropagation()}>
-          <strong>{translate(locale, "customerRelationsActionHelpTitle")}</strong>
           <p>{translate(locale, "customerRelationsActionHelpBody")}</p>
         </div>
       ) : null}

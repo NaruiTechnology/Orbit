@@ -164,6 +164,25 @@ BEGIN
        SET status = 'cancelled', error_code = upper(p_outcome),
            error_message = p_reason, completed_at = CURRENT_TIMESTAMP
      WHERE instance_id = p_instance_id AND record_key = p_record_key;
+
+    -- An abort is terminal, but the workflow should not retain completed-step
+    -- footprints from a previous run. Reset nodes before the aborted step so
+    -- the runtime projection renders them as untouched/upcoming.
+    UPDATE orbit_runtime.workflow_node_instance n
+       SET status = 'pending', completion_source = NULL, attempt_count = 0,
+           output_json = '{}'::jsonb, error_code = NULL, error_message = NULL,
+           started_at = NULL, completed_at = NULL, start_time = NULL,
+           complete_time = NULL, action_time = NULL, action_type = NULL
+      FROM orbit_workflow.workflow_record r,
+           orbit_workflow.workflow_record current_record,
+           orbit_runtime.workflow_instance i
+     WHERE n.instance_id = p_instance_id
+       AND n.record_key = r.record_key
+       AND i.id = p_instance_id
+       AND current_record.workflow_id = i.workflow_id
+       AND current_record.record_key = p_record_key
+       AND r.workflow_id = i.workflow_id
+       AND r.record_order < current_record.record_order;
     UPDATE orbit_runtime.workflow_task
        SET state = 'cancelled', completed_at = CURRENT_TIMESTAMP
      WHERE instance_id = p_instance_id AND record_key = p_record_key
