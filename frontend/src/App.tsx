@@ -63,7 +63,10 @@ export function App() {
   const deferredSelection = useDeferredValue(workspace.selection);
 
   const healthQuery = useGetHealthQuery();
-  const sessionQuery = useGetSessionQuery(workspace.locale, { skip: !authToken });
+  const sessionQuery = useGetSessionQuery(workspace.locale, {
+    skip: !authToken,
+    refetchOnMountOrArgChange: true,
+  });
   const workflowsQuery = useGetWorkflowsQuery(workspace.locale, { skip: !authToken });
   const workflowQuery = useGetWorkflowQuery({
     workflowKey: workspace.selectedWorkflow,
@@ -399,17 +402,25 @@ export function App() {
     <div className="orbit-shell">
       <OrbitHeader
         locale={workspace.locale}
-        session={sessionQuery.data}
+        session={authToken ? sessionQuery.data : undefined}
         health={healthQuery.data}
         onLocaleChange={(locale) => dispatch(setLocale(locale))}
         theme={workspace.theme}
         onThemeChange={(theme) => dispatch(setTheme(theme))}
         onOpenAuth={() => setAuthOpen(true)}
         onSignOut={() => {
+          const token = authToken;
           localStorage.removeItem("orbit:auth-token");
           setAuthToken(null);
+          setAdminOpen(false);
+          window.history.pushState({}, "", "/");
           setAuthOpen(true);
-          void sessionQuery.refetch();
+          if (token) {
+            void fetch("/api/v1/auth/logout", {
+              method: "POST",
+              headers: { "X-Orbit-Auth": token },
+            });
+          }
         }}
         onOpenAdmin={openAdmin}
       />
@@ -425,7 +436,18 @@ export function App() {
       />
 
       {adminOpen ? (
-        <SystemConfigPage locale={workspace.locale} theme={workspace.theme} workflows={workflowsQuery.data || []} authToken={authToken} onBack={closeAdmin} onAuthRequired={() => setAuthOpen(true)} />
+        <SystemConfigPage
+          locale={workspace.locale}
+          theme={workspace.theme}
+          workflows={workflowsQuery.data || []}
+          authToken={authToken}
+          onBack={closeAdmin}
+          onAuthRequired={() => {
+            localStorage.removeItem("orbit:auth-token");
+            setAuthToken(null);
+            setAuthOpen(true);
+          }}
+        />
       ) : <main
         className="orbit-workspace"
         ref={workspaceRef}

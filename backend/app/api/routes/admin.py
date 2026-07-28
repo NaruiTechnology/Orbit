@@ -198,6 +198,17 @@ def create_access_user(
     except Exception as error:
         raise HTTPException(status_code=409, detail=f"Could not create account: {error}") from error
     connection.execute("INSERT INTO orbit_identity.user_role (user_id, role_id) VALUES (%s, %s)", (row["id"], role["id"]))
+    default_org = connection.execute("SELECT id FROM orbit_identity.organization ORDER BY code LIMIT 1").fetchone()
+    default_lab = connection.execute("SELECT id, department_id FROM orbit_identity.laboratory ORDER BY code LIMIT 1").fetchone()
+    if default_org and default_lab:
+        connection.execute(
+            """INSERT INTO orbit_identity.user_membership
+               (user_id, organization_id, department_id, laboratory_id, is_primary)
+               VALUES (%s, %s, %s, %s, true)
+               ON CONFLICT (user_id, organization_id, department_id, laboratory_id)
+               DO UPDATE SET is_primary = true""",
+            (row["id"], default_org["id"], default_lab["department_id"], default_lab["id"]),
+        )
     return {**dict(row), "role_code": request.role_code, "role_name": request.role_code}
 
 

@@ -98,6 +98,32 @@ def _audit(connection: Connection[dict[str, Any]], user_id: UUID | None, action:
     )
 
 
+def _ensure_primary_membership(connection: Connection[dict[str, Any]], user_id: UUID) -> None:
+    """Give legacy accounts a usable default scope before issuing a session."""
+    existing = connection.execute(
+        "SELECT 1 FROM orbit_identity.user_membership WHERE user_id = %s LIMIT 1",
+        (user_id,),
+    ).fetchone()
+    if existing:
+        return
+    organization = connection.execute(
+        "SELECT id FROM orbit_identity.organization ORDER BY code LIMIT 1"
+    ).fetchone()
+    laboratory = connection.execute(
+        "SELECT id, department_id FROM orbit_identity.laboratory ORDER BY code LIMIT 1"
+    ).fetchone()
+    if not organization or not laboratory:
+        raise HTTPException(status_code=503, detail="account workspace scope is not configured")
+    connection.execute(
+        """INSERT INTO orbit_identity.user_membership
+           (user_id, organization_id, department_id, laboratory_id, is_primary)
+           VALUES (%s, %s, %s, %s, true)
+           ON CONFLICT (user_id, organization_id, department_id, laboratory_id)
+           DO UPDATE SET is_primary = true""",
+        (user_id, organization["id"], laboratory["department_id"], laboratory["id"]),
+    )
+
+
 @router.get("/current-account")
 def current_account(
     x_orbit_auth: str | None = Header(default=None, alias="X-Orbit-Auth"),
@@ -172,6 +198,7 @@ def send_sms(request: SmsRequest, connection: Connection[dict[str, Any]] = Depen
         raise HTTPException(status_code=404, detail="account not found")
     if not row.get("phone_number", "").strip():
         raise HTTPException(status_code=400, detail="account has no phone number")
+    _ensure_primary_membership(connection, row["id"])
     user_key = str(row["id"])
     with _challenge_lock:
         existing_id = _active_challenge_by_user.get(user_key)
@@ -208,6 +235,7 @@ def verify_sms(
     if request.code.strip() != challenge["code"]:
         raise HTTPException(status_code=401, detail="verification code is invalid")
     row = challenge["user"]
+    _ensure_primary_membership(connection, row["id"])
     session_lifetime_days = max(1, min(int(row.get("session_lifetime_limit_days") or 1), 3650))
     token = issue_auth_token(row["login_name"], session_lifetime_days)
     connection.execute(
@@ -229,8 +257,18 @@ def verify_sms(
 
 
 @router.post("/logout")
-def logout(x_orbit_auth: str | None = Header(default=None, alias="X-Orbit-Auth")) -> dict[str, bool]:
+def logout(
+    x_orbit_auth: str | None = Header(default=None, alias="X-Orbit-Auth"),
+    connection: Connection[dict[str, Any]] = Depends(get_connection),
+) -> dict[str, bool]:
     revoke_auth_token(x_orbit_auth)
+    if x_orbit_auth:
+        connection.execute(
+            """UPDATE orbit_identity.auth_session
+                  SET is_authorized = false
+                WHERE session_token_hash = %s""",
+            (token_digest(x_orbit_auth),),
+        )
     return {"ok": True}
 
 

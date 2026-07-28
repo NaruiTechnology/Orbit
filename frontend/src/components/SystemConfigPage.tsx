@@ -239,7 +239,7 @@ export function SystemConfigPage({
     let cancelled = false;
     setLoading(true); setError("");
     fetch(`/api/v1/admin/workflow-config/${encodeURIComponent(workflowKey)}?locale=${locale}`, {
-      headers: { "X-Orbit-Auth": localStorage.getItem("orbit:auth-token") || "" },
+      headers: { "X-Orbit-Auth": authToken || "" },
     })
       .then(async (response) => {
         if (response.status === 401) { onAuthRequired(); throw new Error("Session expired. Please sign in again."); }
@@ -257,7 +257,7 @@ export function SystemConfigPage({
     let cancelled = false;
     setAccessLoading(true); setAccessError("");
     fetch(`/api/v1/admin/access-management?locale=${locale}`, {
-      headers: { "X-Orbit-Auth": localStorage.getItem("orbit:auth-token") || "" },
+      headers: { "X-Orbit-Auth": authToken || "" },
     })
       .then(async (response) => {
         if (response.status === 401) { onAuthRequired(); throw new Error("Session expired. Please sign in again."); }
@@ -289,7 +289,7 @@ export function SystemConfigPage({
     try {
       const response = await fetch(`/api/v1/admin/workflow-config/${encodeURIComponent(workflowKey)}/steps/${step.id}`, {
         method: "PATCH",
-        headers: { "Content-Type": "application/json", "X-Orbit-Auth": localStorage.getItem("orbit:auth-token") || "" },
+      headers: { "Content-Type": "application/json", "X-Orbit-Auth": authToken || "" },
         body: JSON.stringify({ businessEntity: step.businessEntity || null, decisionAction: step.decisionAction, sla: step.sla || null, laboratory_id: step.laboratory_id || null, phone_number: step.phone_number, contact_email: step.contact_email, contact_name: step.contact_name, hr_employee_id: step.hr_employee_id || null }),
       });
       if (!response.ok) throw new Error((await response.json().catch(() => ({}))).detail || `HTTP ${response.status}`);
@@ -511,7 +511,7 @@ export function SystemConfigPage({
           method: isNew ? "POST" : "PATCH",
           headers: {
             "Content-Type": "application/json",
-            "X-Orbit-Auth": localStorage.getItem("orbit:auth-token") || "",
+            "X-Orbit-Auth": authToken || "",
           },
           body: JSON.stringify(isNew ? { ...body, last_sign_in: undefined } : body),
         },
@@ -523,7 +523,7 @@ export function SystemConfigPage({
 
       const refreshed = await fetch(
         `/api/v1/admin/access-management?locale=${locale}`,
-        { headers: { "X-Orbit-Auth": localStorage.getItem("orbit:auth-token") || "" } },
+        { headers: { "X-Orbit-Auth": authToken || "" } },
       );
       if (!refreshed.ok) throw new Error(`HTTP ${refreshed.status}`);
       const nextAccess = await refreshed.json() as AccessResponse;
@@ -587,15 +587,15 @@ export function SystemConfigPage({
     setAccessSaving(true); setAccessError("");
     try {
       for (const id of accessDeletedIds) {
-        const response = await fetch(`/api/v1/admin/access-management/users/${id}`, { method: "DELETE", headers: { "X-Orbit-Auth": localStorage.getItem("orbit:auth-token") || "" } });
+        const response = await fetch(`/api/v1/admin/access-management/users/${id}`, { method: "DELETE", headers: { "X-Orbit-Auth": authToken || "" } });
         if (!response.ok) throw new Error((await response.json().catch(() => ({}))).detail || `HTTP ${response.status}`);
       }
       for (const row of Object.values(accessDirtyRows)) {
         const body = { login_name: row.login_name, first_name: row.first_name, last_name: row.last_name, email: row.email, phone_number: row.phone_number, company_name: row.company_name, site: row.site, role_code: row.role_code, is_active: row.is_active, session_lifetime_limit_days: row.session_lifetime_limit_days, last_sign_in: row.last_sign_in };
-        const response = await fetch(row.isDraft ? "/api/v1/admin/access-management/users" : `/api/v1/admin/access-management/users/${row.id}`, { method: row.isDraft ? "POST" : "PATCH", headers: { "Content-Type": "application/json", "X-Orbit-Auth": localStorage.getItem("orbit:auth-token") || "" }, body: JSON.stringify(row.isDraft ? { ...body, last_sign_in: undefined } : body) });
+        const response = await fetch(row.isDraft ? "/api/v1/admin/access-management/users" : `/api/v1/admin/access-management/users/${row.id}`, { method: row.isDraft ? "POST" : "PATCH", headers: { "Content-Type": "application/json", "X-Orbit-Auth": authToken || "" }, body: JSON.stringify(row.isDraft ? { ...body, last_sign_in: undefined } : body) });
         if (!response.ok) throw new Error((await response.json().catch(() => ({}))).detail || `HTTP ${response.status}`);
       }
-      const refreshed = await fetch(`/api/v1/admin/access-management?locale=${locale}`, { headers: { "X-Orbit-Auth": localStorage.getItem("orbit:auth-token") || "" } });
+        const refreshed = await fetch(`/api/v1/admin/access-management?locale=${locale}`, { headers: { "X-Orbit-Auth": authToken || "" } });
       if (!refreshed.ok) throw new Error(`HTTP ${refreshed.status}`);
       setAccess(await refreshed.json() as AccessResponse); setAccessDirtyRows({}); setAccessDeletedIds([]); setAccessDialog(null);
     } catch (reason) { setAccessError(reason instanceof Error ? reason.message : String(reason)); }

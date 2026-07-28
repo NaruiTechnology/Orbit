@@ -82,6 +82,21 @@ VALUES
 ON CONFLICT (email) DO UPDATE
    SET source_id = EXCLUDED.source_id, user_name = EXCLUDED.user_name, is_active = EXCLUDED.is_active;
 
+-- Repair accounts created before access-management started provisioning scope.
+-- A verified account without a primary membership cannot call protected APIs.
+INSERT INTO orbit_identity.user_membership (
+    user_id, organization_id, department_id, laboratory_id, is_primary
+)
+SELECT u.id, o.id, l.department_id, l.id, true
+  FROM orbit_identity.app_user u
+ CROSS JOIN LATERAL (SELECT id FROM orbit_identity.organization ORDER BY code LIMIT 1) o
+ CROSS JOIN LATERAL (SELECT id, department_id FROM orbit_identity.laboratory ORDER BY code LIMIT 1) l
+ WHERE NOT EXISTS (
+     SELECT 1 FROM orbit_identity.user_membership existing WHERE existing.user_id = u.id
+ )
+ON CONFLICT (user_id, organization_id, department_id, laboratory_id)
+DO UPDATE SET is_primary = true;
+
 -- Audit accounts can administer access-management data, matching the sibling
 -- application’s Auditor privilege without granting workflow write access.
 INSERT INTO orbit_identity.role_permission (role_id, permission_id)
