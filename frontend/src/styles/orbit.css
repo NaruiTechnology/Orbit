@@ -1437,7 +1437,6 @@ select:has(> option:checked[value=""]) option { color: var(--ink); }
 .grid-frame:has(.business-entity-header) .ag-header,
 .grid-frame:has(.business-entity-header) .ag-header-viewport,
 .grid-frame:has(.business-entity-header) .ag-header-row {
-  position: relative;
   z-index: 20;
   overflow: visible;
 }
