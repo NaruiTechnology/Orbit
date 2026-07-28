@@ -1155,6 +1155,8 @@ select:has(> option:checked[value=""]) option { color: var(--ink); }
 
 .grid-toolbar {
   display: flex;
+  position: relative;
+  z-index: 1000;
   align-self: flex-end;
   align-items: center;
   gap: 6px;
@@ -1167,11 +1169,15 @@ select:has(> option:checked[value=""]) option { color: var(--ink); }
   display: inline-grid !important;
   width: 16px !important;
   height: 16px !important;
-  margin-right: 5px;
+  margin-right: 0;
   background: transparent !important;
   border: 1px solid color-mix(in srgb, var(--signal) 70%, transparent) !important;
   border-radius: 50% !important;
   box-shadow: none !important;
+}
+
+.grid-toolbar .business-entity-header {
+  margin-right: -6px;
 }
 
 .grid-toolbar .business-entity-help-button:hover,
@@ -1361,7 +1367,7 @@ select:has(> option:checked[value=""]) option { color: var(--ink); }
 
 .business-entity-help-popover {
   position: absolute;
-  z-index: 2000;
+  z-index: 10000;
   top: calc(100% + 10px);
   left: 0;
   width: min(320px, 38vw);
@@ -1400,6 +1406,22 @@ select:has(> option:checked[value=""]) option { color: var(--ink); }
 .business-entity-help-popover p {
   margin: 5px 0 0;
   color: var(--ink-soft);
+  overflow-wrap: break-word;
+  word-break: normal;
+  white-space: normal;
+}
+
+.grid-toolbar .business-entity-help-popover {
+  left: auto;
+  right: 0;
+  box-sizing: border-box;
+  width: min(320px, calc(100vw - 32px));
+  max-width: calc(100vw - 32px);
+  overflow: visible;
+}
+.grid-toolbar .business-entity-help-popover::before {
+  right: 7px;
+  left: auto;
 }
 
 .system-config-grid .ag-header,
@@ -1711,6 +1733,46 @@ select:has(> option:checked[value=""]) option { color: var(--ink); }
   color: var(--paper-bright);
   background: var(--signal);
   border-color: var(--signal) !important;
+}
+
+.workflow-reason-dialog {
+  box-sizing: border-box;
+  width: min(430px, calc(100vw - 32px));
+  padding: 18px;
+}
+.workflow-reason-dialog h2 {
+  margin: 7px 0 16px;
+  font-family: var(--font-display);
+  font-size: 21px;
+}
+.workflow-reason-field {
+  display: grid;
+  gap: 6px;
+  color: var(--ink-soft);
+  font-size: 11px;
+  font-weight: 700;
+}
+.workflow-reason-field textarea {
+  box-sizing: border-box;
+  width: 100%;
+  min-height: 72px;
+  resize: vertical;
+  padding: 9px 10px;
+  color: var(--ink);
+  background: var(--surface);
+  border: 1px solid var(--line-strong);
+  border-radius: 6px;
+  font: inherit;
+}
+.workflow-reason-field textarea:focus,
+.workflow-reason-field textarea:focus-visible {
+  border-color: var(--signal);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--signal) 18%, transparent);
+  outline: none;
+}
+.workflow-reason-dialog__actions {
+  justify-content: flex-end;
+  margin-top: 16px;
 }
 
 .mail-compose-backdrop {
@@ -2295,7 +2357,7 @@ select:has(> option:checked[value=""]) option { color: var(--ink); }
   flex-wrap: wrap;
   gap: 4px;
   max-width: 100%;
-  overflow: hidden;
+  overflow: visible;
   background: transparent;
   border: 0;
   box-shadow: none;
@@ -2332,6 +2394,54 @@ select:has(> option:checked[value=""]) option { color: var(--ink); }
 .workflow-error { display: grid; gap: 3px; padding: 7px; color: #8d2014; background: #ffe1d8; border-left: 3px solid var(--signal); font-size: 9px; }
 .workflow-error b { font-size: 8px; letter-spacing: 0.08em; text-transform: uppercase; }
 .workflow-abort { color: #8d2014 !important; border-color: color-mix(in srgb, #8d2014 42%, transparent) !important; }
+.workflow-abort-group {
+  position: relative;
+  z-index: 10001;
+  display: inline-flex !important;
+  align-items: center;
+  gap: 2px;
+  width: auto;
+  margin: 0 !important;
+  color: inherit !important;
+  font-size: inherit !important;
+}
+.workflow-action-help {
+  display: inline-grid !important;
+  width: 16px !important;
+  min-width: 16px !important;
+  height: 16px !important;
+  min-height: 16px !important;
+  padding: 0 !important;
+  place-items: center;
+  color: var(--ink-soft) !important;
+  background: transparent !important;
+  border: 1px solid var(--ink-soft) !important;
+  border-radius: 50% !important;
+  font-size: 9px !important;
+  font-weight: 800 !important;
+  line-height: 1.2;
+}
+.workflow-action-help:hover,
+.workflow-action-help[aria-expanded="true"] {
+  color: var(--signal) !important;
+  background: color-mix(in srgb, var(--signal-soft) 45%, transparent) !important;
+}
+.workflow-abort-help-popover {
+  box-sizing: border-box;
+  display: block !important;
+  z-index: 10000 !important;
+  left: auto;
+  right: 0;
+  width: min(320px, calc(100vw - 32px));
+  max-width: calc(100vw - 32px);
+  margin: 0 !important;
+  overflow: visible !important;
+  white-space: normal !important;
+}
+.workflow-abort-help-popover::before {
+  right: 7px;
+  left: auto;
+}
 :root[data-theme="green"] .workflow-abort,
 :root[data-theme="navy"] .workflow-abort {
   color: #d4df86 !important;
@@ -2379,6 +2489,14 @@ select:has(> option:checked[value=""]) option { color: var(--ink); }
   grid-template-columns: 40px minmax(0, 1fr);
   min-height: 72px;
   animation: node-in 320ms ease-out both;
+}
+
+.workflow-node--help-open {
+  z-index: 100;
+}
+.workflow-node--help-open .workflow-node__body {
+  position: relative;
+  z-index: 101;
 }
 
 .workflow-node:nth-child(2n) {
@@ -2487,7 +2605,7 @@ select:has(> option:checked[value=""]) option { color: var(--ink); }
 }
 
 .workflow-node__body {
-  margin: 0 0 8px;
+  margin: 0 0 2px;
   padding: 8px 10px;
   background: linear-gradient(135deg, color-mix(in srgb, var(--forest-deep) 88%, var(--signal) 12%), color-mix(in srgb, var(--forest) 78%, var(--blueprint) 22%));
   border: 1px solid color-mix(in srgb, var(--paper-bright) 10%, transparent);
