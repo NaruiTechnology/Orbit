@@ -471,11 +471,13 @@ def list_records(
     sort_by: str,
     sort_direction: str,
     search: str | None,
+    owner_only: bool = False,
 ) -> RecordPage:
     definition = get_workflow(connection, user, workflow_key, locale)
     if _is_customer_relations_workflow(definition):
         return _list_customer_orders(
-            connection, user, locale, offset, limit, sort_by, sort_direction, search
+            connection, user, workflow_key, locale, offset, limit, sort_by, sort_direction, search,
+            owner_only,
         )
     if _is_runtime_workflow(definition):
         return _list_runtime_instances(
@@ -549,12 +551,14 @@ def list_records(
 def _list_customer_orders(
     connection: Connection[dict[str, Any]],
     user: SessionInfo,
+    workflow_key: str,
     locale: str,
     offset: int,
     limit: int,
     sort_by: str,
     sort_direction: str,
     search: str | None,
+    owner_only: bool = False,
 ) -> RecordPage:
     allowed = {
         column.key for column in _customer_order_columns()
@@ -572,6 +576,37 @@ def _list_customer_orders(
         user.scope.department_id,
         user.scope.laboratory_id,
     ]
+    if owner_only:
+        where.append(
+            """
+            EXISTS (
+                SELECT 1
+                  FROM orbit_runtime.workflow_instance current_instance
+                  JOIN orbit_workflow.workflow_definition current_workflow
+                    ON current_workflow.id = current_instance.workflow_id
+                   AND current_workflow.workflow_key = 'order-evaluation'
+                  JOIN orbit_workflow.workflow_record current_step
+                    ON current_step.workflow_id = current_instance.workflow_id
+                   AND current_step.record_key = current_instance.current_record_key
+                  JOIN orbit_workflow.workflow_step_assignment step_assignment
+                    ON step_assignment.workflow_record_id = current_step.id
+                  JOIN orbit_identity.app_user owner_user
+                    ON owner_user.id = %s
+                 WHERE (
+                       current_instance.context_json ->> 'order_id' = customer_order.id::text
+                       OR current_instance.business_key = customer_order.order_number
+                   )
+                   AND (
+                       step_assignment.contact_name = owner_user.login_name
+                       OR step_assignment.contact_name = owner_user.display_name_i18n ->> 'en'
+                       OR step_assignment.contact_name = owner_user.display_name_i18n ->> 'zh_CN'
+                       OR step_assignment.contact_name = owner_user.display_name_i18n ->> 'zh_HK'
+                       OR step_assignment.contact_name = concat_ws(' ', owner_user.first_name, owner_user.last_name)
+                   )
+            )
+            """
+        )
+        parameters.append(user.user_id)
     if search:
         where.append(
             "(order_number ILIKE %s OR customer_name ILIKE %s OR chip_name ILIKE %s)"
@@ -1283,6 +1318,7 @@ def get_tree(
         """
         SELECT r.id, r.record_key, r.record_order, r.label_i18n, r.values_json,
                assignment.contact_name AS assigned_contact_name,
+               assignment.contact_name AS assigned_owner_name,
                assignment.contact_email AS assigned_contact_email,
                assignment.business_entity AS assigned_business_entity,
                assignment."documentAction" AS assigned_document_action,
@@ -1397,6 +1433,7 @@ def get_tree(
             order=row["record_order"],
             label=localized_value(row["label_i18n"], locale),
             owner_role=_localized_step_value(row["values_json"].get("owner_role"), locale),
+            owner_name=row["assigned_owner_name"] or None,
             time_limit=_localized_step_value(row["values_json"].get("time_limit"), locale),
             ContactName=(row["assigned_contact_name"] or _step_contact_value(
                 row["values_json"], "ContactName", "contact_name", "联系人姓名"

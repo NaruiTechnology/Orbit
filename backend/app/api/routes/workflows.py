@@ -110,6 +110,7 @@ def workflow_records(
     sort_by: str = Query(default="record_order"),
     sort_direction: Literal["asc", "desc"] = Query(default="asc"),
     search: str | None = Query(default=None, max_length=200),
+    owner_only: bool = Query(default=False),
     user: SessionInfo = Depends(get_current_user),
     connection: Connection[dict[str, Any]] = Depends(get_connection),
 ) -> RecordPage:
@@ -123,6 +124,7 @@ def workflow_records(
         sort_by,
         sort_direction,
         search,
+        owner_only,
     )
 
 

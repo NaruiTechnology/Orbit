@@ -56,6 +56,7 @@ export function App() {
   const dispatch = useAppDispatch();
   const workspace = useAppSelector((state) => state.workspace);
   const [authToken, setAuthToken] = useState(() => localStorage.getItem("orbit:auth-token"));
+  const [ownerOnly, setOwnerOnly] = useState(false);
   const [splitPercent, setSplitPercent] = useState(70);
   const workspaceRef = useRef<HTMLElement | null>(null);
   const resizingRef = useRef(false);
@@ -78,6 +79,7 @@ export function App() {
     search: deferredSearch,
     sortBy: workspace.sortBy,
     sortDirection: workspace.sortDirection,
+    ownerOnly,
   }, { refetchOnMountOrArgChange: true, skip: !authToken });
   const treeQuery = useGetWorkflowTreeQuery({
     workflowKey: workspace.selectedWorkflow,
@@ -384,6 +386,11 @@ export function App() {
   const hasBlockingError =
     workflowsQuery.isError || workflowQuery.isError || recordsQuery.isError;
   const workflow = workflowQuery.data;
+  const hasAdminEditPrivilege = Boolean(
+    sessionQuery.data?.roles.some((role) =>
+      ["admin", "super_user", "administrator"].includes(role.trim().toLowerCase()),
+    ),
+  );
   const currentRecord = recordsQuery.data?.items.find(
     (record) => record.id === deferredSelection.recordId || record.tree_record_id === deferredSelection.recordId,
   );
@@ -490,11 +497,11 @@ export function App() {
                 <span>{translate(workspace.locale, "rowsVisible")}</span>
               </div>
               <span
-                className={`access-badge ${workflow?.access.can_edit ? "is-editable" : ""}`}
+                className={`access-badge ${hasAdminEditPrivilege && workflow?.access.can_edit ? "is-editable" : ""}`}
               >
                 {translate(
                   workspace.locale,
-                  workflow?.access.can_edit ? "editable" : "readOnly",
+                  hasAdminEditPrivilege && workflow?.access.can_edit ? "editable" : "readOnly",
                 )}
               </span>
             </div>
@@ -528,6 +535,10 @@ export function App() {
                 });
               }}
               profileKey={authToken ? sessionQuery.data?.user_id || null : null}
+              currentUserId={authToken ? sessionQuery.data?.user_id || null : null}
+              ownerOnly={ownerOnly}
+              onOwnerOnlyChange={setOwnerOnly}
+              canEdit={hasAdminEditPrivilege}
               onSortChange={(sortBy, sortDirection) =>
                 dispatch(setSort({ sortBy, sortDirection }))
               }

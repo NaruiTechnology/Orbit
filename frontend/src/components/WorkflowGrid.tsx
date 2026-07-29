@@ -3,6 +3,7 @@ import {
   type ColumnState,
   type CellClickedEvent,
   type CellFocusedEvent,
+  type CellValueChangedEvent,
   type ColDef,
   type GridApi,
   type GridReadyEvent,
@@ -114,6 +115,10 @@ interface WorkflowGridProps {
   onRecordFinishEdit: (recordId: string) => void;
   onSortChange: (sortBy: string, direction: "asc" | "desc") => void;
   profileKey: string | null;
+  currentUserId: string | null;
+  ownerOnly: boolean;
+  onOwnerOnlyChange: (ownerOnly: boolean) => void;
+  canEdit: boolean;
 }
 
 function widthFor(column: ColumnDefinition): number {
@@ -283,6 +288,10 @@ export function WorkflowGrid({
   onRecordFinishEdit,
   onSortChange,
   profileKey,
+  currentUserId,
+  ownerOnly,
+  onOwnerOnlyChange,
+  canEdit,
 }: WorkflowGridProps) {
   const [editingRecord, setEditingRecord] = useState<WorkflowRecord | null>(null);
   const [editValues, setEditValues] = useState<Record<string, unknown>>({});
@@ -291,6 +300,7 @@ export function WorkflowGrid({
   const [editValidationErrors, setEditValidationErrors] = useState<Record<string, string>>({});
   const [newRecordId, setNewRecordId] = useState<string | null>(null);
   const gridApi = useRef<GridApi<WorkflowRecord> | null>(null);
+  const inlineEditAllowed = Boolean(canEdit && workflow?.access.can_edit && workflow.key === "order-evaluation");
 
   function applySelectedRow(api: GridApi<WorkflowRecord>) {
     api.forEachNode((node) => {
@@ -427,7 +437,13 @@ export function WorkflowGrid({
       enableRowGroup: true,
       width: widthFor(column),
       minWidth: 90,
-      editable: false,
+      editable: inlineEditAllowed && column.editable,
+      cellEditor: column.data_type === "boolean" ? "agCheckboxCellEditor" : undefined,
+      valueParser: (parameters) => {
+        if (column.data_type === "integer") return Number.parseInt(String(parameters.newValue), 10);
+        if (column.data_type === "decimal") return Number.parseFloat(String(parameters.newValue));
+        return parameters.newValue;
+      },
       valueGetter: (parameters) => parameters.data?.values[column.key] ?? null,
       valueSetter: (parameters) => {
         if (!parameters.data) return false;
@@ -472,8 +488,8 @@ export function WorkflowGrid({
       cellRenderer: (parameters: ICellRendererParams<WorkflowRecord>) => (
         <RowActionRenderer
           data={parameters.data}
-          canEdit={Boolean(workflow?.access.can_edit)}
-          canDuplicate={Boolean(workflow?.access.can_edit) && (workflow?.key === "order-evaluation" || workflow?.group_key === "hr")}
+          canEdit={Boolean(canEdit && workflow?.access.can_edit)}
+          canDuplicate={Boolean(canEdit && workflow?.access.can_edit) && (workflow?.key === "order-evaluation" || workflow?.group_key === "hr")}
           locale={locale}
           onEdit={openEditDialog}
           onDuplicate={openDuplicateDialog}
@@ -557,6 +573,7 @@ export function WorkflowGrid({
       });
       const combinedSearch = [search, ...filterTerms].filter(Boolean).join(" ");
       if (combinedSearch) query.set("search", combinedSearch);
+      if (ownerOnly) query.set("owner_only", "true");
       const token = localStorage.getItem("orbit:auth-token");
       const requestInit: RequestInit = token
         ? { headers: { "X-Orbit-Auth": token } }
@@ -574,7 +591,12 @@ export function WorkflowGrid({
         })
         .catch(() => parameters.failCallback());
     },
-  }), [locale, search, workflow?.key]);
+  }), [locale, ownerOnly, search, workflow?.key]);
+
+  useEffect(() => {
+    if (!gridApi.current) return;
+    gridApi.current.setGridOption("datasource", datasource);
+  }, [datasource]);
 
   function handleCellFocused(event: CellFocusedEvent<WorkflowRecord>) {
     if (event.rowIndex === null) return;
@@ -608,19 +630,38 @@ export function WorkflowGrid({
   return (
     <div className="grid-frame" aria-busy={loading}>
       <div className="grid-toolbar">
-      {workflow?.group_key !== "hr" ? <CustomerRelationsActionHeader locale={locale} /> : null}
-      {workflow?.key === "order-evaluation" ? <button
-          className="grid-add-button"
-          type="button"
-          aria-label={locale === "en" ? "Add row" : "新增行"}
-          title={locale === "en" ? "Add row" : "新增行"}
-          disabled={!workflow?.access.can_edit || loading}
-          onClick={openNewRecordDialog}
-        >
-          <svg aria-hidden="true" viewBox="0 0 24 24" focusable="false">
-            <path d="M12 5v14M5 12h14" />
-          </svg>
-      </button> : null}
+      {workflow?.group_key !== "hr" && currentUserId ? (
+        <label className="grid-owner-filter">
+          <span>{locale === "en" ? "My records" : locale === "zh-HK" ? "我的記錄" : "我的记录"}</span>
+          <button
+            type="button"
+            className={`grid-toggle ${ownerOnly ? "is-on" : ""}`}
+            role="switch"
+            aria-checked={ownerOnly}
+            aria-label={locale === "en" ? "Show only records owned by me" : locale === "zh-HK" ? "只顯示由我負責的記錄" : "只显示由我负责的记录"}
+            onClick={() => onOwnerOnlyChange(!ownerOnly)}
+          >
+            <span className="grid-toggle__thumb" aria-hidden="true" />
+          </button>
+        </label>
+      ) : null}
+      {workflow?.group_key !== "hr" ? (
+        <div className="grid-toolbar-actions">
+          <CustomerRelationsActionHeader locale={locale} />
+          {workflow?.key === "order-evaluation" ? <button
+            className="grid-add-button"
+            type="button"
+            aria-label={locale === "en" ? "Add row" : "新增行"}
+            title={locale === "en" ? "Add row" : "新增行"}
+            disabled={!inlineEditAllowed || loading}
+            onClick={openNewRecordDialog}
+          >
+            <svg aria-hidden="true" viewBox="0 0 24 24" focusable="false">
+              <path d="M12 5v14M5 12h14" />
+            </svg>
+          </button> : null}
+        </div>
+      ) : null}
         <button
           className="grid-layout-reset-button"
           type="button"
@@ -632,7 +673,7 @@ export function WorkflowGrid({
         </button>
       </div>
       <AgGridReact<WorkflowRecord>
-        key={`${workflow?.key || "grid"}-${locale}-${theme}`}
+        key={`${workflow?.key || "grid"}-${locale}-${theme}-${ownerOnly}`}
         containerStyle={{ width: "100%", height: "100%" }}
         theme={
           theme === "navy"
@@ -696,6 +737,27 @@ export function WorkflowGrid({
         ensureDomOrder
         onCellFocused={handleCellFocused}
         onCellClicked={handleCellClicked}
+        onCellValueChanged={(event: CellValueChangedEvent<WorkflowRecord>) => {
+          const key = event.colDef.colId;
+          if (!inlineEditAllowed || !event.data || !key || key === "record_order" || key === "actions") return;
+          const column = workflow?.columns.find((item) => item.key === key);
+          if (!column?.editable) return;
+          const changedRecord = {
+            ...event.data,
+            values: { ...event.data.values, [key]: event.newValue },
+          };
+          void onRecordUpdate(changedRecord, key, event.newValue)
+            .then((updated) => {
+              event.node.setData({ ...updated, values: { ...updated.values } });
+              onRecordFinishEdit(updated.id);
+            })
+            .catch(() => {
+              event.node.setData({
+                ...event.data,
+                values: { ...event.data.values, [key]: event.oldValue },
+              });
+            });
+        }}
         onGridReady={(event: GridReadyEvent<WorkflowRecord>) => {
           gridApi.current = event.api;
           restoreColumnProfile(event.api);

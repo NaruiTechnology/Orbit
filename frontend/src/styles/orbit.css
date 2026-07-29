@@ -1157,12 +1157,61 @@ select:has(> option:checked[value=""]) option { color: var(--ink); }
   display: flex;
   position: relative;
   z-index: 1000;
-  align-self: flex-end;
+  align-self: stretch;
   align-items: center;
   gap: 6px;
-  width: max-content;
-  justify-content: flex-end;
+  width: 100%;
+  justify-content: flex-start;
   padding: 0;
+}
+
+.grid-owner-filter {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  min-height: 32px;
+  color: #f06a3b;
+  cursor: pointer;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+}
+
+.grid-toggle {
+  position: relative;
+  width: 34px;
+  height: 18px;
+  padding: 2px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--line);
+  cursor: pointer;
+  transition: background 140ms ease, border-color 140ms ease;
+}
+
+.grid-toggle__thumb {
+  display: block;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: var(--paper-bright);
+  box-shadow: 0 1px 2px rgb(0 0 0 / 22%);
+  transition: transform 140ms ease;
+}
+
+.grid-toggle.is-on {
+  border-color: #f06a3b;
+  background: #f06a3b;
+}
+
+.grid-toggle.is-on .grid-toggle__thumb {
+  transform: translateX(16px);
+}
+
+.grid-toggle:focus-visible {
+  outline: 2px solid #f06a3b;
+  outline-offset: 2px;
 }
 
 .grid-toolbar .business-entity-help-button {
@@ -1174,6 +1223,13 @@ select:has(> option:checked[value=""]) option { color: var(--ink); }
   border: 1px solid color-mix(in srgb, var(--signal) 70%, transparent) !important;
   border-radius: 50% !important;
   box-shadow: none !important;
+}
+
+.grid-toolbar-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-left: auto;
 }
 
 .grid-toolbar .business-entity-header {
@@ -1215,6 +1271,10 @@ select:has(> option:checked[value=""]) option { color: var(--ink); }
   font-weight: 800;
   letter-spacing: 0.04em;
   text-transform: uppercase;
+}
+
+.grid-toolbar .grid-layout-reset-button {
+  margin-left: 0;
 }
 
 .grid-layout-reset-button:hover {

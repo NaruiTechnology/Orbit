@@ -536,6 +536,12 @@ def workflow_config(
          ORDER BY display_order
         """
     ).fetchall()
+    owners = connection.execute(
+        """SELECT id, login_name, display_name_i18n, first_name, last_name
+             FROM orbit_identity.app_user
+            WHERE is_active
+            ORDER BY first_name, last_name, login_name"""
+    ).fetchall()
     steps = connection.execute(
         """
         SELECT r.id, r.record_key, r.record_order, r.label_i18n,
@@ -571,6 +577,14 @@ def workflow_config(
             for row in business_entities
             if localized_value(row["name_i18n"], "en") in _WORKFLOW_BUSINESS_ENTITIES
         ],
+        "owners": [
+            {
+                "id": row["id"],
+                "login_name": row["login_name"],
+                "name": localized_value(row["display_name_i18n"], locale, f"{row['first_name']} {row['last_name']}".strip()),
+            }
+            for row in owners
+        ],
         "steps": [
             {
                 "id": row["id"],
@@ -587,6 +601,7 @@ def workflow_config(
                 "phone_number": row["phone_number"],
                 "contact_email": row["contact_email"],
                 "contact_name": row["contact_name"],
+                "owner": row["contact_name"],
                 "hr_employee_id": row["hr_employee_id"],
             }
             for row in steps

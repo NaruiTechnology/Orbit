@@ -246,12 +246,15 @@ export function WorkflowTreePanel({
                         {[node.owner_role, node.time_limit].filter(Boolean).join(" · ")}
                       </span>
                     ) : null}
+                    {node.owner_name ? (
+                      <span>{translate(locale, "owner")}: {node.owner_name}</span>
+                    ) : null}
                     {node.sla ? (
                       <span className="workflow-node__sla">
                         {translate(locale, "sla")}: {node.sla}
                       </span>
                     ) : null}
-                    {node.ContactName ? (
+                    {node.ContactName && node.ContactName !== node.owner_name ? (
                       <span>{translate(locale, "contactName")}: {node.ContactName}</span>
                     ) : null}
                     {node.Email ? (

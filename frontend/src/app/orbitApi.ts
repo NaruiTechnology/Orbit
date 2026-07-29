@@ -23,6 +23,7 @@ interface RecordQuery {
   search: string;
   sortBy: string;
   sortDirection: "asc" | "desc";
+  ownerOnly?: boolean;
 }
 
 interface TreeQuery {
@@ -114,7 +115,7 @@ export const orbitApi = createApi({
       }),
     }),
     records: builder.query<RecordPage, RecordQuery>({
-      query: ({ workflowKey, locale, search, sortBy, sortDirection }) => ({
+      query: ({ workflowKey, locale, search, sortBy, sortDirection, ownerOnly }) => ({
         url: `/workflows/${workflowKey}/records`,
         params: {
           locale,
@@ -122,6 +123,7 @@ export const orbitApi = createApi({
           search: search || undefined,
           sort_by: sortBy,
           sort_direction: sortDirection,
+          owner_only: ownerOnly || undefined,
         },
       }),
       providesTags: (_result, _error, argument) => [

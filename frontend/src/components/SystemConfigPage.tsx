@@ -11,6 +11,8 @@ import { GEOLOCATION_SITES, normalizeSite } from "../geolocation";
 
 interface Laboratory { id: string; code: string; name: string }
 interface BusinessEntityOption { key: string; name: string }
+interface OwnerOption { id: string; login_name: string; name: string }
+interface AuthUsersResponse { users?: Array<{ id: string; login_name: string; display_name?: string; first_name?: string; last_name?: string }> }
 interface StepRow {
   id: string;
   record_key: string;
@@ -26,9 +28,10 @@ interface StepRow {
   phone_number: string;
   contact_email: string;
   contact_name: string;
+  owner: string;
   hr_employee_id: string | null;
 }
-interface ConfigResponse { workflow_key: string; workflow_name: string; laboratories: Laboratory[]; businessEntities: BusinessEntityOption[]; steps: StepRow[] }
+interface ConfigResponse { workflow_key: string; workflow_name: string; laboratories: Laboratory[]; businessEntities: BusinessEntityOption[]; owners: OwnerOption[]; steps: StepRow[] }
 
 function HelpLabel({ locale, label, titleKey, bodyKey, detailKeys = [] }: {
   locale: Locale;
@@ -39,7 +42,7 @@ function HelpLabel({ locale, label, titleKey, bodyKey, detailKeys = [] }: {
 }) {
   const [open, setOpen] = useState(false);
   return (
-    <div className="business-entity-header">
+    <div className="business-entity-header" onMouseEnter={() => setOpen(true)} onMouseLeave={() => setOpen(false)}>
       <span>{label}</span>
       <button
         type="button"
@@ -47,7 +50,8 @@ function HelpLabel({ locale, label, titleKey, bodyKey, detailKeys = [] }: {
         aria-label={translate(locale, titleKey)}
         aria-expanded={open}
         title={translate(locale, titleKey)}
-        onClick={(event) => { event.stopPropagation(); setOpen((current) => !current); }}
+        onFocus={() => setOpen(true)}
+        onBlur={() => setOpen(false)}
       >?
       </button>
       {open ? (
@@ -246,7 +250,22 @@ export function SystemConfigPage({
         if (!response.ok) throw new Error((await response.json().catch(() => ({}))).detail || `HTTP ${response.status}`);
         return response.json() as Promise<ConfigResponse>;
       })
-      .then((next) => { if (!cancelled) { setConfig(next); dirtyRowsRef.current = {}; setDirtyRows({}); } })
+      .then(async (next) => {
+        if (cancelled) return;
+        let owners = next.owners || [];
+        if (!owners.length) {
+          const usersResponse = await fetch("/api/v1/auth/users", { cache: "no-store" });
+          if (usersResponse.ok) {
+            const users = await usersResponse.json() as AuthUsersResponse;
+            owners = (users.users || []).map((account) => ({
+              id: account.id,
+              login_name: account.login_name,
+              name: account.display_name || `${account.first_name || ""} ${account.last_name || ""}`.trim() || account.login_name,
+            }));
+          }
+        }
+        if (!cancelled) { setConfig({ ...next, owners }); dirtyRowsRef.current = {}; setDirtyRows({}); }
+      })
       .catch((reason) => { if (!cancelled) setError(reason instanceof Error ? reason.message : String(reason)); })
       .finally(() => { if (!cancelled) setLoading(false); });
     return () => { cancelled = true; };
@@ -290,11 +309,11 @@ export function SystemConfigPage({
       const response = await fetch(`/api/v1/admin/workflow-config/${encodeURIComponent(workflowKey)}/steps/${step.id}`, {
         method: "PATCH",
       headers: { "Content-Type": "application/json", "X-Orbit-Auth": authToken || "" },
-        body: JSON.stringify({ businessEntity: step.businessEntity || null, decisionAction: step.decisionAction, sla: step.sla || null, laboratory_id: step.laboratory_id || null, phone_number: step.phone_number, contact_email: step.contact_email, contact_name: step.contact_name, hr_employee_id: step.hr_employee_id || null }),
+        body: JSON.stringify({ businessEntity: step.businessEntity || null, decisionAction: step.decisionAction, sla: step.sla || null, laboratory_id: step.laboratory_id || null, phone_number: step.phone_number, contact_email: step.contact_email, contact_name: step.owner || step.contact_name, hr_employee_id: step.hr_employee_id || null }),
       });
       if (!response.ok) throw new Error((await response.json().catch(() => ({}))).detail || `HTTP ${response.status}`);
       setConfig((current) => current
-        ? { ...current, steps: current.steps.map((row) => row.id === step.id ? { ...row, ...step, DocumentAction: step.businessEntity ? (step.DocumentAction ?? false) : null } : row) }
+        ? { ...current, steps: current.steps.map((row) => row.id === step.id ? { ...row, ...step, owner: step.owner || step.contact_name, DocumentAction: step.businessEntity ? (step.DocumentAction ?? false) : null } : row) }
         : current);
       const nextDirtyRows = { ...dirtyRowsRef.current };
       delete nextDirtyRows[step.id];
@@ -303,7 +322,7 @@ export function SystemConfigPage({
       return true;
     } catch (reason) { setError(reason instanceof Error ? reason.message : String(reason)); return false; }
     finally { setSavingId(null); }
-  }, [workflowKey]);
+  }, [authToken, workflowKey]);
 
   const saveAll = useCallback(async () => {
     const rows = Object.values(dirtyRowsRef.current);
@@ -402,8 +421,21 @@ export function SystemConfigPage({
       cellRenderer: (params: ICellRendererParams<StepRow>) => <AdminTextCell {...params} field="contact_email" updateDraft={updateDraft} publishDirty={publishDirty} locale={locale} readOnly />,
     },
     {
-      field: "contact_name", headerName: locale === "en" ? "Contact Name" : "联系人姓名", minWidth: 210, editable: false,
-      cellRenderer: (params: ICellRendererParams<StepRow>) => <AdminTextCell {...params} field="contact_name" updateDraft={updateDraft} publishDirty={publishDirty} locale={locale} readOnly />,
+      field: "owner", headerName: locale === "en" ? "Owner" : "负责人", minWidth: 210, editable: false,
+      cellRenderer: (params: ICellRendererParams<StepRow>) => {
+        const row = params.data;
+        if (!row) return null;
+        return <select className="admin-grid-select" value={row.owner || row.contact_name || ""} aria-label={locale === "en" ? "Owner" : "负责人"} onClick={(event) => event.stopPropagation()} onChange={(event) => {
+          event.stopPropagation();
+          const owner = config?.owners.find((item) => item.name === event.target.value);
+          const updated = { ...row, owner: owner?.name || event.target.value, contact_name: owner?.name || event.target.value };
+          params.node.setData(updated);
+          markDirty(updated);
+        }}>
+          <option value="">{locale === "en" ? "Select owner" : "选择负责人"}</option>
+          {(config?.owners || []).map((owner) => <option key={owner.id} value={owner.name}>{owner.name} ({owner.login_name})</option>)}
+        </select>;
+      },
     },
     {
       colId: "actions",
@@ -427,7 +459,7 @@ export function SystemConfigPage({
         </div>;
       },
     },
-  ], [clearStepAssignments, config?.laboratories, locale, markDirty, publishDirty, saveStep, savingAll, savingId, updateDraft]);
+  ], [clearStepAssignments, config?.laboratories, config?.owners, locale, markDirty, publishDirty, saveStep, savingAll, savingId, updateDraft]);
 
   function changeAccessRow(row: AccessUserRow, patch: Partial<AccessUserRow>) {
     const next = { ...row, ...patch };
@@ -703,7 +735,7 @@ export function SystemConfigPage({
                 <label className="grid-edit-field"><span>{locale === "en" ? "Laboratory" : "实验室"}</span><select value={stepDialog.laboratory_id || ""} onChange={(event) => { const laboratoryId = event.target.value || null; const laboratory = config?.laboratories.find((item) => item.id === laboratoryId); updateStepDialog({ laboratory_id: laboratoryId, laboratory_name: laboratory?.name || null, laboratory_code: laboratory?.code || null }); }} disabled={Boolean(savingId)}><option value="">{locale === "en" ? "Select laboratory" : "选择实验室"}</option>{(config?.laboratories || []).map((laboratory) => <option key={laboratory.id} value={laboratory.id}>{laboratory.name}</option>)}</select></label>
                 <label className="grid-edit-field"><span>{locale === "en" ? "Phone Number" : "电话号码"}</span><input type="tel" value={stepDialog.phone_number} onChange={(event) => updateStepDialog({ phone_number: event.target.value })} disabled={Boolean(savingId)} /></label>
                 <label className="grid-edit-field"><span>{locale === "en" ? "Email address" : "电子邮件"}</span><input type="email" value={stepDialog.contact_email} onChange={(event) => updateStepDialog({ contact_email: event.target.value })} disabled={Boolean(savingId)} /></label>
-                <label className="grid-edit-field"><span>{locale === "en" ? "Contact Name" : "联系人姓名"}</span><input type="text" value={stepDialog.contact_name} onChange={(event) => updateStepDialog({ contact_name: event.target.value })} disabled={Boolean(savingId)} /></label>
+                <label className="grid-edit-field"><span>{locale === "en" ? "Owner" : "负责人"}</span><select value={stepDialog.owner || stepDialog.contact_name || ""} onChange={(event) => { const owner = config?.owners.find((item) => item.name === event.target.value); updateStepDialog({ owner: owner?.name || event.target.value, contact_name: owner?.name || event.target.value }); }} disabled={Boolean(savingId)}><option value="">{locale === "en" ? "Select owner" : "选择负责人"}</option>{(config?.owners || []).map((owner) => <option key={owner.id} value={owner.name}>{owner.name} ({owner.login_name})</option>)}</select></label>
                 <label className="grid-edit-field"><HelpLabel locale={locale} label={locale === "en" ? "Decision action" : "决策动作"} titleKey="decisionActionHelpTitle" bodyKey="decisionActionHelpBody" /><input className="system-config-decision-checkbox system-config-decision-checkbox--dialog" type="checkbox" checked={stepDialog.decisionAction} onChange={(event) => updateStepDialog({ decisionAction: event.target.checked })} disabled={Boolean(savingId)} /></label>
               </div>
               {stepDialogError ? <p className="grid-edit-dialog__error" role="alert">{stepDialogError}</p> : null}

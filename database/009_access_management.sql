@@ -110,3 +110,40 @@ SELECT r.id, 'global', '*', true, false, false
   FROM orbit_identity.role r WHERE r.code = 'audit'
 ON CONFLICT (role_id, scope_type, scope_key) DO UPDATE
  SET can_view = EXCLUDED.can_view, can_edit = EXCLUDED.can_edit, can_execute = EXCLUDED.can_execute;
+
+-- Ensure the imported Henry Li auditor also has a normalized Orbit account.
+INSERT INTO orbit_identity.app_user (
+    login_name, display_name_i18n, first_name, last_name, email,
+    phone_number, company_name, site, preferred_locale, is_active
+)
+VALUES (
+    'henryli',
+    '{"en":"Henry Li","zh_CN":"Henry Li","zh_HK":"Henry Li"}'::jsonb,
+    'Henry', 'Li', 'lyh1154@gmail.com', '', 'Ionbeamtech', 'Beijing(北京)', 'zh-CN', true
+)
+ON CONFLICT (login_name) DO UPDATE
+   SET display_name_i18n = EXCLUDED.display_name_i18n,
+       first_name = EXCLUDED.first_name,
+       last_name = EXCLUDED.last_name,
+       is_active = true;
+
+INSERT INTO orbit_identity.user_membership (
+    user_id, organization_id, department_id, laboratory_id, is_primary
+)
+SELECT u.id, o.id, l.department_id, l.id, true
+  FROM orbit_identity.app_user u
+ CROSS JOIN LATERAL (SELECT id FROM orbit_identity.organization ORDER BY code LIMIT 1) o
+ CROSS JOIN LATERAL (SELECT id, department_id FROM orbit_identity.laboratory ORDER BY code LIMIT 1) l
+ WHERE u.login_name = 'henryli'
+ON CONFLICT (user_id, organization_id, department_id, laboratory_id)
+DO UPDATE SET is_primary = true;
+
+DELETE FROM orbit_identity.user_role
+ WHERE user_id = (SELECT id FROM orbit_identity.app_user WHERE login_name = 'henryli');
+
+INSERT INTO orbit_identity.user_role (user_id, role_id, organization_id, department_id, laboratory_id)
+SELECT u.id, r.id, o.id, NULL, NULL
+  FROM orbit_identity.app_user u
+ CROSS JOIN orbit_identity.role r
+ CROSS JOIN LATERAL (SELECT id FROM orbit_identity.organization ORDER BY code LIMIT 1) o
+ WHERE u.login_name = 'henryli' AND r.code = 'audit';

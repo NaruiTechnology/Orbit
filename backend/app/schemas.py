@@ -140,6 +140,7 @@ class TreeNode(BaseModel):
     order: int
     label: str
     owner_role: str | None = None
+    owner_name: str | None = None
     time_limit: str | None = None
     ContactName: str | None = None
     Email: str | None = None

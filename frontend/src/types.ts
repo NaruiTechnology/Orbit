@@ -110,6 +110,7 @@ export interface TreeNode {
   order: number;
   label: string;
   owner_role: string | null;
+  owner_name: string | null;
   time_limit: string | null;
   ContactName: string | null;
   Email: string | null;
