@@ -2231,6 +2231,47 @@ select:has(> option:checked[value=""]) option { color: var(--ink); }
   opacity: 0.55;
 }
 
+.system-config-decision-switch {
+  position: relative;
+  display: block;
+  width: 34px;
+  height: 18px;
+  margin: 0 auto;
+  padding: 2px;
+  border: 1px solid #6f8caf;
+  border-radius: 999px;
+  background: #0b1a33;
+  cursor: pointer;
+  transition: background 140ms ease, border-color 140ms ease;
+}
+
+.system-config-decision-switch__thumb {
+  display: block;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: #f7fbff;
+  box-shadow: 0 1px 2px rgb(0 0 0 / 28%);
+  transition: transform 140ms ease;
+}
+
+.system-config-decision-switch.is-on {
+  border-color: var(--signal);
+  background: var(--signal);
+}
+
+.system-config-decision-switch.is-on .system-config-decision-switch__thumb {
+  transform: translateX(16px);
+}
+
+.system-config-decision-switch:disabled {
+  cursor: not-allowed;
+}
+
+.system-config-decision-switch--dialog {
+  margin: 4px 0 0;
+}
+
 .system-config-decision-checkbox--dialog {
   margin: 4px 0 0;
 }

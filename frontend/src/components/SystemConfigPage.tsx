@@ -72,6 +72,7 @@ function BusinessEntityHeader({ locale }: { locale: Locale }) {
 function DecisionActionHeader({ locale }: { locale: Locale }) {
   return <HelpLabel locale={locale} label={translate(locale, "decisionActionHelpTitle")} titleKey="decisionActionHelpTitle" bodyKey="decisionActionHelpBody" />;
 }
+
 interface AccessRole { code: string; name: string }
 interface AccessUserRow {
   id: string;
@@ -372,7 +373,17 @@ export function SystemConfigPage({
       cellRenderer: (params: ICellRendererParams<StepRow>) => {
         const row = params.data;
         if (!row) return null;
-        return <input className="system-config-decision-checkbox" type="checkbox" checked={row.decisionAction} aria-label={locale === "en" ? "Decision action" : "决策动作"} aria-readonly="true" disabled onClick={(event) => event.stopPropagation()} />;
+        return <button
+          type="button"
+          className={`system-config-decision-switch${row.decisionAction ? " is-on" : ""}`}
+          role="switch"
+          aria-checked={row.decisionAction}
+          aria-label={locale === "en" ? "Decision action" : "决策动作"}
+          disabled
+          onClick={(event) => event.stopPropagation()}
+        >
+          <span className="system-config-decision-switch__thumb" aria-hidden="true" />
+        </button>;
       },
     },
     {
@@ -736,7 +747,17 @@ export function SystemConfigPage({
                 <label className="grid-edit-field"><span>{locale === "en" ? "Phone Number" : "电话号码"}</span><input type="tel" value={stepDialog.phone_number} onChange={(event) => updateStepDialog({ phone_number: event.target.value })} disabled={Boolean(savingId)} /></label>
                 <label className="grid-edit-field"><span>{locale === "en" ? "Email address" : "电子邮件"}</span><input type="email" value={stepDialog.contact_email} onChange={(event) => updateStepDialog({ contact_email: event.target.value })} disabled={Boolean(savingId)} /></label>
                 <label className="grid-edit-field"><span>{locale === "en" ? "Owner" : "负责人"}</span><select value={stepDialog.owner || stepDialog.contact_name || ""} onChange={(event) => { const owner = config?.owners.find((item) => item.name === event.target.value); updateStepDialog({ owner: owner?.name || event.target.value, contact_name: owner?.name || event.target.value }); }} disabled={Boolean(savingId)}><option value="">{locale === "en" ? "Select owner" : "选择负责人"}</option>{(config?.owners || []).map((owner) => <option key={owner.id} value={owner.name}>{owner.name} ({owner.login_name})</option>)}</select></label>
-                <label className="grid-edit-field"><HelpLabel locale={locale} label={locale === "en" ? "Decision action" : "决策动作"} titleKey="decisionActionHelpTitle" bodyKey="decisionActionHelpBody" /><input className="system-config-decision-checkbox system-config-decision-checkbox--dialog" type="checkbox" checked={stepDialog.decisionAction} onChange={(event) => updateStepDialog({ decisionAction: event.target.checked })} disabled={Boolean(savingId)} /></label>
+                <label className="grid-edit-field"><HelpLabel locale={locale} label={locale === "en" ? "Decision action" : "决策动作"} titleKey="decisionActionHelpTitle" bodyKey="decisionActionHelpBody" /><button
+                  type="button"
+                  className={`system-config-decision-switch system-config-decision-switch--dialog${stepDialog.decisionAction ? " is-on" : ""}`}
+                  role="switch"
+                  aria-checked={stepDialog.decisionAction}
+                  aria-label={locale === "en" ? "Decision action" : "决策动作"}
+                  disabled={Boolean(savingId)}
+                  onClick={() => updateStepDialog({ decisionAction: !stepDialog.decisionAction })}
+                >
+                  <span className="system-config-decision-switch__thumb" aria-hidden="true" />
+                </button></label>
               </div>
               {stepDialogError ? <p className="grid-edit-dialog__error" role="alert">{stepDialogError}</p> : null}
               <footer className="dialog-actions grid-edit-dialog__actions"><button type="button" className="confirm-dialog__cancel" onClick={() => setStepDialog(null)} disabled={Boolean(savingId)}><svg className="grid-edit-action__icon" aria-hidden="true" viewBox="0 0 24 24" focusable="false"><path d="M6 6l12 12M18 6 6 18" /></svg>{locale === "en" ? "Cancel" : "取消"}</button><button type="button" className="confirm-dialog__confirm" onClick={() => void applyStepDialog()} disabled={Boolean(savingId)}><svg className="grid-edit-action__icon" aria-hidden="true" viewBox="0 0 24 24" focusable="false"><path d="m5 12 4 4L19 6" /></svg>{savingId ? (locale === "en" ? "Saving…" : "保存中…") : (locale === "en" ? "Save" : "保存")}</button></footer>
