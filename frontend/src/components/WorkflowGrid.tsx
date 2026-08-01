@@ -97,6 +97,7 @@ export const orbitGridBlackTheme = themeQuartz.withParams({
 interface WorkflowGridProps {
   locale: Locale;
   theme: ThemeMode;
+  authToken: string | null;
   workflow: WorkflowDetail | undefined;
   dirtyRecordIds: string[];
   loading: boolean;
@@ -274,6 +275,7 @@ function RowActionRenderer({
 export function WorkflowGrid({
   locale,
   theme,
+  authToken,
   workflow,
   dirtyRecordIds,
   loading,
@@ -574,9 +576,8 @@ export function WorkflowGrid({
       const combinedSearch = [search, ...filterTerms].filter(Boolean).join(" ");
       if (combinedSearch) query.set("search", combinedSearch);
       if (ownerOnly) query.set("owner_only", "true");
-      const token = localStorage.getItem("orbit:auth-token");
-      const requestInit: RequestInit = token
-        ? { headers: { "X-Orbit-Auth": token } }
+      const requestInit: RequestInit = authToken
+        ? { headers: { "X-Orbit-Auth": authToken } }
         : {};
       void fetch("/api/v1/workflows/" + encodeURIComponent(workflow.key) + "/records?" + query, requestInit)
         .then(async (response) => {
@@ -591,11 +592,12 @@ export function WorkflowGrid({
         })
         .catch(() => parameters.failCallback());
     },
-  }), [locale, ownerOnly, search, workflow?.key]);
+  }), [authToken, locale, ownerOnly, search, workflow?.key]);
 
   useEffect(() => {
     if (!gridApi.current) return;
     gridApi.current.setGridOption("datasource", datasource);
+    gridApi.current.purgeInfiniteCache();
   }, [datasource]);
 
   function handleCellFocused(event: CellFocusedEvent<WorkflowRecord>) {
@@ -673,7 +675,7 @@ export function WorkflowGrid({
         </button>
       </div>
       <AgGridReact<WorkflowRecord>
-        key={`${workflow?.key || "grid"}-${locale}-${theme}-${ownerOnly}`}
+        key={`${workflow?.key || "grid"}-${locale}-${theme}`}
         containerStyle={{ width: "100%", height: "100%" }}
         theme={
           theme === "navy"

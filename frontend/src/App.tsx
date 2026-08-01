@@ -514,6 +514,7 @@ export function App() {
               key={`${workspace.selectedWorkflow}:${workspace.locale}:${workspace.theme}:${recordsRevision}`}
               locale={workspace.locale}
               theme={workspace.theme}
+              authToken={authToken}
               workflow={workflow}
               dirtyRecordIds={[...dirtyRecordIds]}
               loading={recordsQuery.isLoading || workflowQuery.isLoading}
