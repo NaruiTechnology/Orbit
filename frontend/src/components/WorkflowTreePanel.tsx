@@ -192,6 +192,7 @@ export function WorkflowTreePanel({
           <ol className="workflow-tree">
             {(tree?.nodes || []).map((node) => {
               const runtimeNode = runtimeByKey.get(node.record_key);
+              const canSubmit = runtimeNode?.available_actions.includes("submit") ?? false;
               const warning = Boolean(
                 runtimeNode?.sla_violated &&
                 (runtimeNode.status === "active" || runtimeNode.status === "waiting"),
@@ -273,7 +274,8 @@ export function WorkflowTreePanel({
                             <input
                               type="checkbox"
                               checked={runtimeNode.status === "completed"}
-                              disabled={commandBusy || runtimeNode.status === "completed" || (!isLastWorkflowStep && currentTreeNode?.DocumentAction !== null && !reportActionCompleted)}
+                              disabled={commandBusy || !canSubmit || runtimeNode.status === "completed" || (!isLastWorkflowStep && currentTreeNode?.DocumentAction !== null && !reportActionCompleted)}
+                              title={!canSubmit ? translate(locale, "readOnly") : undefined}
                               onChange={() => void send("submit")}
                             />
                             <span>{translate(locale, "submit")}</span>

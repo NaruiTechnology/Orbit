@@ -1951,7 +1951,43 @@ def command_instance(
         ),
     ).fetchone()
     if current is None:
-        raise HTTPException(status_code=404, detail="Workflow instance not found")
+        # The grid identifies customer orders by order id, while the command
+        # endpoint operates on workflow-instance ids. Resolve that identifier
+        # here as a safety net for commands issued during a runtime rebind.
+        current = connection.execute(
+            """
+            SELECT i.*, w.workflow_key
+              FROM orbit_runtime.workflow_instance i
+              JOIN orbit_workflow.workflow_definition w ON w.id = i.workflow_id
+             WHERE w.group_key <> 'hr'
+               AND w.definition_type = 'workflow'
+               AND i.organization_id = %s
+               AND (i.department_id IS NULL OR i.department_id = %s)
+               AND (i.laboratory_id IS NULL OR i.laboratory_id = %s)
+               AND (
+                   i.context_json ->> 'order_id' = %s
+                   OR i.business_key = (
+                       SELECT order_number
+                         FROM orbit_sales.customer_order
+                        WHERE id = %s
+                          AND organization_id = %s
+                   )
+               )
+             ORDER BY i.updated_at DESC
+             LIMIT 1
+            """,
+            (
+                user.scope.organization_id,
+                user.scope.department_id,
+                user.scope.laboratory_id,
+                str(instance_id),
+                instance_id,
+                user.scope.organization_id,
+            ),
+        ).fetchone()
+        if current is None:
+            raise HTTPException(status_code=404, detail="Workflow instance not found")
+        instance_id = current["id"]
     require_workflow_access(connection, user.user_id, current["workflow_key"], "execute")
     node_key = request.node_key or current["current_record_key"]
     if node_key != current["current_record_key"]:

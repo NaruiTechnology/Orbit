@@ -97,8 +97,8 @@ SELECT u.id, o.id, l.department_id, l.id, true
 ON CONFLICT (user_id, organization_id, department_id, laboratory_id)
 DO UPDATE SET is_primary = true;
 
--- Audit accounts can administer access-management data, matching the sibling
--- application’s Auditor privilege without granting workflow write access.
+-- Audit accounts can administer access-management data and execute workflow
+-- actions, matching the sibling application's Auditor privilege model.
 INSERT INTO orbit_identity.role_permission (role_id, permission_id)
 SELECT r.id, p.id
   FROM orbit_identity.role r CROSS JOIN orbit_identity.permission p
@@ -106,7 +106,7 @@ SELECT r.id, p.id
 ON CONFLICT DO NOTHING;
 
 INSERT INTO orbit_identity.role_workflow_access (role_id, scope_type, scope_key, can_view, can_edit, can_execute)
-SELECT r.id, 'global', '*', true, false, false
+SELECT r.id, 'global', '*', true, true, true
   FROM orbit_identity.role r WHERE r.code = 'audit'
 ON CONFLICT (role_id, scope_type, scope_key) DO UPDATE
  SET can_view = EXCLUDED.can_view, can_edit = EXCLUDED.can_edit, can_execute = EXCLUDED.can_execute;

@@ -113,11 +113,12 @@ export function App() {
   const [adminOpen, setAdminOpen] = useState(() => window.location.pathname === "/admin");
 
   async function handleWorkflowCommand(command: WorkflowCommandInput) {
-    const instanceId = runtimeQuery.data?.instance.id || deferredSelection.recordId;
-    if (!instanceId) return;
-    const projection = await sendWorkflowCommand({ instanceId, ...command }).unwrap();
-    await runtimeQuery.refetch();
-    await treeQuery.refetch();
+    const instanceId = runtimeQuery.data?.instance.id;
+    if (!instanceId) {
+      throw new Error("The workflow runtime is not ready. Refresh the selected record and try again.");
+    }
+    await sendWorkflowCommand({ instanceId, ...command }).unwrap();
+    await Promise.all([runtimeQuery.refetch(), treeQuery.refetch()]);
   }
 
   async function handleSaveWorkflowMessage(recordId: string, message: string): Promise<void> {
