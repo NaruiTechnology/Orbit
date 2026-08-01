@@ -1835,7 +1835,7 @@ select:has(> option:checked[value=""]) option { color: var(--ink); }
 }
 
 .mail-compose-backdrop {
-  z-index: 40;
+  z-index: 11000;
   overflow: auto;
   padding: 20px;
   place-items: center;
