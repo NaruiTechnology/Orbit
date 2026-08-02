@@ -163,6 +163,8 @@ def _apply_schema_and_seed(skip_catalog: bool) -> dict[str, int] | None:
         connection.execute(sla_normalization_migration.read_text(encoding="utf-8"))
         notify_action_migration = PROJECT_ROOT / "database" / "013_notify_action_state.sql"
         connection.execute(notify_action_migration.read_text(encoding="utf-8"))
+        sla_email_wording_migration = PROJECT_ROOT / "database" / "014_sla_email_wording.sql"
+        connection.execute(sla_email_wording_migration.read_text(encoding="utf-8"))
         connection.commit()
 
         diagnostics = connection.execute(

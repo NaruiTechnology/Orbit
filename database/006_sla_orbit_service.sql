@@ -6,7 +6,7 @@ ALTER TABLE orbit_workflow.notification_template
     ADD COLUMN IF NOT EXISTS workflow_record_id uuid
         REFERENCES orbit_workflow.workflow_record(id) ON DELETE CASCADE,
     ADD COLUMN IF NOT EXISTS subject_xml text NOT NULL DEFAULT '<subject>{{step_name}} SLA notification</subject>',
-    ADD COLUMN IF NOT EXISTS body_xml text NOT NULL DEFAULT '<body><p>{{step_name}} has an SLA event.</p>{{items_table}}</body>',
+    ADD COLUMN IF NOT EXISTS body_xml text NOT NULL DEFAULT '<body><p>The following {{sla_step_name}} passed the SLA due.</p>{{items_table}}</body>',
     ADD COLUMN IF NOT EXISTS stylesheet_css text NOT NULL DEFAULT '',
     ADD COLUMN IF NOT EXISTS access_url_template text NOT NULL DEFAULT '';
 
@@ -199,7 +199,7 @@ LANGUAGE sql
 STABLE
 AS $function$
     SELECT coalesce(custom.subject_xml, nt.subject_xml, '<subject>{{step_name}} SLA notification</subject>'),
-           coalesce(custom.body_xml, nt.body_xml, '<body><p>{{step_name}} has an SLA event.</p>{{items_table}}</body>'),
+           coalesce(custom.body_xml, nt.body_xml, '<body><p>The following {{sla_step_name}} passed the SLA due.</p>{{items_table}}</body>'),
            coalesce(custom.stylesheet_css, nt.stylesheet_css, ''),
            coalesce(custom.access_url_template, nt.access_url_template, '')
       FROM (SELECT 1) seed

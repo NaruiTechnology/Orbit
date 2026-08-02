@@ -392,6 +392,7 @@ export function App() {
       ["admin", "super_user", "administrator"].includes(role.trim().toLowerCase()),
     ),
   );
+  const canEditWorkflow = workflow?.access.can_edit === true;
   const currentRecord = recordsQuery.data?.items.find(
     (record) => record.id === deferredSelection.recordId || record.tree_record_id === deferredSelection.recordId,
   );
@@ -499,11 +500,11 @@ export function App() {
                 <span>{translate(workspace.locale, "rowsVisible")}</span>
               </div>
               <span
-                className={`access-badge ${hasAdminEditPrivilege && workflow?.access.can_edit ? "is-editable" : ""}`}
+                className={`access-badge ${canEditWorkflow ? "is-editable" : ""}`}
               >
                 {translate(
                   workspace.locale,
-                  hasAdminEditPrivilege && workflow?.access.can_edit ? "editable" : "readOnly",
+                  canEditWorkflow ? "editable" : "readOnly",
                 )}
               </span>
             </div>
@@ -541,7 +542,7 @@ export function App() {
               currentUserId={authToken ? sessionQuery.data?.user_id || null : null}
               ownerOnly={ownerOnly}
               onOwnerOnlyChange={setOwnerOnly}
-              canEdit={hasAdminEditPrivilege}
+              canEdit={canEditWorkflow}
               onSortChange={(sortBy, sortDirection) =>
                 dispatch(setSort({ sortBy, sortDirection }))
               }

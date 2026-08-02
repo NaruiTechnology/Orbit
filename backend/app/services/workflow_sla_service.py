@@ -21,7 +21,7 @@ from app.config import get_mail_settings
 
 DEFAULT_SUBJECT_XML = "<subject>{{step_name}} SLA violation</subject>"
 DEFAULT_BODY_XML = (
-    "<body><p>The following workflow items have violated their SLA:</p>"
+    "<body><p>The following {{sla_step_name}} passed the SLA due.</p>"
     "{{items_table}}</body>"
 )
 DEFAULT_STYLESHEET = (
@@ -72,6 +72,20 @@ def _attach_step_configuration(
         (step_ids,),
     ).fetchall()
     by_id = {row["workflow_step_id"]: row for row in configured}
+    instance_ids = list({row["workflow_instance_id"] for row in rows if row.get("workflow_instance_id")})
+    customer_rows = connection.execute(
+        """
+        SELECT i.id AS workflow_instance_id,
+               c.customer_name
+          FROM orbit_runtime.workflow_instance i
+          LEFT JOIN orbit_sales.customer_order c
+            ON c.id::text = i.context_json ->> 'order_id'
+            OR c.order_number = i.business_key
+         WHERE i.id = ANY(%s)
+        """,
+        (instance_ids,),
+    ).fetchall() if instance_ids else []
+    customer_by_instance = {row["workflow_instance_id"]: row["customer_name"] for row in customer_rows}
     return [
         {
             **row,
@@ -79,6 +93,7 @@ def _attach_step_configuration(
             "step_name": by_id.get(row["workflow_step_id"], {}).get("step_name"),
             "sla_configured": by_id.get(row["workflow_step_id"], {}).get("sla_configured"),
             "sla_source": by_id.get(row["workflow_step_id"], {}).get("sla_source"),
+            "customer_name": customer_by_instance.get(row.get("workflow_instance_id")),
         }
         for row in rows
     ]
@@ -182,11 +197,16 @@ def _send_violation_emails(
     access_url_base: str,
 ) -> dict[str, Any]:
     groups: dict[tuple[UUID, str], list[dict[str, Any]]] = defaultdict(list)
+    seen_items: set[tuple[UUID, str, datetime]] = set()
     for row in rows:
         recipient = str(
             row.get("recipient_email") or row.get("row_data", {}).get("email") or ""
         ).strip()
         if recipient and "@" in recipient:
+            item_key = (row["workflow_node_instance_id"], recipient, row["due_at"])
+            if item_key in seen_items:
+                continue
+            seen_items.add(item_key)
             groups[(row["workflow_step_id"], recipient)].append(row)
 
     sent = 0
@@ -260,6 +280,12 @@ def _render_message(
     first = rows[0]
     replacements = {
         "{{step_name}}": str(first["source_step_data"].get("label", first["record_key"])),
+        "{{sla_step_name}}": (
+            "Official Order"
+            if str(first["source_step_data"].get("label", first["record_key"]))
+            == "Proceed to Official Order"
+            else str(first["source_step_data"].get("label", first["record_key"]))
+        ),
         "{{sla_days}}": str(first["sla_days"]),
         "{{item_count}}": str(len(rows)),
     }
@@ -270,7 +296,10 @@ def _render_message(
         "{workflow_instance_id}/runtime"
     )
     table = _items_table(rows, url_template)
-    replacements["{{items_table}}"] = table
+    # Some imported templates contain the table placeholder twice. Expand it
+    # once and remove any remaining occurrences so one notification has one
+    # results table.
+    body = body.replace("{{items_table}}", table, 1).replace("{{items_table}}", "")
     for token, value in replacements.items():
         subject = subject.replace(token, value)
         body = body.replace(token, value)
@@ -291,7 +320,7 @@ def _items_table(rows: list[dict[str, Any]], url_template: str) -> str:
         url = url.replace("{{record_key}}", str(row["record_key"]))
         cells.append(
             "<tr>"
-            f"<td>{html.escape(row_uuid)}</td>"
+            f"<td>{html.escape(str(row.get('customer_name') or '-'))}</td>"
             f"<td>{html.escape(str(row['business_key']))}</td>"
             f"<td>{html.escape(str(row['sla_text']))}</td>"
             f"<td>{html.escape(str(row['due_at']))}</td>"
@@ -299,7 +328,7 @@ def _items_table(rows: list[dict[str, Any]], url_template: str) -> str:
             "</tr>"
         )
     return (
-        "<table><thead><tr><th>Row UUID</th><th>Business Key</th><th>SLA</th>"
+        "<table><thead><tr><th>Customer Name</th><th>Business Key</th><th>SLA</th>"
         "<th>Due At</th><th>Access</th></tr></thead><tbody>"
         + "".join(cells)
         + "</tbody></table>"
