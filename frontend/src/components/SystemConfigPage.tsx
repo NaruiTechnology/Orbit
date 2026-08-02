@@ -18,7 +18,7 @@ interface StepRow {
   record_key: string;
   record_order: number;
   step_name: string;
-  sla: string | null;
+  sla: number | null;
   businessEntity: string | null;
   DocumentAction: boolean | null;
   decisionAction: boolean;
@@ -368,7 +368,7 @@ export function SystemConfigPage({
       const response = await fetch(`/api/v1/admin/workflow-config/${encodeURIComponent(workflowKey)}/steps/${step.id}`, {
         method: "PATCH",
       headers: { "Content-Type": "application/json", "X-Orbit-Auth": authToken || "" },
-        body: JSON.stringify({ businessEntity: step.businessEntity || null, decisionAction: step.decisionAction, notifyAction: step.notifyAction, notifiedDate: step.notifiedDate, sla: step.sla || null, laboratory_id: step.laboratory_id || null, phone_number: step.phone_number, contact_email: step.contact_email, contact_name: step.owner || step.contact_name, hr_employee_id: step.hr_employee_id || null }),
+        body: JSON.stringify({ businessEntity: step.businessEntity || null, decisionAction: step.decisionAction, notifyAction: step.notifyAction, notifiedDate: step.notifiedDate, sla: step.sla ?? null, laboratory_id: step.laboratory_id || null, phone_number: step.phone_number, contact_email: step.contact_email, contact_name: step.owner || step.contact_name, hr_employee_id: step.hr_employee_id || null }),
       });
       if (!response.ok) throw new Error((await response.json().catch(() => ({}))).detail || `HTTP ${response.status}`);
       setConfig((current) => current
@@ -415,6 +415,26 @@ export function SystemConfigPage({
   async function applyStepDialog() {
     if (!stepDialog) return;
     setStepDialogError("");
+    if (stepDialog.sla != null && (!Number.isFinite(stepDialog.sla) || stepDialog.sla < 1)) {
+      setStepDialogError(
+        locale === "en"
+          ? "SLA must be a numeric value of at least 1 day."
+          : locale === "zh-HK"
+            ? "SLA 必須是至少 1 天的數值。"
+            : "SLA 必须是至少 1 天的数值。",
+      );
+      return;
+    }
+    if (stepDialog.sla != null && stepDialog.notifyAction == null) {
+      setStepDialogError(
+        locale === "en"
+          ? "Notify type is required when SLA is specified."
+          : locale === "zh-HK"
+            ? "指定 SLA 時必須選擇通知類型。"
+            : "指定 SLA 时必须选择通知类型。",
+      );
+      return;
+    }
     const saved = await saveStep(stepDialog);
     if (saved) setStepDialog(null);
     else setStepDialogError(error || (locale === "en" ? "Could not save this workflow step." : "无法保存此工作流步骤。"));
@@ -812,7 +832,7 @@ export function SystemConfigPage({
                 <button type="button" className="grid-edit-dialog__close" aria-label={locale === "en" ? "Close" : "关闭"} onClick={() => setStepDialog(null)} disabled={Boolean(savingId)}><svg className="grid-edit-action__icon" aria-hidden="true" viewBox="0 0 24 24" focusable="false"><path d="M6 6l12 12M18 6 6 18" /></svg></button>
               </header>
               <div className="grid-edit-dialog__body">
-                <label className="grid-edit-field"><span>{translate(locale, "sla")}</span><input type="text" value={stepDialog.sla || ""} placeholder="—" onChange={(event) => updateStepDialog({ sla: event.target.value || null })} disabled={Boolean(savingId)} /></label>
+                <label className="grid-edit-field"><span>{translate(locale, "sla")}</span><input type="number" inputMode="decimal" min="1" step="0.01" value={stepDialog.sla ?? ""} placeholder="—" onKeyDown={(event) => { if (["e", "E", "+", "-"].includes(event.key)) event.preventDefault(); }} onChange={(event) => { const value = event.target.value; updateStepDialog({ sla: value === "" ? null : Number(value) }); if (value !== "") setStepDialogError(""); }} disabled={Boolean(savingId)} /></label>
                 <label className="grid-edit-field"><HelpLabel locale={locale} label={locale === "en" ? "Business entity" : "业务实体"} titleKey="businessEntityHelpTitle" bodyKey="businessEntityHelpBody" detailKeys={["businessEntityHelpSteps", "businessEntityHelpEntities"]} /><select value={stepDialog.businessEntity || ""} onChange={(event) => updateStepDialog({ businessEntity: event.target.value || null })} disabled={Boolean(savingId)}><option value="">{locale === "en" ? "Select business entity" : "选择业务实体"}</option>{(config?.businessEntities || []).map((entity) => <option key={entity.key} value={entity.name}>{entity.name}</option>)}</select></label>
                 <label className="grid-edit-field"><span>{locale === "en" ? "Laboratory" : "实验室"}</span><select value={stepDialog.laboratory_id || ""} onChange={(event) => { const laboratoryId = event.target.value || null; const laboratory = config?.laboratories.find((item) => item.id === laboratoryId); updateStepDialog({ laboratory_id: laboratoryId, laboratory_name: laboratory?.name || null, laboratory_code: laboratory?.code || null }); }} disabled={Boolean(savingId)}><option value="">{locale === "en" ? "Select laboratory" : "选择实验室"}</option>{(config?.laboratories || []).map((laboratory) => <option key={laboratory.id} value={laboratory.id}>{laboratory.name}</option>)}</select></label>
                 <label className="grid-edit-field"><span>{locale === "en" ? "Phone Number" : "电话号码"}</span><input type="tel" value={stepDialog.phone_number} onChange={(event) => updateStepDialog({ phone_number: event.target.value })} disabled={Boolean(savingId)} /></label>
@@ -829,7 +849,7 @@ export function SystemConfigPage({
                 >
                   <span className="system-config-decision-switch__thumb" aria-hidden="true" />
                 </button></label>
-                <label className="grid-edit-field"><span>{locale === "en" ? "Notify type" : locale === "zh-HK" ? "通知類型" : "通知类型"}</span><NotifyTypeMultiSelect value={stepDialog.notifyAction} locale={locale} onChange={(notifyAction) => updateStepDialog({ notifyAction })} /></label>
+                <label className={`grid-edit-field${stepDialogError && stepDialog.sla != null && stepDialog.notifyAction == null ? " grid-edit-field--invalid" : ""}`}><span>{locale === "en" ? "Notify type" : locale === "zh-HK" ? "通知類型" : "通知类型"}{stepDialog.sla != null ? <b className="grid-edit-field__required" aria-label={locale === "en" ? "required" : "必填"}>*</b> : null}</span><NotifyTypeMultiSelect value={stepDialog.notifyAction} locale={locale} onChange={(notifyAction) => { updateStepDialog({ notifyAction }); if (notifyAction != null) setStepDialogError(""); }} />{stepDialogError && stepDialog.sla != null && stepDialog.notifyAction == null ? <small className="grid-edit-field__error">{locale === "en" ? "Required when SLA is specified." : locale === "zh-HK" ? "指定 SLA 時必填。" : "指定 SLA 时必填。"}</small> : null}</label>
               </div>
               {stepDialogError ? <p className="grid-edit-dialog__error" role="alert">{stepDialogError}</p> : null}
               <footer className="dialog-actions grid-edit-dialog__actions"><button type="button" className="confirm-dialog__cancel" onClick={() => setStepDialog(null)} disabled={Boolean(savingId)}><svg className="grid-edit-action__icon" aria-hidden="true" viewBox="0 0 24 24" focusable="false"><path d="M6 6l12 12M18 6 6 18" /></svg>{locale === "en" ? "Cancel" : "取消"}</button><button type="button" className="confirm-dialog__confirm" onClick={() => void applyStepDialog()} disabled={Boolean(savingId)}><svg className="grid-edit-action__icon" aria-hidden="true" viewBox="0 0 24 24" focusable="false"><path d="m5 12 4 4L19 6" /></svg>{savingId ? (locale === "en" ? "Saving…" : "保存中…") : (locale === "en" ? "Save" : "保存")}</button></footer>

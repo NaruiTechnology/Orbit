@@ -2185,6 +2185,8 @@ select:has(> option:checked[value=""]) option { color: var(--ink); }
 
 .grid-edit-field:has(.grid-edit-field__error) input:not([type="checkbox"]),
 .grid-edit-field:has(.grid-edit-field__error) textarea,
+.grid-edit-field:has(.grid-edit-field__error) select,
+.grid-edit-field:has(.grid-edit-field__error) .notify-type-combobox__trigger,
 .grid-edit-field:has(.grid-edit-field__error) output {
   border-color: #e0523d;
   box-shadow: 0 0 0 1px rgba(224, 82, 61, 0.3);

@@ -213,7 +213,7 @@ CREATE TABLE IF NOT EXISTS orbit_workflow.workflow_step_assignment (
     id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
     workflow_record_id uuid NOT NULL UNIQUE REFERENCES orbit_workflow.workflow_record(id) ON DELETE CASCADE,
     business_entity varchar(160),
-    sla varchar(200),
+    sla numeric(10, 2) CHECK (sla IS NULL OR sla >= 1),
     laboratory_id uuid REFERENCES orbit_identity.laboratory(id) ON DELETE SET NULL,
     phone_number varchar(80) NOT NULL DEFAULT '',
     contact_email varchar(320) NOT NULL DEFAULT '',
@@ -290,7 +290,7 @@ CREATE TABLE IF NOT EXISTS orbit_workflow.sla_lookup (
     workflow_name varchar(200) NOT NULL,
     record_key varchar(140) NOT NULL,
     current_workflow_step text NOT NULL,
-    sla text NOT NULL,
+    sla numeric(10, 2) NOT NULL CHECK (sla >= 1),
     sla_i18n jsonb NOT NULL DEFAULT '{}'::jsonb
         CHECK (jsonb_typeof(sla_i18n) = 'object'),
     sla_days numeric(10, 2) NOT NULL CHECK (sla_days >= 1),

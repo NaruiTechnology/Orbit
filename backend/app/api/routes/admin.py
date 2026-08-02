@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from datetime import datetime
+from decimal import Decimal
 from typing import Any
 from uuid import UUID
 
@@ -27,7 +28,7 @@ class WorkflowStepAssignmentUpdate(BaseModel):
     decisionAction: bool = False
     notifyAction: int | None = Field(default=None, ge=1, le=53)
     notifiedDate: datetime | None = None
-    sla: str | None = Field(default=None, max_length=200)
+    sla: Decimal | None = Field(default=None, ge=1, max_digits=10, decimal_places=2)
     laboratory_id: UUID | None = None
     phone_number: str = Field(default="", max_length=80)
     contact_email: str = Field(default="", max_length=320)
@@ -625,6 +626,9 @@ def update_workflow_step(
     _require_admin(user, connection)
     if request.businessEntity is not None and request.businessEntity not in _WORKFLOW_BUSINESS_ENTITIES:
         raise HTTPException(status_code=422, detail="unsupported business entity")
+    normalized_sla = request.sla
+    if normalized_sla and request.notifyAction is None:
+        raise HTTPException(status_code=422, detail="Notify type is required when SLA is specified.")
     updated = connection.execute(
         """
         UPDATE orbit_workflow.workflow_step_assignment a
@@ -647,7 +651,7 @@ def update_workflow_step(
         """,
         (request.businessEntity, request.businessEntity, request.decisionAction,
          request.notifyAction, request.notifiedDate,
-         request.sla.strip() if request.sla and request.sla.strip() else None,
+         normalized_sla,
          request.laboratory_id, request.phone_number.strip(), request.contact_email.strip(),
          request.contact_name.strip(), request.hr_employee_id, user.user_id, record_id, workflow_key),
     ).fetchone()

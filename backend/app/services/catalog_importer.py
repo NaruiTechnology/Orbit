@@ -430,7 +430,7 @@ def import_catalog(
                     workflow_name,
                     record["record_key"],
                     current_step,
-                    str(values["time_limit"]),
+                    sla_days,
                     Jsonb(sla_i18n),
                     sla_days,
                     catalog["source_sha256"],
