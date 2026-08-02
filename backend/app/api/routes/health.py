@@ -37,6 +37,7 @@ def health(
     return HealthResponse(
         status="ok",
         application=get_settings().application_name,
+        is_production=get_settings().is_production,
         database=diagnostics["database_name"],
         server_encoding=diagnostics["server_encoding"],
         client_encoding=diagnostics["client_encoding"],

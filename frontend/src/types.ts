@@ -271,6 +271,7 @@ export interface WorkflowCommandInput {
 export interface HealthResponse {
   status: "ok";
   application: string;
+  is_production: boolean;
   database: string;
   server_encoding: string;
   client_encoding: string;

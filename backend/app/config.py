@@ -87,6 +87,7 @@ class MailSettings:
 @dataclass(frozen=True)
 class ApplicationSettings:
     application_name: str
+    is_production: bool
     environment: str
     api_host: str
     api_port: int
@@ -159,6 +160,7 @@ def get_settings() -> ApplicationSettings:
     database_path = _resolve_path(data["DatabaseConfig"])
     return ApplicationSettings(
         application_name=data["ApplicationName"],
+        is_production=bool(data.get("IsProduction", False)),
         environment=os.getenv("ORBIT_ENVIRONMENT", data["Environment"]),
         api_host=os.getenv("ORBIT_API_HOST", data["ApiHost"]),
         api_port=int(os.getenv("ORBIT_API_PORT", str(data["ApiPort"]))),

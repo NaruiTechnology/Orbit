@@ -259,6 +259,7 @@ class WorkflowRuntimeProjection(BaseModel):
 class HealthResponse(BaseModel):
     status: Literal["ok"]
     application: str
+    is_production: bool
     database: str
     server_encoding: str
     client_encoding: str

@@ -449,6 +449,7 @@ export function App() {
           theme={workspace.theme}
           workflows={workflowsQuery.data || []}
           authToken={authToken}
+          isProduction={healthQuery.data?.is_production === true}
           onBack={closeAdmin}
           onAuthRequired={() => {
             localStorage.removeItem("orbit:auth-token");

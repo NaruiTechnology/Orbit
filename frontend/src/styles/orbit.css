@@ -422,6 +422,9 @@ input:focus-visible {
 .system-config-kicker { color: var(--signal); font-size: 10px; font-weight: 800; letter-spacing: .16em; text-transform: uppercase; }
 .system-config-back { padding: 6px 10px; border: 1px solid var(--line-strong); color: var(--ink); background: transparent; cursor: pointer; font-size: 11px; }
 .system-config-back:hover { border-color: var(--signal); color: var(--signal); }
+.system-config-card__header-actions { display: flex; align-items: center; gap: 10px; }
+.production-readonly { display: inline-flex; align-items: center; gap: 7px; color: var(--ink-muted); font-size: 11px; white-space: nowrap; }
+.production-readonly__switch { flex: 0 0 auto; }
 .admin-grid-select { width: 100%; min-height: 28px; padding: 4px 24px 4px 7px; color: var(--ink); background: var(--control-bg); border: 1px solid var(--line); border-radius: 4px; font: inherit; }
 .admin-grid-select:focus { border-color: var(--signal); outline: none; box-shadow: 0 0 0 1px color-mix(in srgb, var(--signal) 25%, transparent); }
 .notify-type-combobox { position: relative; width: 100%; }

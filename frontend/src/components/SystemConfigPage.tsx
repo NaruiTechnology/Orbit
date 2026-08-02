@@ -75,6 +75,10 @@ function DecisionActionHeader({ locale }: { locale: Locale }) {
   return <HelpLabel locale={locale} label={translate(locale, "decisionActionHelpTitle")} titleKey="decisionActionHelpTitle" bodyKey="decisionActionHelpBody" />;
 }
 
+function SlaHeader({ locale }: { locale: Locale }) {
+  return <HelpLabel locale={locale} label={translate(locale, "sla")} titleKey="slaHelpTitle" bodyKey="slaHelpBody" />;
+}
+
 const NOTIFY_TYPE_LABELS_ZH = [
   "客户跟进预警", "报价到期提醒", "合同到期提醒", "对账逾期提醒", "对账超期干预", "开票逾期提醒", "开票超期干预", "回款到期提醒", "回款轻度逾期", "回款中度逾期", "回款重度逾期", "公海预警通知", "公海回收通知", "费用确认单发送", "对账单发送", "自动回访", "余额不足提醒", "技术评估超时提醒", "返样超时预警", "返样超时告警", "失效分析待处理", "设备维护提醒", "设备维修告警", "良率低于阈值提醒", "客户测试结果通知", "分析报告完成通知", "故障工单提交通知", "故障工单超时未接单", "维修完成验收通知", "期望恢复时间无法满足", "耗材库存预警", "耗材耗尽告警", "维修受阻通知", "设备空时率周报", "维修时长统计月报", "异地订单通知-技术", "异地评估结果反馈", "异地订单接单确认", "异地样品寄出通知", "异地订单转回通知", "异地物流异常提醒", "红冲申请提交", "红冲审批通过通知", "红冲审批驳回通知", "开票实验室跳转通知", "预付款余额提醒", "预付款耗尽告警", "回款机时反馈提醒", "预付款充值确认", "红冲执行完成通知", "故障工单提交通知", "期望恢复时间无法满足", "维修完成验收通知",
 ] as const;
@@ -241,9 +245,9 @@ function AdminTextCell({
 }
 
 export function SystemConfigPage({
-  locale, theme, workflows, authToken, onBack, onAuthRequired,
+  locale, theme, workflows, authToken, isProduction, onBack, onAuthRequired,
 }: {
-  locale: Locale; theme: ThemeMode; workflows: WorkflowSummary[]; authToken: string | null; onBack: () => void; onAuthRequired: () => void;
+  locale: Locale; theme: ThemeMode; workflows: WorkflowSummary[]; authToken: string | null; isProduction: boolean; onBack: () => void; onAuthRequired: () => void;
 }) {
   const [topTab, setTopTab] = useState<"customer-relations" | "people-operations" | "access-management">("customer-relations");
   const [customerSubTab, setCustomerSubTab] = useState<"steps" | "templates">("steps");
@@ -419,7 +423,7 @@ export function SystemConfigPage({
   const columns = useMemo<ColDef<StepRow>[]>(() => [
     { field: "record_order", headerName: "#", width: 70, pinned: "left", editable: false },
     { field: "step_name", headerName: locale === "en" ? "Workflow step" : "工作流步骤", minWidth: 220, flex: 1, editable: false },
-    { field: "sla", headerName: "SLA", minWidth: 120, width: 140, editable: false },
+    { field: "sla", headerName: translate(locale, "sla"), headerComponent: () => <SlaHeader locale={locale} />, minWidth: 120, width: 140, editable: false },
     {
       field: "decisionAction", headerName: locale === "en" ? "Decision action" : "决策动作", width: 150, minWidth: 150,
       headerComponent: () => <DecisionActionHeader locale={locale} />,
@@ -739,7 +743,7 @@ export function SystemConfigPage({
 
   return <main className="system-config-page">
     <section className="system-config-card">
-      <header className="system-config-card__header"><div><span className="system-config-kicker">System Config</span><h1>{translate(locale, "appSubtitle")}</h1></div><button className="system-config-back" type="button" onClick={onBack}>← {locale === "en" ? "Back to workspace" : "返回工作区"}</button></header>
+      <header className="system-config-card__header"><div><span className="system-config-kicker">System Config</span><h1>{translate(locale, "appSubtitle")}</h1></div><div className="system-config-card__header-actions"><button className="system-config-back" type="button" onClick={onBack}>← {locale === "en" ? "Back to workspace" : "返回工作区"}</button><span className="production-readonly" title={`IsProduction = ${isProduction}`}><span>{translate(locale, "productionMode")}</span><button type="button" className={`system-config-decision-switch production-readonly__switch${isProduction ? " is-on" : ""}`} role="switch" aria-checked={isProduction} aria-label={translate(locale, "productionMode")} disabled><span className="system-config-decision-switch__thumb" aria-hidden="true" /></button></span></div></header>
       <nav className="system-config-tabs system-config-tabs--top" aria-label="System configuration sections" role="tablist">
         <button type="button" role="tab" aria-selected={topTab === "customer-relations"} onClick={() => setTopTab("customer-relations")}>{locale === "en" ? "Customer Relations" : locale === "zh-HK" ? "客戶關係" : "客户关系"}</button>
         <button type="button" role="tab" aria-selected={topTab === "people-operations"} onClick={() => setTopTab("people-operations")}>{locale === "en" ? "People Operations" : "人员运营"}</button>
@@ -808,7 +812,7 @@ export function SystemConfigPage({
                 <button type="button" className="grid-edit-dialog__close" aria-label={locale === "en" ? "Close" : "关闭"} onClick={() => setStepDialog(null)} disabled={Boolean(savingId)}><svg className="grid-edit-action__icon" aria-hidden="true" viewBox="0 0 24 24" focusable="false"><path d="M6 6l12 12M18 6 6 18" /></svg></button>
               </header>
               <div className="grid-edit-dialog__body">
-                <label className="grid-edit-field"><span>SLA</span><input type="text" value={stepDialog.sla || ""} placeholder="—" onChange={(event) => updateStepDialog({ sla: event.target.value || null })} disabled={Boolean(savingId)} /></label>
+                <label className="grid-edit-field"><span>{translate(locale, "sla")}</span><input type="text" value={stepDialog.sla || ""} placeholder="—" onChange={(event) => updateStepDialog({ sla: event.target.value || null })} disabled={Boolean(savingId)} /></label>
                 <label className="grid-edit-field"><HelpLabel locale={locale} label={locale === "en" ? "Business entity" : "业务实体"} titleKey="businessEntityHelpTitle" bodyKey="businessEntityHelpBody" detailKeys={["businessEntityHelpSteps", "businessEntityHelpEntities"]} /><select value={stepDialog.businessEntity || ""} onChange={(event) => updateStepDialog({ businessEntity: event.target.value || null })} disabled={Boolean(savingId)}><option value="">{locale === "en" ? "Select business entity" : "选择业务实体"}</option>{(config?.businessEntities || []).map((entity) => <option key={entity.key} value={entity.name}>{entity.name}</option>)}</select></label>
                 <label className="grid-edit-field"><span>{locale === "en" ? "Laboratory" : "实验室"}</span><select value={stepDialog.laboratory_id || ""} onChange={(event) => { const laboratoryId = event.target.value || null; const laboratory = config?.laboratories.find((item) => item.id === laboratoryId); updateStepDialog({ laboratory_id: laboratoryId, laboratory_name: laboratory?.name || null, laboratory_code: laboratory?.code || null }); }} disabled={Boolean(savingId)}><option value="">{locale === "en" ? "Select laboratory" : "选择实验室"}</option>{(config?.laboratories || []).map((laboratory) => <option key={laboratory.id} value={laboratory.id}>{laboratory.name}</option>)}</select></label>
                 <label className="grid-edit-field"><span>{locale === "en" ? "Phone Number" : "电话号码"}</span><input type="tel" value={stepDialog.phone_number} onChange={(event) => updateStepDialog({ phone_number: event.target.value })} disabled={Boolean(savingId)} /></label>

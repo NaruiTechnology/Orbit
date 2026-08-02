@@ -1,5 +1,6 @@
 {
   "ApplicationName": "Orbit Automation",
+  "IsProduction": false,
   "Environment": "development",
   "ApiHost": "127.0.0.1",
   "ApiPort": 8120,
