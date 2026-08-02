@@ -577,6 +577,7 @@ export function App() {
           decisionCatalogs={decisionOptionsQuery.data || []}
           onDecisionGoto={(workflowKey, stepKey) => void handleDecisionGoto(workflowKey, stepKey)}
           theme={workspace.theme}
+          isProduction={healthQuery.data?.is_production === true}
         />
       </main>}
       <footer className="orbit-footer">

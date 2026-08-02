@@ -26,7 +26,8 @@ class WorkflowStepAssignmentUpdate(BaseModel):
 
     businessEntity: str | None = Field(default=None, max_length=160)
     decisionAction: bool = False
-    notifyAction: int | None = Field(default=None, ge=1, le=53)
+    notifyAction: bool | None = None
+    notifyType: int | None = Field(default=None, ge=1, le=53)
     notifiedDate: datetime | None = None
     sla: Decimal | None = Field(default=None, ge=1, max_digits=10, decimal_places=2)
     laboratory_id: UUID | None = None
@@ -551,7 +552,7 @@ def workflow_config(
                sla.sla_i18n, sla.sla,
                a.business_entity, a."documentAction" AS document_action,
                a."decisionAction" AS decision_action, a.sla AS assignment_sla,
-               a."notifyAction" AS notify_action, a."notifiedDate" AS notified_date,
+               a."notifyAction" AS notify_action, a."notifyType" AS notify_type, a."notifiedDate" AS notified_date,
                a.laboratory_id, l.code AS laboratory_code, l.name_i18n AS laboratory_name_i18n,
                a.phone_number, a.contact_email, a.contact_name, a.hr_employee_id
           FROM orbit_workflow.workflow_record r
@@ -600,6 +601,7 @@ def workflow_config(
                 "DocumentAction": row["document_action"],
                 "decisionAction": row["decision_action"],
                 "notifyAction": row["notify_action"],
+                "notifyType": row["notify_type"],
                 "notifiedDate": row["notified_date"],
                 "laboratory_id": row["laboratory_id"],
                 "laboratory_code": row["laboratory_code"],
@@ -627,7 +629,7 @@ def update_workflow_step(
     if request.businessEntity is not None and request.businessEntity not in _WORKFLOW_BUSINESS_ENTITIES:
         raise HTTPException(status_code=422, detail="unsupported business entity")
     normalized_sla = request.sla
-    if normalized_sla and request.notifyAction is None:
+    if normalized_sla and request.notifyType is None:
         raise HTTPException(status_code=422, detail="Notify type is required when SLA is specified.")
     updated = connection.execute(
         """
@@ -639,7 +641,7 @@ def update_workflow_step(
                    ELSE a."documentAction"
                END,
                "decisionAction" = %s,
-               "notifyAction" = %s, "notifiedDate" = %s,
+               "notifyAction" = %s, "notifyType" = %s, "notifiedDate" = %s,
                sla = %s, laboratory_id = %s, phone_number = %s, contact_email = %s,
                contact_name = %s,
                hr_employee_id = %s, updated_by = %s, updated_at = CURRENT_TIMESTAMP
@@ -650,7 +652,7 @@ def update_workflow_step(
          RETURNING a.workflow_record_id
         """,
         (request.businessEntity, request.businessEntity, request.decisionAction,
-         request.notifyAction, request.notifiedDate,
+         request.notifyAction, request.notifyType, request.notifiedDate,
          normalized_sla,
          request.laboratory_id, request.phone_number.strip(), request.contact_email.strip(),
          request.contact_name.strip(), request.hr_employee_id, user.user_id, record_id, workflow_key),

@@ -175,7 +175,8 @@ export interface TreeNode {
   business_entity: string | null;
   DocumentAction: boolean | null;
   decisionAction: boolean;
-  notifyAction: notifyType | null;
+  notifyAction: boolean | null;
+  notifyType: notifyType | null;
   notifiedDate: string | null;
   sla: string | null;
   is_selected: boolean;

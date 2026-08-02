@@ -16,6 +16,7 @@ interface MailComposeDialogProps {
   defaultTo?: string;
   defaultBody?: string;
   onClose: () => void;
+  onSent?: (() => void | Promise<void>) | undefined;
 }
 
 function authHeaders(): HeadersInit {
@@ -48,7 +49,7 @@ function containsHtmlMarkup(value: string): boolean {
   return /<\s*(html|body|table|thead|tbody|tfoot|tr|th|td|p|ul|ol|li|strong|em|br)\b/i.test(value);
 }
 
-export function MailComposeDialog({ locale, defaultSubject, defaultTo = "", defaultBody = "", onClose }: MailComposeDialogProps) {
+export function MailComposeDialog({ locale, defaultSubject, defaultTo = "", defaultBody = "", onClose, onSent }: MailComposeDialogProps) {
   const [to, setTo] = useState(defaultTo);
   const [subject, setSubject] = useState(defaultSubject);
   const [busy, setBusy] = useState(false);
@@ -96,6 +97,14 @@ export function MailComposeDialog({ locale, defaultSubject, defaultTo = "", defa
     };
   }, []);
 
+  useEffect(() => {
+    setSubject(defaultSubject);
+  }, [defaultSubject]);
+
+  useEffect(() => {
+    if (editor && defaultBody) editor.commands.setContent(`<p>${escapeHtml(defaultBody)}</p>`);
+  }, [defaultBody, editor]);
+
   async function fallbackToMailApp(): Promise<void> {
     const text = editor?.getText() || "";
     openMailApp(to, subject, text);
@@ -134,6 +143,7 @@ export function MailComposeDialog({ locale, defaultSubject, defaultTo = "", defa
         const detail = await response.text();
         throw new Error(detail || "SMTP delivery failed");
       }
+      await onSent?.();
       onClose();
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : "SMTP delivery failed");

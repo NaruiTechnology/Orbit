@@ -47,6 +47,70 @@ from app.services.workflow_sla_service import evaluate_sla_workflow_steps
 router = APIRouter(prefix="/workflows", tags=["workflows"])
 
 
+@router.get("/notify-types/{notify_type}")
+def workflow_notify_type(
+    notify_type: int,
+    locale: str = Query(default="zh-CN"),
+    user: SessionInfo = Depends(get_current_user),
+    connection: Connection[dict[str, Any]] = Depends(get_connection),
+) -> dict[str, Any]:
+    if notify_type < 1 or notify_type > 53:
+        raise HTTPException(status_code=422, detail="Invalid notify type")
+    locale_key = {"zh-CN": "zh_CN", "zh-HK": "zh_HK"}.get(locale, "en")
+    row = connection.execute(
+        """
+        SELECT notify_type,
+               notification_scenario ->> %s AS notification_scenario,
+               notification_channel ->> %s AS notification_channel,
+               recipient ->> %s AS recipient,
+               template_title ->> %s AS template_title,
+               template_body ->> %s AS template_body
+          FROM orbit_workflow.notify
+         WHERE notify_type = %s
+        """,
+        (locale_key, locale_key, locale_key, locale_key, locale_key, notify_type),
+    ).fetchone()
+    if row is None:
+        raise HTTPException(status_code=404, detail="Notification template not found")
+    return {
+        "notifyType": row["notify_type"],
+        "notificationScenario": row["notification_scenario"],
+        "notificationChannel": row["notification_channel"],
+        "recipient": row["recipient"],
+        "templateTitle": row["template_title"],
+        "templateBody": row["template_body"],
+    }
+
+
+@router.patch("/{workflow_key}/steps/{record_id}/notify-action")
+def complete_workflow_notify_action(
+    workflow_key: str,
+    record_id: UUID,
+    user: SessionInfo = Depends(get_current_user),
+    connection: Connection[dict[str, Any]] = Depends(get_connection),
+) -> dict[str, Any]:
+    require_workflow_access(connection, user.user_id, workflow_key, "execute")
+    updated = connection.execute(
+        """
+        UPDATE orbit_workflow.workflow_step_assignment a
+           SET "notifyAction" = true,
+               "notifiedDate" = CURRENT_TIMESTAMP,
+               updated_by = %s,
+               updated_at = CURRENT_TIMESTAMP
+          FROM orbit_workflow.workflow_record r
+          JOIN orbit_workflow.workflow_definition w ON w.id = r.workflow_id
+         WHERE a.workflow_record_id = r.id
+           AND r.id = %s
+           AND w.workflow_key = %s
+         RETURNING a.workflow_record_id
+        """,
+        (user.user_id, record_id, workflow_key),
+    ).fetchone()
+    if updated is None:
+        raise HTTPException(status_code=404, detail="Workflow step not found")
+    return {"ok": True, "record_id": updated["workflow_record_id"], "notifyAction": True}
+
+
 @router.post("/steps/{workflow_step_id}/sla-advance")
 def workflow_sla_advance(
     workflow_step_id: UUID,

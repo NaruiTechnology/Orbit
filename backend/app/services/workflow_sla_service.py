@@ -57,6 +57,8 @@ def _attach_step_configuration(
                COALESCE(w.name_i18n ->> 'en', w.workflow_key) AS workflow_name,
                COALESCE(r.label_i18n ->> 'en', r.record_key) AS step_name,
                COALESCE(a.sla, r.values_json ->> 'time_limit') AS sla_configured,
+               a."notifyAction" AS notify_action,
+               a."notifyType" AS notify_type,
                CASE
                    WHEN a.sla IS NOT NULL THEN 'workflow_step_assignment.sla'
                    ELSE 'workflow_record.values_json.time_limit'
@@ -116,11 +118,14 @@ def run_sla_cycle(connection: Connection[dict[str, Any]], access_url_base: str) 
                     "step_start_time": row.get("started_at"),
                     "due_at": row.get("due_at"),
                     "sla_violated": row.get("sla_violated"),
+                    "notify_type": row.get("notify_type"),
+                    "notify_action": row.get("notify_action"),
                 }
             ),
             flush=True,
         )
     violations = [row for row in rows if row["sla_violated"]]
+    _mark_overdue_steps_for_notification(connection, violations)
     email_result = _send_violation_emails(connection, violations, access_url_base)
     decisions = _placeholder_decisions(rows)
     return {
@@ -130,6 +135,24 @@ def run_sla_cycle(connection: Connection[dict[str, Any]], access_url_base: str) 
         "email_errors": email_result["email_errors"],
         "decisions": decisions,
     }
+
+
+def _mark_overdue_steps_for_notification(
+    connection: Connection[dict[str, Any]], rows: list[dict[str, Any]]
+) -> None:
+    """Expose an overdue SLA as an outstanding notification action in the tree."""
+    step_ids = {row["workflow_step_id"] for row in rows if row.get("workflow_step_id")}
+    if not step_ids:
+        return
+    connection.execute(
+        """
+        UPDATE orbit_workflow.workflow_step_assignment
+           SET "notifyAction" = false,
+               updated_at = CURRENT_TIMESTAMP
+         WHERE workflow_record_id = ANY(%s)
+        """,
+        (list(step_ids),),
+    )
 
 
 def _json_log(payload: dict[str, Any]) -> str:

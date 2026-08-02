@@ -35,6 +35,7 @@ interface WorkflowTreePanelProps {
   decisionCatalogs?: WorkflowDecisionCatalog[];
   onDecisionGoto?: (workflowKey: string, stepKey: string) => void;
   theme?: ThemeMode;
+  isProduction?: boolean;
 }
 
 function formatCommandError(error: unknown): string {
@@ -57,6 +58,42 @@ function formatStepStartTime(value: string | null | undefined, locale: Locale): 
   }).format(date);
 }
 
+function localizedNotifyText(locale: Locale, en: string, simplified: string, traditional: string): string {
+  return locale === "en" ? en : locale === "zh-HK" ? traditional : simplified;
+}
+
+function buildSlaNotificationBody(
+  locale: Locale,
+  templateBody: string,
+  workflowName: string,
+  stepName: string,
+  businessKey: string,
+  slaValue: string | null,
+  startedAt: string | null,
+): string {
+  const slaDays = Number(slaValue?.match(/[0-9]+(?:\.[0-9]+)?/)?.[0] || 0);
+  const start = startedAt ? new Date(startedAt) : null;
+  const now = new Date();
+  const due = start && slaDays > 0 ? new Date(start.getTime() + slaDays * 86400000) : null;
+  const overdueMs = due ? Math.max(0, now.getTime() - due.getTime()) : 0;
+  const overdueMinutes = Math.floor(overdueMs / 60000);
+  const overdueDays = overdueMs / 86400000;
+  const startText = start && !Number.isNaN(start.getTime()) ? formatStepStartTime(start.toISOString(), locale) || start.toISOString() : "-";
+  const dueText = due ? formatStepStartTime(due.toISOString(), locale) || due.toISOString() : "-";
+  const roundedDays = overdueDays.toFixed(2);
+  const minutesText = String(overdueMinutes);
+  const body = (templateBody || "")
+    .replace(/\[(?:工单号|订单号|工作流单号|评估工单号|order number|ticket number)\]|\{(?:工单号|订单号|工作流单号|评估工单号|order number|ticket number)\}/gi, businessKey || "-")
+    .replace(/\[(?:分钟|minutes?|overdue minutes?)\]|\{(?:分钟|minutes?|overdue minutes?)\}/gi, minutesText);
+  const detailTitle = localizedNotifyText(locale, "SLA overdue details", "SLA逾期详情", "SLA逾期詳情");
+  const labels = locale === "en"
+    ? [`Workflow: ${workflowName}`, `Step: ${stepName}`, `Business key: ${businessKey || "-"}`, `Configured SLA: ${slaValue || "-"} day(s)`, `Step start time: ${startText}`, `SLA due time: ${dueText}`, `Overdue: ${roundedDays} day(s) (${overdueMinutes} minute(s))`]
+    : locale === "zh-HK"
+      ? [`工作流程：${workflowName}`, `步驟：${stepName}`, `業務編號：${businessKey || "-"}`, `SLA 設定：${slaValue || "-"} 日`, `步驟開始時間：${startText}`, `SLA 到期時間：${dueText}`, `逾期：${roundedDays} 日（${overdueMinutes} 分鐘）`]
+      : [`工作流：${workflowName}`, `步骤：${stepName}`, `业务编号：${businessKey || "-"}`, `SLA 配置：${slaValue || "-"} 天`, `步骤开始时间：${startText}`, `SLA 到期时间：${dueText}`, `逾期：${roundedDays} 天（${overdueMinutes} 分钟）`];
+  return `${body}\n\n${detailTitle}\n${labels.join("\n")}`.trim();
+}
+
 export function WorkflowTreePanel({
   locale,
   tree,
@@ -72,11 +109,15 @@ export function WorkflowTreePanel({
   decisionCatalogs = [],
   onDecisionGoto,
   theme = "navy",
+  isProduction = true,
 }: WorkflowTreePanelProps) {
   const selectedRef = useRef<HTMLLIElement | null>(null);
   const [commandError, setCommandError] = useState<string | null>(null);
   const [mailComposeOpen, setMailComposeOpen] = useState(false);
   const [mailComposeBody, setMailComposeBody] = useState("");
+  const [mailComposeSubject, setMailComposeSubject] = useState("");
+  const [notifyComposeMode, setNotifyComposeMode] = useState(false);
+  const [notifyActionPending, setNotifyActionPending] = useState(false);
   const [messageDialogOpen, setMessageDialogOpen] = useState(false);
   const [reportDialogOpen, setReportDialogOpen] = useState(false);
   const [decisionDialogOpen, setDecisionDialogOpen] = useState(false);
@@ -103,6 +144,61 @@ export function WorkflowTreePanel({
     currentTreeNode && lastTreeNode?.record_key === currentTreeNode.record_key,
   );
   const runtimeByKey = new Map((runtime?.nodes || []).map((node) => [node.record_key, node]));
+  const notifyRequired = Boolean(
+    !isProduction && runtimeCurrentNode && currentTreeNode?.record_key === runtimeCurrentNode.record_key && currentTreeNode.notifyType &&
+    runtimeCurrentNode.sla_violated && currentTreeNode.notifyAction === false,
+  );
+
+  async function openNotifyCompose(): Promise<void> {
+    if (!currentTreeNode?.notifyType) return;
+    const currentRuntimeNode = runtime?.nodes.find((node) => node.record_key === currentTreeNode.record_key);
+    const defaultBody = buildSlaNotificationBody(
+      locale,
+      "",
+      tree?.workflow_name || "Orbit workflow",
+      currentTreeNode.label,
+      runtime?.instance.business_key || "",
+      currentTreeNode.sla,
+      currentRuntimeNode?.start_time || currentRuntimeNode?.started_at || null,
+    );
+    setNotifyActionPending(true);
+    setNotifyComposeMode(true);
+    setMailComposeSubject(`${translate(locale, "email")} · ${currentTreeNode.record_key}`);
+    setMailComposeBody(defaultBody);
+    setMailComposeOpen(true);
+    try {
+      const token = localStorage.getItem("orbit:auth-token");
+      const response = await fetch(`/api/v1/workflows/notify-types/${currentTreeNode.notifyType}?locale=${encodeURIComponent(locale)}`, {
+        headers: token ? { "X-Orbit-Auth": token } : {},
+      });
+      if (!response.ok) throw new Error("Notification template unavailable");
+      const template = await response.json() as { templateTitle?: string; templateBody?: string };
+      setMailComposeSubject(template.templateTitle || `${translate(locale, "email")} · ${currentTreeNode.record_key}`);
+      setMailComposeBody(buildSlaNotificationBody(
+        locale,
+        template.templateBody || "",
+        tree?.workflow_name || "Orbit workflow",
+        currentTreeNode.label,
+        runtime?.instance.business_key || "",
+        currentTreeNode.sla,
+        currentRuntimeNode?.start_time || currentRuntimeNode?.started_at || null,
+      ));
+    } catch (error) {
+      setCommandError(error instanceof Error ? error.message : "Notification template unavailable");
+    } finally {
+      setNotifyActionPending(false);
+    }
+  }
+
+  async function markNotifyAction(): Promise<void> {
+    if (!tree?.workflow_key || !currentTreeNode) return;
+    const token = localStorage.getItem("orbit:auth-token");
+    const response = await fetch(`/api/v1/workflows/${encodeURIComponent(tree.workflow_key)}/steps/${currentTreeNode.record_id}/notify-action`, {
+      method: "PATCH",
+      headers: token ? { "X-Orbit-Auth": token } : {},
+    });
+    if (!response.ok) throw new Error("Notification status could not be saved");
+  }
 
   const reportContextKey = `${tree?.workflow_key || ""}:${runtime?.instance.id || ""}:${currentNode?.record_key || ""}`;
   const reportActionCompleted = Boolean(
@@ -317,6 +413,12 @@ export function WorkflowTreePanel({
                               <span className="workflow-report-check__required" aria-hidden="true">*</span>
                             </label>
                           ) : null}
+                          {notifyRequired ? (
+                            <label className="workflow-report-check workflow-notify-check" title={translate(locale, "notifyAction")}>
+                              <input type="checkbox" checked={false} disabled={commandBusy || notifyActionPending} onChange={() => void openNotifyCompose()} />
+                              <span className="workflow-report-check__required" aria-hidden="true">*</span>
+                            </label>
+                          ) : null}
                           <button
                             type="button"
                             className="workflow-email-button"
@@ -334,6 +436,7 @@ export function WorkflowTreePanel({
                             title={translate(locale, "email")}
                             disabled={commandBusy}
                             onClick={() => {
+                              setNotifyComposeMode(false);
                               setMailComposeBody("");
                               setMailComposeOpen(true);
                             }}
@@ -347,6 +450,7 @@ export function WorkflowTreePanel({
                             title={currentTreeNode?.ContactName || translate(locale, "contact")}
                             disabled={commandBusy}
                             onClick={() => {
+                              setNotifyComposeMode(false);
                               const contactName = currentTreeNode?.ContactName?.trim() || "";
                               setMailComposeBody(contactName ? `DEAR ${contactName}` : "DEAR");
                               setMailComposeOpen(true);
@@ -404,7 +508,8 @@ export function WorkflowTreePanel({
           locale={locale}
           defaultTo={currentTreeNode?.Email || ""}
           defaultBody={mailComposeBody}
-          defaultSubject={`${translate(locale, "email")} · ${currentNode?.record_key || "Orbit workflow"}`}
+          defaultSubject={mailComposeSubject || `${translate(locale, "email")} · ${currentNode?.record_key || "Orbit workflow"}`}
+          onSent={notifyComposeMode ? () => void markNotifyAction() : undefined}
           onClose={() => setMailComposeOpen(false)}
         />
       ) : null}

@@ -148,7 +148,8 @@ class TreeNode(BaseModel):
     business_entity: str | None = None
     DocumentAction: bool | None = None
     decisionAction: bool = False
-    notifyAction: int | None = Field(default=None, ge=1, le=53)
+    notifyAction: bool | None = None
+    notifyType: int | None = Field(default=None, ge=1, le=53)
     notifiedDate: datetime | None = None
     sla: str | None = None
     is_selected: bool

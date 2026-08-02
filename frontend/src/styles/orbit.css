@@ -2498,6 +2498,7 @@ select:has(> option:checked[value=""]) option { color: var(--ink); }
   position: relative;
 }
 .workflow-report-check input { width: 16px; min-height: 16px; accent-color: #f0b429; }
+.workflow-notify-check input { accent-color: #dc2626; }
 .workflow-node__body .workflow-report-check__required {
   position: absolute;
   top: -6px;
