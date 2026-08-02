@@ -1323,6 +1323,8 @@ def get_tree(
                assignment.business_entity AS assigned_business_entity,
                assignment."documentAction" AS assigned_document_action,
                assignment."decisionAction" AS decision_action,
+               assignment."notifyAction" AS notify_action,
+               assignment."notifiedDate" AS notified_date,
                assignment.sla AS assigned_sla,
                sla.sla_i18n,
                sla.sla
@@ -1445,6 +1447,8 @@ def get_tree(
             business_entity=row["assigned_business_entity"],
             DocumentAction=row["assigned_document_action"],
             decisionAction=bool(row["decision_action"]),
+            notifyAction=row["notify_action"],
+            notifiedDate=row["notified_date"],
             sla=_localized_step_value(row["assigned_sla"], locale) or localized_value(row["sla_i18n"], locale, row["sla"]),
             is_selected=(
                 row["record_key"] == selected_step_key

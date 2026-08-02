@@ -1,8 +1,8 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useId, useMemo, useRef, useState } from "react";
 import { AgGridReact } from "ag-grid-react";
 import { type ColDef, type GridApi, type ICellRendererParams } from "ag-grid-community";
 
-import type { Locale, ThemeMode, WorkflowSummary } from "../types";
+import { notifyType, type Locale, type ThemeMode, type WorkflowSummary } from "../types";
 import { translate, type TranslationKey } from "../i18n/translations";
 import { orbitGridBlackTheme, orbitGridGreenTheme, orbitGridNavyTheme, orbitGridTheme } from "./WorkflowGrid";
 import { SalesTemplatesPage } from "./SalesTemplatesPage";
@@ -22,6 +22,8 @@ interface StepRow {
   businessEntity: string | null;
   DocumentAction: boolean | null;
   decisionAction: boolean;
+  notifyAction: notifyType | null;
+  notifiedDate: string | null;
   laboratory_id: string | null;
   laboratory_code: string | null;
   laboratory_name: string | null;
@@ -71,6 +73,58 @@ function BusinessEntityHeader({ locale }: { locale: Locale }) {
 
 function DecisionActionHeader({ locale }: { locale: Locale }) {
   return <HelpLabel locale={locale} label={translate(locale, "decisionActionHelpTitle")} titleKey="decisionActionHelpTitle" bodyKey="decisionActionHelpBody" />;
+}
+
+const NOTIFY_TYPE_LABELS_ZH = [
+  "客户跟进预警", "报价到期提醒", "合同到期提醒", "对账逾期提醒", "对账超期干预", "开票逾期提醒", "开票超期干预", "回款到期提醒", "回款轻度逾期", "回款中度逾期", "回款重度逾期", "公海预警通知", "公海回收通知", "费用确认单发送", "对账单发送", "自动回访", "余额不足提醒", "技术评估超时提醒", "返样超时预警", "返样超时告警", "失效分析待处理", "设备维护提醒", "设备维修告警", "良率低于阈值提醒", "客户测试结果通知", "分析报告完成通知", "故障工单提交通知", "故障工单超时未接单", "维修完成验收通知", "期望恢复时间无法满足", "耗材库存预警", "耗材耗尽告警", "维修受阻通知", "设备空时率周报", "维修时长统计月报", "异地订单通知-技术", "异地评估结果反馈", "异地订单接单确认", "异地样品寄出通知", "异地订单转回通知", "异地物流异常提醒", "红冲申请提交", "红冲审批通过通知", "红冲审批驳回通知", "开票实验室跳转通知", "预付款余额提醒", "预付款耗尽告警", "回款机时反馈提醒", "预付款充值确认", "红冲执行完成通知", "故障工单提交通知", "期望恢复时间无法满足", "维修完成验收通知",
+] as const;
+
+const NOTIFY_TYPE_OPTIONS = Object.entries(notifyType)
+  .filter(([key]) => Number.isNaN(Number(key)))
+  .map(([key, value]) => ({ value: value as notifyType, label: key, labelZh: NOTIFY_TYPE_LABELS_ZH[(value as number) - 1] ?? key }));
+
+function notifyTypeLabel(option: (typeof NOTIFY_TYPE_OPTIONS)[number], locale: Locale): string {
+  return locale === "en" ? option.label : option.labelZh;
+}
+
+function NotifyTypeMultiSelect({ value, locale, onChange }: {
+  value: notifyType | null;
+  locale: Locale;
+  onChange: (value: notifyType | null) => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const [menuPosition, setMenuPosition] = useState({ top: 0, left: 0, width: 360 });
+  const triggerRef = useRef<HTMLButtonElement | null>(null);
+  const radioGroupName = `notify-type-${useId()}`;
+  const selected = value === null || value === undefined ? null : value;
+  useEffect(() => {
+    if (!open || !triggerRef.current) return;
+    const rect = triggerRef.current.getBoundingClientRect();
+    const menuHeight = Math.min(760, window.innerHeight - 24);
+    const top = rect.bottom + menuHeight <= window.innerHeight
+      ? rect.bottom + 3
+      : Math.max(12, rect.top - menuHeight - 3);
+    setMenuPosition({ top, left: Math.max(12, Math.min(rect.left, window.innerWidth - 560)), width: Math.min(560, window.innerWidth - 24) });
+  }, [open]);
+  const selectedOption = NOTIFY_TYPE_OPTIONS.find((option) => option.value === selected);
+  const selectedLabels = selectedOption ? [notifyTypeLabel(selectedOption, locale)] : [];
+  const summary = selectedLabels.length
+    ? selectedLabels.join(", ")
+    : (locale === "en" ? "Select notify type" : locale === "zh-HK" ? "選擇通知類型" : "选择通知类型");
+  return <div className="notify-type-combobox" onClick={(event) => event.stopPropagation()}>
+    <button ref={triggerRef} type="button" className="admin-grid-select notify-type-combobox__trigger" role="combobox" aria-expanded={open} title={summary} onClick={() => setOpen((current) => !current)}><span className={`notify-type-combobox__summary${selectedLabels.length ? "" : " is-placeholder"}`}>{summary}</span><span aria-hidden="true">▾</span></button>
+    {open ? <div className="notify-type-combobox__menu" style={{ top: menuPosition.top, left: menuPosition.left, width: menuPosition.width }} role="listbox" aria-multiselectable="false">
+      <div className="notify-type-combobox__menu-header"><strong>{locale === "en" ? "Notify type" : locale === "zh-HK" ? "通知類型" : "通知类型"}</strong><button type="button" className="notify-type-combobox__close" aria-label={locale === "en" ? "Close" : locale === "zh-HK" ? "關閉" : "关闭"} onClick={() => setOpen(false)}>×</button></div>
+      <label className="notify-type-combobox__option notify-type-combobox__option--empty">
+        <input type="radio" name={radioGroupName} checked={selected === null} onChange={() => { onChange(null); setOpen(false); }} />
+        <span>{locale === "en" ? "NO NOTIFY TYPE" : locale === "zh-HK" ? "不選擇通知類型" : "不选择通知类型"}</span>
+      </label>
+      {NOTIFY_TYPE_OPTIONS.map((option) => <label className="notify-type-combobox__option" key={option.value}>
+        <input type="radio" name={radioGroupName} checked={selected === option.value} onChange={() => { onChange(option.value); setOpen(false); }} />
+        <span>{notifyTypeLabel(option, locale)}</span>
+      </label>)}
+    </div> : null}
+  </div>;
 }
 
 interface AccessRole { code: string; name: string }
@@ -310,7 +364,7 @@ export function SystemConfigPage({
       const response = await fetch(`/api/v1/admin/workflow-config/${encodeURIComponent(workflowKey)}/steps/${step.id}`, {
         method: "PATCH",
       headers: { "Content-Type": "application/json", "X-Orbit-Auth": authToken || "" },
-        body: JSON.stringify({ businessEntity: step.businessEntity || null, decisionAction: step.decisionAction, sla: step.sla || null, laboratory_id: step.laboratory_id || null, phone_number: step.phone_number, contact_email: step.contact_email, contact_name: step.owner || step.contact_name, hr_employee_id: step.hr_employee_id || null }),
+        body: JSON.stringify({ businessEntity: step.businessEntity || null, decisionAction: step.decisionAction, notifyAction: step.notifyAction, notifiedDate: step.notifiedDate, sla: step.sla || null, laboratory_id: step.laboratory_id || null, phone_number: step.phone_number, contact_email: step.contact_email, contact_name: step.owner || step.contact_name, hr_employee_id: step.hr_employee_id || null }),
       });
       if (!response.ok) throw new Error((await response.json().catch(() => ({}))).detail || `HTTP ${response.status}`);
       setConfig((current) => current
@@ -387,6 +441,19 @@ export function SystemConfigPage({
       },
     },
     {
+      field: "notifyAction", headerName: locale === "en" ? "Notify type" : locale === "zh-HK" ? "通知類型" : "通知类型", minWidth: 230, width: 250,
+      editable: false, sortable: false, filter: false,
+      cellRenderer: (params: ICellRendererParams<StepRow>) => {
+        const row = params.data;
+        if (!row) return null;
+        return <NotifyTypeMultiSelect value={row.notifyAction} locale={locale} onChange={(notifyAction) => {
+          const updated = { ...row, notifyAction };
+          params.node.setData(updated);
+          markDirty(updated);
+        }} />;
+      },
+    },
+    {
       field: "businessEntity", headerName: translate(locale, "businessEntityHeader"), minWidth: 220, editable: false,
       headerComponent: () => <BusinessEntityHeader locale={locale} />,
       cellRenderer: (params: ICellRendererParams<StepRow>) => {
@@ -456,13 +523,13 @@ export function SystemConfigPage({
         const row = params.data;
         if (!row) return null;
         return <div className="grid-row-actions">
-          <button type="button" className="grid-row-action grid-row-action--update" aria-label="Edit workflow step" title="Edit workflow step" disabled={savingId === row.id || savingAll} onMouseDown={(event) => event.stopPropagation()} onClick={(event) => {
+          <button type="button" className="grid-row-action grid-row-action--edit" aria-label="Edit workflow step" title="Edit workflow step" disabled={savingId === row.id || savingAll} onMouseDown={(event) => event.stopPropagation()} onClick={(event) => {
             event.stopPropagation();
             const latest = dirtyRowsRef.current[row.id] || row;
             setStepDialogError("");
             setStepDialog({ ...latest });
           }}>
-            <svg aria-hidden="true" viewBox="0 0 24 24"><path d="m5 12 4 4L19 6" /></svg>
+            <svg aria-hidden="true" viewBox="0 0 24 24"><path d="m4 16-.8 4.8L8 20 18.8 9.2l-4-4L4 16Zm9.4-9.4 4 4" /></svg>
           </button>
           <button type="button" className="grid-row-action grid-row-action--delete" aria-label="Clear assignments" title="Clear assignments" disabled={savingId === row.id || savingAll} onMouseDown={(event) => event.stopPropagation()} onClick={(event) => { event.stopPropagation(); void clearStepAssignments(row, (cleared) => params.node.setData(cleared)); }}>
             <svg aria-hidden="true" viewBox="0 0 24 24"><path d="M5 7h14M10 11v6m4-6v6M9 7V4h6v3m-9 0 1 13h8l1-13" /></svg>
@@ -758,6 +825,7 @@ export function SystemConfigPage({
                 >
                   <span className="system-config-decision-switch__thumb" aria-hidden="true" />
                 </button></label>
+                <label className="grid-edit-field"><span>{locale === "en" ? "Notify type" : locale === "zh-HK" ? "通知類型" : "通知类型"}</span><NotifyTypeMultiSelect value={stepDialog.notifyAction} locale={locale} onChange={(notifyAction) => updateStepDialog({ notifyAction })} /></label>
               </div>
               {stepDialogError ? <p className="grid-edit-dialog__error" role="alert">{stepDialogError}</p> : null}
               <footer className="dialog-actions grid-edit-dialog__actions"><button type="button" className="confirm-dialog__cancel" onClick={() => setStepDialog(null)} disabled={Boolean(savingId)}><svg className="grid-edit-action__icon" aria-hidden="true" viewBox="0 0 24 24" focusable="false"><path d="M6 6l12 12M18 6 6 18" /></svg>{locale === "en" ? "Cancel" : "取消"}</button><button type="button" className="confirm-dialog__confirm" onClick={() => void applyStepDialog()} disabled={Boolean(savingId)}><svg className="grid-edit-action__icon" aria-hidden="true" viewBox="0 0 24 24" focusable="false"><path d="m5 12 4 4L19 6" /></svg>{savingId ? (locale === "en" ? "Saving…" : "保存中…") : (locale === "en" ? "Save" : "保存")}</button></footer>

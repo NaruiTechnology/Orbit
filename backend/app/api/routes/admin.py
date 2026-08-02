@@ -25,6 +25,8 @@ class WorkflowStepAssignmentUpdate(BaseModel):
 
     businessEntity: str | None = Field(default=None, max_length=160)
     decisionAction: bool = False
+    notifyAction: int | None = Field(default=None, ge=1, le=53)
+    notifiedDate: datetime | None = None
     sla: str | None = Field(default=None, max_length=200)
     laboratory_id: UUID | None = None
     phone_number: str = Field(default="", max_length=80)
@@ -548,6 +550,7 @@ def workflow_config(
                sla.sla_i18n, sla.sla,
                a.business_entity, a."documentAction" AS document_action,
                a."decisionAction" AS decision_action, a.sla AS assignment_sla,
+               a."notifyAction" AS notify_action, a."notifiedDate" AS notified_date,
                a.laboratory_id, l.code AS laboratory_code, l.name_i18n AS laboratory_name_i18n,
                a.phone_number, a.contact_email, a.contact_name, a.hr_employee_id
           FROM orbit_workflow.workflow_record r
@@ -595,6 +598,8 @@ def workflow_config(
                 "businessEntity": row["business_entity"],
                 "DocumentAction": row["document_action"],
                 "decisionAction": row["decision_action"],
+                "notifyAction": row["notify_action"],
+                "notifiedDate": row["notified_date"],
                 "laboratory_id": row["laboratory_id"],
                 "laboratory_code": row["laboratory_code"],
                 "laboratory_name": localized_value(row["laboratory_name_i18n"], locale) if row["laboratory_name_i18n"] else None,
@@ -630,6 +635,7 @@ def update_workflow_step(
                    ELSE a."documentAction"
                END,
                "decisionAction" = %s,
+               "notifyAction" = %s, "notifiedDate" = %s,
                sla = %s, laboratory_id = %s, phone_number = %s, contact_email = %s,
                contact_name = %s,
                hr_employee_id = %s, updated_by = %s, updated_at = CURRENT_TIMESTAMP
@@ -640,6 +646,7 @@ def update_workflow_step(
          RETURNING a.workflow_record_id
         """,
         (request.businessEntity, request.businessEntity, request.decisionAction,
+         request.notifyAction, request.notifiedDate,
          request.sla.strip() if request.sla and request.sla.strip() else None,
          request.laboratory_id, request.phone_number.strip(), request.contact_email.strip(),
          request.contact_name.strip(), request.hr_employee_id, user.user_id, record_id, workflow_key),

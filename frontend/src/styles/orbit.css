@@ -424,6 +424,19 @@ input:focus-visible {
 .system-config-back:hover { border-color: var(--signal); color: var(--signal); }
 .admin-grid-select { width: 100%; min-height: 28px; padding: 4px 24px 4px 7px; color: var(--ink); background: var(--control-bg); border: 1px solid var(--line); border-radius: 4px; font: inherit; }
 .admin-grid-select:focus { border-color: var(--signal); outline: none; box-shadow: 0 0 0 1px color-mix(in srgb, var(--signal) 25%, transparent); }
+.notify-type-combobox { position: relative; width: 100%; }
+.notify-type-combobox__trigger { display: flex; align-items: center; justify-content: space-between; gap: 8px; cursor: pointer; text-align: left; }
+.notify-type-combobox__summary { min-width: 0; overflow-wrap: anywhere; word-break: break-word; }
+.notify-type-combobox__summary.is-placeholder { color: var(--ink-soft); }
+.notify-type-combobox__menu { position: fixed; z-index: 1000; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); column-gap: 10px; row-gap: 3px; max-height: calc(100vh - 24px); overflow: auto; padding: 9px 12px; background: var(--surface); border: 1px solid var(--line); border-radius: 6px; box-shadow: 0 12px 28px color-mix(in srgb, var(--ink) 22%, transparent); }
+.notify-type-combobox__menu-header { display: flex; grid-column: 1 / -1; align-items: center; justify-content: space-between; padding: 2px 4px 8px; border-bottom: 1px solid var(--line); color: var(--ink); }
+.notify-type-combobox__close { width: 24px; height: 24px; padding: 0; border: 1px solid var(--line); border-radius: 4px; color: var(--ink); background: var(--control-bg); font-size: 18px; line-height: 1; cursor: pointer; }
+.notify-type-combobox__close:hover { border-color: var(--signal); color: var(--signal); }
+.notify-type-combobox__option { display: flex; align-items: center; min-width: 0; gap: 7px; padding: 6px 4px; color: var(--ink); font-size: 12px; line-height: 1.35; text-align: left; cursor: pointer; white-space: normal; overflow: visible; }
+.notify-type-combobox__option--empty { grid-column: 1 / -1; border-bottom: 1px solid var(--line); color: var(--ink-soft); }
+.notify-type-combobox__option input[type="radio"] { flex: 0 0 18px; width: 18px; height: 18px; margin: 0; accent-color: var(--signal); }
+.notify-type-combobox__option span { min-width: 0; overflow: visible; white-space: normal; overflow-wrap: anywhere; word-break: break-word; }
+.notify-type-combobox__option:hover { background: color-mix(in srgb, var(--signal) 12%, transparent); }
 
 /* Empty dropdown prompts are placeholders, not selected data. Keep them muted
    consistently across grid editors, dialogs, authentication, and templates. */

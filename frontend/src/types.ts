@@ -1,6 +1,63 @@
 export type Locale = "en" | "zh-CN" | "zh-HK";
 export type ThemeMode = "navy" | "light" | "green" | "black";
 
+/** Numeric notification-template identifiers from the ManagementV2 workbook. */
+export enum notifyType {
+  customerFollowUpWarning = 1,
+  quotationExpiryReminder = 2,
+  contractExpiryReminder = 3,
+  statementOverdueReminder = 4,
+  statementOverdueIntervention = 5,
+  invoiceOverdueReminder = 6,
+  invoiceOverdueIntervention = 7,
+  paymentDueReminder = 8,
+  paymentMildOverdue = 9,
+  paymentModerateOverdue = 10,
+  paymentSevereOverdue = 11,
+  customerPoolWarning = 12,
+  customerPoolReclaimed = 13,
+  feeConfirmationSent = 14,
+  statementSent = 15,
+  automaticFollowUp = 16,
+  insufficientBalanceReminder = 17,
+  technicalEvaluationTimeout = 18,
+  sampleReturnTimeoutWarning = 19,
+  sampleReturnTimeoutAlert = 20,
+  failureAnalysisPending = 21,
+  equipmentMaintenanceReminder = 22,
+  equipmentRepairAlert = 23,
+  yieldThresholdWarning = 24,
+  customerTestResult = 25,
+  analysisReportCompleted = 26,
+  faultTicketSubmitted = 27,
+  faultTicketUnclaimedTimeout = 28,
+  repairAcceptance = 29,
+  recoveryTimeUnavailable = 30,
+  consumablesInventoryWarning = 31,
+  consumablesDepleted = 32,
+  repairBlocked = 33,
+  equipmentIdleRateWeekly = 34,
+  repairDurationMonthly = 35,
+  remoteOrderTechnical = 36,
+  remoteEvaluationResult = 37,
+  remoteOrderAccepted = 38,
+  remoteSampleShipped = 39,
+  remoteOrderReturned = 40,
+  remoteLogisticsException = 41,
+  creditNoteSubmitted = 42,
+  creditNoteApproved = 43,
+  creditNoteRejected = 44,
+  invoiceLaboratoryRedirect = 45,
+  prepaidBalanceReminder = 46,
+  prepaidBalanceDepleted = 47,
+  paymentHoursFeedback = 48,
+  prepaidRechargeConfirmed = 49,
+  creditNoteCompleted = 50,
+  faultTicketSubmittedDuplicate = 51,
+  recoveryTimeUnavailableDuplicate = 52,
+  repairAcceptanceDuplicate = 53,
+}
+
 export interface GeolocationSite {
   id: string;
   value: string;
@@ -118,6 +175,8 @@ export interface TreeNode {
   business_entity: string | null;
   DocumentAction: boolean | null;
   decisionAction: boolean;
+  notifyAction: notifyType | null;
+  notifiedDate: string | null;
   sla: string | null;
   is_selected: boolean;
   is_before_selected: boolean;
