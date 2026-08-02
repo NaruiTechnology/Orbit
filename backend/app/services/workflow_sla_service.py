@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import html
+import json
 import smtplib
 import ssl
 import xml.etree.ElementTree as ET
@@ -36,10 +37,49 @@ def get_sla_workflow_steps(
     workflow_step_id: UUID | None = None,
     as_of: datetime | None = None,
 ) -> list[dict[str, Any]]:
-    return connection.execute(
+    rows = connection.execute(
         "SELECT * FROM orbit_runtime.get_sla_workflow_steps(%s, %s)",
         (as_of, workflow_step_id),
     ).fetchall()
+    return _attach_step_configuration(connection, rows)
+
+
+def _attach_step_configuration(
+    connection: Connection[dict[str, Any]], rows: list[dict[str, Any]]
+) -> list[dict[str, Any]]:
+    """Attach the workflow/step names and raw SLA source used by each check."""
+    step_ids = [row["workflow_step_id"] for row in rows]
+    if not step_ids:
+        return rows
+    configured = connection.execute(
+        """
+        SELECT r.id AS workflow_step_id,
+               COALESCE(w.name_i18n ->> 'en', w.workflow_key) AS workflow_name,
+               COALESCE(r.label_i18n ->> 'en', r.record_key) AS step_name,
+               COALESCE(a.sla, r.values_json ->> 'time_limit') AS sla_configured,
+               CASE
+                   WHEN a.sla IS NOT NULL THEN 'workflow_step_assignment.sla'
+                   ELSE 'workflow_record.values_json.time_limit'
+               END AS sla_source
+          FROM orbit_workflow.workflow_record r
+          JOIN orbit_workflow.workflow_definition w ON w.id = r.workflow_id
+          LEFT JOIN orbit_workflow.workflow_step_assignment a
+            ON a.workflow_record_id = r.id
+         WHERE r.id = ANY(%s)
+        """,
+        (step_ids,),
+    ).fetchall()
+    by_id = {row["workflow_step_id"]: row for row in configured}
+    return [
+        {
+            **row,
+            "workflow_name": by_id.get(row["workflow_step_id"], {}).get("workflow_name"),
+            "step_name": by_id.get(row["workflow_step_id"], {}).get("step_name"),
+            "sla_configured": by_id.get(row["workflow_step_id"], {}).get("sla_configured"),
+            "sla_source": by_id.get(row["workflow_step_id"], {}).get("sla_source"),
+        }
+        for row in rows
+    ]
 
 
 def evaluate_sla_workflow_steps(
@@ -57,6 +97,29 @@ def evaluate_sla_workflow_steps(
 def run_sla_cycle(connection: Connection[dict[str, Any]], access_url_base: str) -> dict[str, Any]:
     """Run both SLA passes using one snapshot of the catalog/runtime query."""
     rows = get_sla_workflow_steps(connection)
+    for row in rows:
+        print(
+            "[orbit_service] SLA due check "
+            + _json_log(
+                {
+                    "workflow_name": row.get("workflow_name"),
+                    "workflow_key": row.get("workflow_key"),
+                    "step_name": row.get("step_name"),
+                    "workflow_step_id": row.get("workflow_step_id"),
+                    "workflow_instance_id": row.get("workflow_instance_id"),
+                    "workflow_node_instance_id": row.get("workflow_node_instance_id"),
+                    "record_key": row.get("record_key"),
+                    "business_key": row.get("business_key"),
+                    "sla": row.get("sla_configured"),
+                    "sla_source": row.get("sla_source"),
+                    "sla_days": row.get("sla_days"),
+                    "step_start_time": row.get("started_at"),
+                    "due_at": row.get("due_at"),
+                    "sla_violated": row.get("sla_violated"),
+                }
+            ),
+            flush=True,
+        )
     violations = [row for row in rows if row["sla_violated"]]
     email_result = _send_violation_emails(connection, violations, access_url_base)
     decisions = _placeholder_decisions(rows)
@@ -67,6 +130,10 @@ def run_sla_cycle(connection: Connection[dict[str, Any]], access_url_base: str) 
         "email_errors": email_result["email_errors"],
         "decisions": decisions,
     }
+
+
+def _json_log(payload: dict[str, Any]) -> str:
+    return json.dumps(payload, default=str, ensure_ascii=False, separators=(",", ":"))
 
 
 def _placeholder_decisions(rows: list[dict[str, Any]]) -> list[dict[str, Any]]:

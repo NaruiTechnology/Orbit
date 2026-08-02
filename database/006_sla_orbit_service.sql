@@ -50,16 +50,20 @@ LANGUAGE plpgsql
 IMMUTABLE
 AS $function$
 DECLARE
-    v_match text[];
+    v_numeric text;
 BEGIN
-    v_match := regexp_match(
-        lower(coalesce(p_text, '')),
-        '([0-9]+([.][0-9]+)?)[[:space:]]*(个工作日|工作日|天|日|business[[:space:]]+days?|working[[:space:]]+days?|days?|day)'
-    );
-    IF v_match IS NULL THEN
+    -- SLA values are stored as free-form configuration text (for example
+    -- "5", "5个工作日内", or "Within 5 business days"). Normalize the
+    -- configured value before evaluating it so a unit suffix is never able
+    -- to hide an otherwise valid numeric SLA.
+    v_numeric := regexp_replace(trim(coalesce(p_text, '')), '[^0-9.]', '', 'g');
+    IF v_numeric IS NULL
+       OR v_numeric = ''
+       OR v_numeric !~ '^[0-9]+([.][0-9]+)?$'
+       OR v_numeric::numeric < 1 THEN
         RETURN NULL;
     END IF;
-    RETURN v_match[1]::numeric;
+    RETURN v_numeric::numeric;
 END
 $function$;
 

@@ -159,6 +159,8 @@ def _apply_schema_and_seed(skip_catalog: bool) -> dict[str, int] | None:
             )
         notify_migration = PROJECT_ROOT / "database" / "011_notify_templates_and_workflow_step_notifications.sql"
         connection.execute(notify_migration.read_text(encoding="utf-8"))
+        sla_normalization_migration = PROJECT_ROOT / "database" / "012_sla_numeric_normalization.sql"
+        connection.execute(sla_normalization_migration.read_text(encoding="utf-8"))
         connection.commit()
 
         diagnostics = connection.execute(

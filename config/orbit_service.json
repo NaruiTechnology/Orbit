@@ -1,5 +1,5 @@
 {
-  "interval_minutes": 60,
+  "interval_minutes": 5,
   "run_on_start": true,
   "lock_file": "/tmp/orbit_service.lock",
   "last_run_file": "/tmp/orbit_service.last-run",

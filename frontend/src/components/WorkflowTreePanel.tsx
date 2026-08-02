@@ -46,6 +46,17 @@ function formatCommandError(error: unknown): string {
   return "Workflow command failed";
 }
 
+function formatStepStartTime(value: string | null | undefined, locale: Locale): string | null {
+  if (!value) return null;
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return null;
+  const dateLocale = locale === "en" ? "en-US" : locale;
+  return new Intl.DateTimeFormat(dateLocale, {
+    dateStyle: "medium",
+    timeStyle: "short",
+  }).format(date);
+}
+
 export function WorkflowTreePanel({
   locale,
   tree,
@@ -192,6 +203,10 @@ export function WorkflowTreePanel({
           <ol className="workflow-tree">
             {(tree?.nodes || []).map((node) => {
               const runtimeNode = runtimeByKey.get(node.record_key);
+              const stepStartTime = formatStepStartTime(
+                runtimeNode?.start_time || runtimeNode?.started_at,
+                locale,
+              );
               const canSubmit = runtimeNode?.available_actions.includes("submit") ?? false;
               const warning = Boolean(
                 runtimeNode?.sla_violated &&
@@ -253,6 +268,11 @@ export function WorkflowTreePanel({
                     {node.sla ? (
                       <span className="workflow-node__sla">
                         {translate(locale, "sla")}: {node.sla}
+                      </span>
+                    ) : null}
+                    {stepStartTime ? (
+                      <span>
+                        {translate(locale, "stepStartTime")}: {stepStartTime}
                       </span>
                     ) : null}
                     {node.ContactName && node.ContactName !== node.owner_name ? (
