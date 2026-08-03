@@ -11,6 +11,7 @@ from datetime import datetime, timezone
 from email.message import EmailMessage
 from email.utils import getaddresses
 from typing import Any
+from urllib.parse import urlencode
 from uuid import UUID
 
 from psycopg import Connection
@@ -301,11 +302,7 @@ def _render_professional_message(
     step_names = {_display_step_name(row, str(row.get("step_name") or row["source_step_data"].get("label", row["record_key"])), locale) for row in rows}
     display_step_name = next(iter(step_names)) if len(step_names) == 1 else labels["workflow_items"]
     subject = f"{display_step_name} — {labels['subject']}" if len(step_names) == 1 else f"{labels['subject']} — {len(rows)} {labels['items']}"
-    url_template = (
-        f"{access_url_base.rstrip('/')}/workflows/instances/"
-        "{workflow_instance_id}/runtime"
-    )
-    table = _items_table(rows, url_template, locale)
+    table = _items_table(rows, access_url_base, locale)
     contact_name = str(first.get("contact_name") or first.get("recipient_name") or "there")
     greeting_separator = " " if locale == "en" else ""
     greeting = f"{labels['greeting']}{greeting_separator}{html.escape(contact_name)}{labels['greeting_suffix']}"
@@ -363,14 +360,24 @@ def _email_table_labels(locale: str) -> dict[str, str]:
     return {"workflow": "Workflow", "step": "Step", "customer": "Customer Name", "business_key": "Business Key", "contact": "Contact Person / Email", "sla": "SLA", "step_start": "Step Start", "due_at": "Due At", "overdue": "Overdue", "access": "Access"}
 
 
-def _items_table(rows: list[dict[str, Any]], url_template: str, locale: str) -> str:
+def _items_table(rows: list[dict[str, Any]], access_url_base: str, locale: str) -> str:
     labels = _email_table_labels(locale)
     cells = []
     for row in rows:
-        row_uuid = str(row["row_uuid"])
-        url = url_template.replace("{{row_uuid}}", row_uuid)
-        url = url.replace("{{workflow_instance_id}}", str(row["workflow_instance_id"]))
-        url = url.replace("{{record_key}}", str(row["record_key"]))
+        # The workspace restores AG-grid/tree selection from these query
+        # parameters.  `row_uuid` is the runtime instance UUID, while the
+        # record parameter must identify the business row (order_id when it
+        # is present, with the instance UUID as a safe fallback).
+        row_data = row.get("row_data") or {}
+        record_id = row_data.get("order_id") or row["workflow_instance_id"]
+        query = urlencode(
+            {
+                "workflow": row.get("workflow_key"),
+                "record": record_id,
+                "step": row.get("record_key"),
+            }
+        )
+        url = f"{access_url_base.rstrip('/')}/?{query}"
         cells.append(
             "<tr>"
             f"<td>{html.escape(str(row.get('workflow_name') or row.get('workflow_key') or '-'))}</td>"
