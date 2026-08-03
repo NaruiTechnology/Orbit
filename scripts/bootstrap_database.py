@@ -165,6 +165,10 @@ def _apply_schema_and_seed(skip_catalog: bool) -> dict[str, int] | None:
         connection.execute(notify_action_migration.read_text(encoding="utf-8"))
         sla_email_wording_migration = PROJECT_ROOT / "database" / "014_sla_email_wording.sql"
         connection.execute(sla_email_wording_migration.read_text(encoding="utf-8"))
+        sla_notify_type_migration = PROJECT_ROOT / "database" / "015_assign_sla_notification_type.sql"
+        connection.execute(sla_notify_type_migration.read_text(encoding="utf-8"))
+        legacy_sla_email_migration = PROJECT_ROOT / "database" / "016_remove_legacy_sla_email_function.sql"
+        connection.execute(legacy_sla_email_migration.read_text(encoding="utf-8"))
         connection.commit()
 
         diagnostics = connection.execute(

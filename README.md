@@ -2,7 +2,7 @@
 
 Orbit Automation is a full-stack workflow automation and management platform built with PostgreSQL, FastAPI, React, Redux Toolkit, TypeScript, and AG Grid. Its initial workflow catalog is generated from `~/Downloads/单束系统 初版.xlsx`.
 
-The workbook's `全流程图` sheet is the 17-stage master workflow. The other sheets are imported as linked subworkflows, rule catalogs, lookup tables, field dictionaries, metrics, and operational ledgers. Notification templates are stored in `orbit_workflow.notification_template` for component lookup rather than shown as subworkflows.
+The workbook's `全流程图` sheet is the 17-stage master workflow. The other sheets are imported as linked subworkflows, rule catalogs, lookup tables, field dictionaries, metrics, and operational ledgers. The automated SLA service resolves localized notification templates from `orbit_workflow.notify` using each step's `notifyType`.
 
 ## Runtime Layout
 
@@ -191,7 +191,8 @@ The default contents are:
 
 ```json
 {
-  "interval_minutes": 60,
+  "interval_minutes": 5,
+  "locale": "en",
   "run_on_start": true,
   "lock_file": "/tmp/orbit_service.lock",
   "last_run_file": "/tmp/orbit_service.last-run",
@@ -199,7 +200,7 @@ The default contents are:
 }
 ```
 
-`interval_minutes` is the effective schedule and is currently set to 60
+`interval_minutes` is the effective schedule and is currently set to 5
 minutes. The example cron entry invokes the worker every minute; the worker
 reads `config/orbit_service.json`, enforces the configured interval, and exits
 immediately when the next run is not due. `lock_file` prevents overlapping
@@ -241,10 +242,11 @@ check with `--force`:
 python scripts/orbit_service.py --force 2>&1 | tee -a /tmp/orbit_service.log
 ```
 
-Database migration `database/006_sla_orbit_service.sql` adds the SLA query and
-rule-evaluation functions, per-step XML/CSS email templates, and notification
-deduplication records. Apply it through `scripts/bootstrap_database.py` on a
-new or upgraded database.
+Database migrations `006_sla_orbit_service.sql` through
+`016_remove_legacy_sla_email_function.sql` add the SLA query, rule-evaluation
+functions, notification catalog, notification state, professional HTML email
+rendering support, and notification deduplication records. Apply them through
+`scripts/bootstrap_database.py` on a new or upgraded database.
 
 The database functions added by this migration are:
 
@@ -253,7 +255,7 @@ The database functions added by this migration are:
 | `orbit_workflow.extract_sla_days(text)` | Extracts the numeric day value from SLA text. |
 | `orbit_runtime.get_sla_workflow_steps(as_of, workflow_step_id)` | Returns active SLA-enabled workflow steps, due times, violation status, source data, and catalog rules. |
 | `orbit_runtime.evaluate_sla_workflow_steps(workflow_step_id, as_of)` | Returns the rule-evaluation/next-step placeholder decisions. |
-| `orbit_workflow.get_email_template(workflow_step_id)` | Looks up the XML/CSS email template for a workflow step. |
+| `orbit_workflow.notify` | Canonical localized notification-template lookup keyed by `notify_type`; the service reads title/body/channel data from this table. |
 | `orbit_runtime.claim_sla_notification(...)` | Claims a notification while preventing duplicate sends. |
 | `orbit_runtime.finish_sla_notification(...)` | Marks a notification as sent or failed. |
 | `orbit_runtime.record_workflow_action(...)` | Records a typed action once and updates the step's latest `action_time`/`action_type`. |

@@ -6,9 +6,8 @@ import html
 import json
 import smtplib
 import ssl
-import xml.etree.ElementTree as ET
 from collections import defaultdict
-from datetime import datetime
+from datetime import datetime, timezone
 from email.message import EmailMessage
 from email.utils import getaddresses
 from typing import Any
@@ -19,46 +18,37 @@ from psycopg.types.json import Jsonb
 
 from app.config import get_mail_settings
 
-DEFAULT_SUBJECT_XML = "<subject>{{step_name}} SLA violation</subject>"
-DEFAULT_BODY_XML = (
-    "<body><p>The following {{sla_step_name}} passed the SLA due.</p>"
-    "{{items_table}}</body>"
-)
-DEFAULT_STYLESHEET = (
-    "body{font-family:Arial,sans-serif;color:#1f2937}"
-    "table{border-collapse:collapse;width:100%}"
-    "th,td{border:1px solid #d1d5db;padding:6px;text-align:left}"
-    "th{background:#f3f4f6}"
-)
-
-
 def get_sla_workflow_steps(
     connection: Connection[dict[str, Any]],
     workflow_step_id: UUID | None = None,
     as_of: datetime | None = None,
+    locale: str = "en",
 ) -> list[dict[str, Any]]:
     rows = connection.execute(
         "SELECT * FROM orbit_runtime.get_sla_workflow_steps(%s, %s)",
         (as_of, workflow_step_id),
     ).fetchall()
-    return _attach_step_configuration(connection, rows)
+    return _attach_step_configuration(connection, rows, locale)
 
 
 def _attach_step_configuration(
-    connection: Connection[dict[str, Any]], rows: list[dict[str, Any]]
+    connection: Connection[dict[str, Any]], rows: list[dict[str, Any]], locale: str
 ) -> list[dict[str, Any]]:
     """Attach the workflow/step names and raw SLA source used by each check."""
     step_ids = [row["workflow_step_id"] for row in rows]
     if not step_ids:
         return rows
+    locale_key = {"zh-CN": "zh_CN", "zh-HK": "zh_HK"}.get(locale, "en")
     configured = connection.execute(
         """
         SELECT r.id AS workflow_step_id,
-               COALESCE(w.name_i18n ->> 'en', w.workflow_key) AS workflow_name,
-               COALESCE(r.label_i18n ->> 'en', r.record_key) AS step_name,
+               COALESCE(w.name_i18n ->> %s, w.name_i18n ->> 'en', w.workflow_key) AS workflow_name,
+               COALESCE(r.label_i18n ->> %s, r.label_i18n ->> 'en', r.record_key) AS step_name,
                COALESCE(a.sla, r.values_json ->> 'time_limit') AS sla_configured,
                a."notifyAction" AS notify_action,
                a."notifyType" AS notify_type,
+               a.contact_name AS contact_name,
+               a.contact_email AS contact_email,
                CASE
                    WHEN a.sla IS NOT NULL THEN 'workflow_step_assignment.sla'
                    ELSE 'workflow_record.values_json.time_limit'
@@ -69,7 +59,7 @@ def _attach_step_configuration(
             ON a.workflow_record_id = r.id
          WHERE r.id = ANY(%s)
         """,
-        (step_ids,),
+        (locale_key, locale_key, step_ids),
     ).fetchall()
     by_id = {row["workflow_step_id"]: row for row in configured}
     instance_ids = list({row["workflow_instance_id"] for row in rows if row.get("workflow_instance_id")})
@@ -93,7 +83,11 @@ def _attach_step_configuration(
             "step_name": by_id.get(row["workflow_step_id"], {}).get("step_name"),
             "sla_configured": by_id.get(row["workflow_step_id"], {}).get("sla_configured"),
             "sla_source": by_id.get(row["workflow_step_id"], {}).get("sla_source"),
+            "notify_type": by_id.get(row["workflow_step_id"], {}).get("notify_type"),
+            "notify_action": by_id.get(row["workflow_step_id"], {}).get("notify_action"),
             "customer_name": customer_by_instance.get(row.get("workflow_instance_id")),
+            "contact_name": by_id.get(row["workflow_step_id"], {}).get("contact_name") or row.get("recipient_name"),
+            "contact_email": by_id.get(row["workflow_step_id"], {}).get("contact_email") or row.get("recipient_email"),
         }
         for row in rows
     ]
@@ -111,9 +105,11 @@ def evaluate_sla_workflow_steps(
     ).fetchall()
 
 
-def run_sla_cycle(connection: Connection[dict[str, Any]], access_url_base: str) -> dict[str, Any]:
+def run_sla_cycle(
+    connection: Connection[dict[str, Any]], access_url_base: str, locale: str = "en"
+) -> dict[str, Any]:
     """Run both SLA passes using one snapshot of the catalog/runtime query."""
-    rows = get_sla_workflow_steps(connection)
+    rows = get_sla_workflow_steps(connection, locale=locale)
     for row in rows:
         print(
             "[orbit_service] SLA due check "
@@ -141,7 +137,7 @@ def run_sla_cycle(connection: Connection[dict[str, Any]], access_url_base: str) 
         )
     violations = [row for row in rows if row["sla_violated"]]
     _mark_overdue_steps_for_notification(connection, violations)
-    email_result = _send_violation_emails(connection, violations, access_url_base)
+    email_result = _send_violation_emails(connection, violations, access_url_base, locale)
     decisions = _placeholder_decisions(rows)
     return {
         "checked": len(rows),
@@ -195,26 +191,28 @@ def _send_violation_emails(
     connection: Connection[dict[str, Any]],
     rows: list[dict[str, Any]],
     access_url_base: str,
+    locale: str,
 ) -> dict[str, Any]:
-    groups: dict[tuple[UUID, str], list[dict[str, Any]]] = defaultdict(list)
+    groups: dict[str, list[dict[str, Any]]] = defaultdict(list)
     seen_items: set[tuple[UUID, str, datetime]] = set()
     for row in rows:
-        recipient = str(
-            row.get("recipient_email") or row.get("row_data", {}).get("email") or ""
-        ).strip()
-        if recipient and "@" in recipient:
+        for recipient, contact_name in _recipient_targets(row):
             item_key = (row["workflow_node_instance_id"], recipient, row["due_at"])
             if item_key in seen_items:
                 continue
             seen_items.add(item_key)
-            groups[(row["workflow_step_id"], recipient)].append(row)
+            target_row = {**row, "contact_email": recipient, "contact_name": contact_name}
+            groups[recipient.lower()].append(target_row)
 
     sent = 0
     errors: list[str] = []
-    for (step_id, recipient), items in groups.items():
+    for items in groups.values():
+        recipient = str(items[0]["contact_email"])
         try:
-            template = _get_template(connection, step_id)
-            subject, body = _render_message(template, items, access_url_base)
+            notify_types = {item.get("notify_type") for item in items}
+            templates = [_get_notification_template(connection, notify_type, locale) for notify_type in notify_types]
+            template = templates[0]
+            subject, body = _render_professional_message(template, items, access_url_base, locale)
             claimed: list[UUID] = []
             for item in items:
                 notification_id = connection.execute(
@@ -262,56 +260,111 @@ def _send_violation_emails(
     return {"emails_sent": sent, "email_errors": errors}
 
 
-def _get_template(connection: Connection[dict[str, Any]], step_id: UUID) -> dict[str, str]:
+def _recipient_targets(row: dict[str, Any]) -> list[tuple[str, str]]:
+    """Return normalized individual recipients for one SLA row."""
+    raw_email = str(row.get("recipient_email") or row.get("row_data", {}).get("email") or "")
+    addresses = [address for _, address in getaddresses([raw_email.replace(";", ",")]) if address and "@" in address]
+    if not addresses:
+        return []
+    names = [item.strip() for item in str(row.get("contact_name") or row.get("recipient_name") or "").replace(";", ",").split(",") if item.strip()]
+    return [(address.strip(), names[index] if index < len(names) else (names[0] if names else "")) for index, address in enumerate(addresses)]
+
+
+def _get_notification_template(
+    connection: Connection[dict[str, Any]], notify_type: int | None, locale: str
+) -> dict[str, str]:
+    if notify_type is None:
+        raise RuntimeError("No notifyType is configured for the SLA workflow step")
+    locale_key = {"zh-CN": "zh_CN", "zh-HK": "zh_HK"}.get(locale, "en")
     row = connection.execute(
-        "SELECT * FROM orbit_workflow.get_email_template(%s) LIMIT 1", (step_id,)
+        """
+        SELECT notify_type,
+               COALESCE(template_title ->> %s, template_title ->> 'en', template_title ->> 'zh_CN') AS template_title,
+               COALESCE(template_body ->> %s, template_body ->> 'en', template_body ->> 'zh_CN') AS template_body,
+               COALESCE(notification_scenario ->> %s, notification_scenario ->> 'en', notification_scenario ->> 'zh_CN') AS scenario,
+               COALESCE(notification_channel ->> %s, notification_channel ->> 'en', notification_channel ->> 'zh_CN') AS channel
+          FROM orbit_workflow.notify
+         WHERE notify_type = %s
+        """,
+        (locale_key, locale_key, locale_key, locale_key, notify_type),
     ).fetchone()
-    return dict(row) if row else {
-        "subject_xml": DEFAULT_SUBJECT_XML,
-        "body_xml": DEFAULT_BODY_XML,
-        "stylesheet_css": DEFAULT_STYLESHEET,
-        "access_url_template": "",
-    }
+    if row is None:
+        raise RuntimeError(f"Notification template not found for notifyType={notify_type}")
+    return dict(row)
 
 
-def _render_message(
-    template: dict[str, str], rows: list[dict[str, Any]], access_url_base: str
+def _render_professional_message(
+    template: dict[str, str], rows: list[dict[str, Any]], access_url_base: str, locale: str
 ) -> tuple[str, str]:
     first = rows[0]
-    replacements = {
-        "{{step_name}}": str(first["source_step_data"].get("label", first["record_key"])),
-        "{{sla_step_name}}": (
-            "Official Order"
-            if str(first["source_step_data"].get("label", first["record_key"]))
-            == "Proceed to Official Order"
-            else str(first["source_step_data"].get("label", first["record_key"]))
-        ),
-        "{{sla_days}}": str(first["sla_days"]),
-        "{{item_count}}": str(len(rows)),
-    }
-    subject = _xml_text(template.get("subject_xml") or DEFAULT_SUBJECT_XML, "subject")
-    body = _xml_inner(template.get("body_xml") or DEFAULT_BODY_XML, "body")
-    url_template = template.get("access_url_template") or (
+    labels = _email_labels(locale)
+    step_names = {_display_step_name(row, str(row.get("step_name") or row["source_step_data"].get("label", row["record_key"])), locale) for row in rows}
+    display_step_name = next(iter(step_names)) if len(step_names) == 1 else labels["workflow_items"]
+    subject = f"{display_step_name} — {labels['subject']}" if len(step_names) == 1 else f"{labels['subject']} — {len(rows)} {labels['items']}"
+    url_template = (
         f"{access_url_base.rstrip('/')}/workflows/instances/"
         "{workflow_instance_id}/runtime"
     )
-    table = _items_table(rows, url_template)
-    # Some imported templates contain the table placeholder twice. Expand it
-    # once and remove any remaining occurrences so one notification has one
-    # results table.
-    body = body.replace("{{items_table}}", table, 1).replace("{{items_table}}", "")
-    for token, value in replacements.items():
-        subject = subject.replace(token, value)
-        body = body.replace(token, value)
-    stylesheet = template.get("stylesheet_css") or DEFAULT_STYLESHEET
-    html_body = (
-        "<!doctype html><html><head><meta charset='utf-8'><style>"
-        f"{stylesheet}</style></head><body>{body}</body></html>"
+    table = _items_table(rows, url_template, locale)
+    contact_name = str(first.get("contact_name") or first.get("recipient_name") or "there")
+    greeting_separator = " " if locale == "en" else ""
+    greeting = f"{labels['greeting']}{greeting_separator}{html.escape(contact_name)}{labels['greeting_suffix']}"
+    message = labels["message"].format(step=html.escape(display_step_name))
+    overview = f"<p class='greeting'>{greeting}</p>"
+    summary = (
+        "<div class='summary'>"
+        f"<div><span>{labels['workflow']}</span><strong>{html.escape(str(first.get('workflow_name') or first.get('workflow_key') or '-'))}</strong></div>"
+        f"<div><span>{labels['step']}</span><strong>{html.escape(display_step_name)}</strong></div>"
+        f"<div><span>{labels['overdue_items']}</span><strong>{len(rows)}</strong></div>"
+        "</div>"
     )
-    return subject.strip(), html_body
+    html_body = f"""<!doctype html>
+<html><head><meta charset="utf-8"><style>
+body{{margin:0;background:#f4f7fb;color:#24324a;font-family:Arial,sans-serif}}
+.wrap{{max-width:1100px;margin:24px auto;background:#fff;border:1px solid #d9e2ef;border-radius:12px;overflow:hidden}}
+.header{{padding:24px 28px;background:#17345f;color:#fff}}
+.brand{{font-size:11px;letter-spacing:2px;color:#8ed0ff;font-weight:bold}}
+h1{{margin:8px 0 0;font-size:24px}} .content{{padding:24px 28px}}
+.greeting{{font-size:16px}} .summary{{display:flex;gap:12px;flex-wrap:wrap;margin:20px 0}}
+.summary div{{min-width:150px;padding:12px 14px;background:#f0f5fb;border-radius:8px}}
+.summary span{{display:block;color:#6b7b91;font-size:11px;text-transform:uppercase;letter-spacing:.6px}}
+.summary strong{{display:block;margin-top:5px}} .template{{padding:14px 16px;border-left:4px solid #ef9b35;background:#fff8ed}}
+table{{width:100%;border-collapse:collapse;margin-top:20px;font-size:13px}}
+th{{background:#eaf0f7;text-align:left;color:#40536c}} th,td{{border:1px solid #d5deea;padding:10px 9px;vertical-align:top}}
+td.alert{{color:#b42318;font-weight:bold}} a{{color:#1267b1}} .footer{{padding:16px 28px;color:#6b7b91;font-size:12px;background:#f7f9fc}}
+</style></head><body><div class="wrap"><div class="header"><div class="brand">ORBIT AUTOMATION</div>
+<h1>{html.escape(subject)}</h1></div><div class="content">{overview}{summary}
+<div class="template"><strong>{labels['notification_message']}</strong><br>{message}</div>{table}
+</div><div class="footer">This notification was generated automatically by the Orbit SLA monitoring service.</div>
+</div></body></html>"""
+    return subject, html_body
 
 
-def _items_table(rows: list[dict[str, Any]], url_template: str) -> str:
+def _display_step_name(row: dict[str, Any], step_name: str, locale: str) -> str:
+    source_name = str(row.get("source_step_data", {}).get("label") or step_name)
+    if source_name == "Proceed to Official Order":
+        return {"zh-CN": "正式订单", "zh-HK": "正式訂單"}.get(locale, "Official Order")
+    return step_name
+
+
+def _email_labels(locale: str) -> dict[str, str]:
+    if locale == "zh-CN":
+        return {"subject": "SLA逾期", "greeting": "您好，", "greeting_suffix": "：", "workflow": "工作流", "step": "步骤", "workflow_items": "工作流项目", "items": "项目", "overdue_items": "逾期项目", "notification_message": "通知消息", "message": "以下{step}已超过SLA截止时间，请立即处理。"}
+    if locale == "zh-HK":
+        return {"subject": "SLA逾期", "greeting": "您好，", "greeting_suffix": "：", "workflow": "工作流程", "step": "步驟", "workflow_items": "工作流程項目", "items": "項目", "overdue_items": "逾期項目", "notification_message": "通知訊息", "message": "以下{step}已超過SLA截止時間，請立即處理。"}
+    return {"subject": "SLA overdue", "greeting": "Hi", "greeting_suffix": ",", "workflow": "Workflow", "step": "Step", "workflow_items": "workflow items", "items": "items", "overdue_items": "Overdue items", "notification_message": "Notification message", "message": "The following {step} passed the SLA due time. Please proceed immediately."}
+
+
+def _email_table_labels(locale: str) -> dict[str, str]:
+    if locale == "zh-CN":
+        return {"workflow": "工作流", "step": "步骤", "customer": "客户名称", "business_key": "业务编号", "contact": "联系人 / 邮箱", "sla": "SLA", "step_start": "步骤开始", "due_at": "截止时间", "overdue": "逾期时长", "access": "访问"}
+    if locale == "zh-HK":
+        return {"workflow": "工作流程", "step": "步驟", "customer": "客戶名稱", "business_key": "業務編號", "contact": "聯絡人 / 電郵", "sla": "SLA", "step_start": "步驟開始", "due_at": "截止時間", "overdue": "逾期時長", "access": "訪問"}
+    return {"workflow": "Workflow", "step": "Step", "customer": "Customer Name", "business_key": "Business Key", "contact": "Contact Person / Email", "sla": "SLA", "step_start": "Step Start", "due_at": "Due At", "overdue": "Overdue", "access": "Access"}
+
+
+def _items_table(rows: list[dict[str, Any]], url_template: str, locale: str) -> str:
+    labels = _email_table_labels(locale)
     cells = []
     for row in rows:
         row_uuid = str(row["row_uuid"])
@@ -320,37 +373,38 @@ def _items_table(rows: list[dict[str, Any]], url_template: str) -> str:
         url = url.replace("{{record_key}}", str(row["record_key"]))
         cells.append(
             "<tr>"
+            f"<td>{html.escape(str(row.get('workflow_name') or row.get('workflow_key') or '-'))}</td>"
+            f"<td>{html.escape(str(row.get('step_name') or row.get('record_key') or '-'))}</td>"
             f"<td>{html.escape(str(row.get('customer_name') or '-'))}</td>"
             f"<td>{html.escape(str(row['business_key']))}</td>"
+            f"<td>{html.escape(str(row.get('contact_name') or '-'))}<br><small>{html.escape(str(row.get('contact_email') or '-'))}</small></td>"
             f"<td>{html.escape(str(row['sla_text']))}</td>"
+            f"<td>{html.escape(_format_datetime(row.get('started_at')))}</td>"
             f"<td>{html.escape(str(row['due_at']))}</td>"
+            f"<td class='alert'>{html.escape(_overdue_text(row['due_at']))}</td>"
             f"<td><a href=\"{html.escape(url, quote=True)}\">Open workflow item</a></td>"
             "</tr>"
         )
     return (
-        "<table><thead><tr><th>Customer Name</th><th>Business Key</th><th>SLA</th>"
-        "<th>Due At</th><th>Access</th></tr></thead><tbody>"
+        f"<table><thead><tr><th>{labels['workflow']}</th><th>{labels['step']}</th><th>{labels['customer']}</th><th>{labels['business_key']}</th><th>{labels['contact']}</th>"
+        f"<th>{labels['sla']}</th><th>{labels['step_start']}</th><th>{labels['due_at']}</th><th>{labels['overdue']}</th><th>{labels['access']}</th></tr></thead><tbody>"
         + "".join(cells)
         + "</tbody></table>"
     )
 
 
-def _xml_text(fragment: str, tag: str) -> str:
-    root = ET.fromstring(fragment)
-    node = root if root.tag == tag else root.find(f".//{tag}")
-    return "".join(node.itertext()).strip() if node is not None else ""
+def _overdue_text(value: Any) -> str:
+    if not isinstance(value, datetime):
+        return "-"
+    due = value if value.tzinfo else value.replace(tzinfo=timezone.utc)
+    minutes = max(0, int((datetime.now(due.tzinfo) - due).total_seconds() // 60))
+    return f"{minutes / 1440:.2f} days ({minutes:,} minutes)"
 
 
-def _xml_inner(fragment: str, tag: str) -> str:
-    root = ET.fromstring(fragment)
-    node = root if root.tag == tag else root.find(f".//{tag}")
-    if node is None:
-        return ""
-    parts = [node.text or ""]
-    for child in node:
-        parts.append(ET.tostring(child, encoding="unicode"))
-        parts.append(child.tail or "")
-    return "".join(parts)
+def _format_datetime(value: Any) -> str:
+    if not isinstance(value, datetime):
+        return "-"
+    return value.strftime("%Y-%m-%d %H:%M %z")
 
 
 def _send_email(recipient: str, subject: str, html_body: str) -> None:

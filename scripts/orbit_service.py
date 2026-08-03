@@ -64,6 +64,7 @@ def main() -> int:
             result = run_sla_cycle(
                 connection,
                 str(settings.get("access_url_base", "http://127.0.0.1:5274")),
+                locale=str(settings.get("locale", app_settings.default_locale)),
             )
             connection.commit()
         last_run_path.write_text(str(time.time()), encoding="utf-8")
